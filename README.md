@@ -4,8 +4,9 @@ An Android app that drafts sewing patterns from a customer's measurements, so a 
 **print the pieces at true size** or **project them straight onto the cloth** and cut along
 the lines. There is no manual drafting with chalk and no separate cutting master.
 
-The first category is **saree blouses**, with 12 designs: round, boat, V, sweetheart, square,
-deep U back, sleeveless, cap / elbow / ¾ sleeves, and front or back opening.
+The first category is **saree blouses**, with 16 designs: round, boat, V, sweetheart, square,
+deep U back, sleeveless, cap / elbow / ¾ sleeves, front or back opening, and **princess cut**
+fronts (two panels joined by a curved seam through the bust point instead of darts).
 
 ## How it works
 
@@ -41,10 +42,11 @@ lives in `pattern-core/.../blouse/BlouseDrafter.kt`.
 | Bust point | apex-to-apex / 2 across, apex length (corrected for the diagonal) down |
 | Side dart | takes up front length − back length, so front and back side seams match when sewn |
 | Sleeve | biceps + 2.5 cm ease; the cap height is **solved** so the cap is 1 cm longer than the drafted armhole |
+| Princess cut | the front is split along a curve from the armhole (halfway up) through the bust point to the bottom; the waist-dart width becomes the gap between the two curves at the bottom, and the bust-dart length is taken off the side panel so the side seam matches the back. Both seam edges are the same length |
 | Neck | the shape comes from the design, the depth from the customer's measurement (boat / deep designs scale it) |
 
 Default seam allowances: neck 1 cm, shoulder 1.5, armhole 1, side 2.5 (room for alterations),
-bottom 2, hook opening 2.5, sleeve cap 1, underarm 1.5, sleeve hem 2. The app also warns
+bottom 2, hook opening 2.5, princess seam 1.5, sleeve cap 1, underarm 1.5, sleeve hem 2. The app also warns
 about suspicious measurements (for example, front shorter than back, or an arm round too big
 for the armhole).
 
@@ -75,7 +77,7 @@ GitHub Actions runs both on every push and uploads the debug APK as a build arti
 ## Roadmap ideas
 
 - More categories: kurti, salwar, lehenga, petticoat (entries are already in the catalogue).
-- Princess-cut / katori blouses, collars, padded cups.
+- Katori blouses, back princess seams, collars, padded cups.
 - Keystone correction for projectors mounted at an angle.
 - Save the tailor's own ease and allowance preferences.
 - Telugu / Hindi / Tamil translations.

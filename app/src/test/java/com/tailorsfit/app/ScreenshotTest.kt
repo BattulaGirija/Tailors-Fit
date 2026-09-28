@@ -5,7 +5,10 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.tailorsfit.app.ui.screens.CatalogScreen
@@ -92,6 +95,20 @@ class ScreenshotTest {
         val vm = vm()
         show { PatternScreen(vm, "blouse_sweetheart", onBack = {}, onProject = {}) }
         save("07-pattern-sweetheart")
+    }
+
+    @Test
+    fun patternPrincess() {
+        val vm = vm()
+        show { PatternScreen(vm, "blouse_princess_round", onBack = {}, onProject = {}) }
+        save("07b-pattern-princess")
+    }
+
+    @Test
+    fun catalogPrincess() {
+        show { CatalogScreen("blouse", onBack = {}, onModel = {}) }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Princess Cut, Round Neck"))
+        save("02b-catalog-princess")
     }
 
     @Test

@@ -19,6 +19,7 @@ enum class EdgeKind(val label: String) {
     SLEEVE_CAP("Sleeve cap"),
     UNDERARM("Underarm seam"),
     SLEEVE_HEM("Sleeve hem"),
+    PRINCESS("Princess seam"),
 }
 
 /** Seam allowances in cm per edge kind. A fold never gets an allowance. */
@@ -32,6 +33,7 @@ data class SeamAllowances(
     val sleeveCap: Double = 1.0,
     val underarm: Double = 1.5,
     val sleeveHem: Double = 2.0,
+    val princess: Double = 1.5,
 ) {
     fun of(kind: EdgeKind): Double = when (kind) {
         EdgeKind.NECK -> neck
@@ -44,10 +46,11 @@ data class SeamAllowances(
         EdgeKind.SLEEVE_CAP -> sleeveCap
         EdgeKind.UNDERARM -> underarm
         EdgeKind.SLEEVE_HEM -> sleeveHem
+        EdgeKind.PRINCESS -> princess
     }
 
     companion object {
-        val NONE = SeamAllowances(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        val NONE = SeamAllowances(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 }
 

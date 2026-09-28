@@ -65,6 +65,28 @@ data class CubicTo(val c1: Pt, val c2: Pt, override val end: Pt) : Seg {
 
     override fun map(f: (Pt) -> Pt): Seg = CubicTo(f(c1), f(c2), f(end))
     override fun reversed(start: Pt): Seg = CubicTo(c2, c1, start)
+
+    /** De Casteljau split at [t]: the part up to t, and the rest (which starts at pointAt(t)). */
+    fun split(start: Pt, t: Double): Pair<CubicTo, CubicTo> {
+        val p01 = start.lerp(c1, t)
+        val p12 = c1.lerp(c2, t)
+        val p23 = c2.lerp(end, t)
+        val a = p01.lerp(p12, t)
+        val b = p12.lerp(p23, t)
+        val mid = a.lerp(b, t)
+        return CubicTo(p01, a, mid) to CubicTo(b, p23, end)
+    }
+
+    /** Splits so the first part is [length] cm long (measured on the flattened curve). */
+    fun splitAtLength(start: Pt, length: Double): Pair<CubicTo, CubicTo> {
+        var lo = 0.0
+        var hi = 1.0
+        repeat(40) {
+            val mid = (lo + hi) / 2
+            if (polylineLength(listOf(start) + split(start, mid).first.flatten(start)) < length) lo = mid else hi = mid
+        }
+        return split(start, (lo + hi) / 2)
+    }
 }
 
 /** Maximum chord length used when turning curves into polylines. */

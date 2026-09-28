@@ -20,26 +20,28 @@ import kotlin.math.min
 /** Front and back of the design drawn from its real draft at a standard size. */
 @Composable
 fun ModelThumbnail(model: GarmentModel, modifier: Modifier = Modifier, fill: Color, line: Color) {
-    val outlines = remember(model.id) {
+    // Each group is one garment view (front, back) made of one or more panels in a shared frame.
+    val groups: List<List<List<Pt>>> = remember(model.id) {
         runCatching {
-            val pattern = model.draft(Measurements.defaults())
-            listOfNotNull(
-                pattern.pieces.firstOrNull { it.id == "front" },
-                pattern.pieces.firstOrNull { it.id == "back" },
-            ).map { fullPiece(it).seamOutline() }
+            val pieces = model.draft(Measurements.defaults()).pieces
+            val front = pieces.filter { it.id.startsWith("front") }.flatMap { p ->
+                if (p.id == "front_side") listOf(p.seamOutline(), p.mirrored().seamOutline()) else listOf(fullPiece(p).seamOutline())
+            }
+            val back = pieces.filter { it.id == "back" }.map { fullPiece(it).seamOutline() }
+            listOf(front, back).filter { it.isNotEmpty() }
         }.getOrDefault(emptyList())
     }
     Canvas(modifier) {
-        if (outlines.isEmpty()) return@Canvas
+        if (groups.isEmpty()) return@Canvas
         val gap = 4.0
-        val boxes = outlines.map { Rect.of(it) }
+        val boxes = groups.map { g -> Rect.of(g.flatten()) }
         val totalW = boxes.sumOf { it.width } + gap * (boxes.size - 1)
         val totalH = boxes.maxOf { it.height }
         val scale = (min(size.width / totalW, size.height / totalH) * 0.92).toFloat()
         var x = (size.width - totalW * scale) / 2
-        for ((poly, box) in outlines.zip(boxes)) {
+        for ((group, box) in groups.zip(boxes)) {
             val top = ((size.height - box.height * scale) / 2).toFloat()
-            drawOutline(poly, box, x.toFloat(), top, scale, fill, line)
+            for (poly in group) drawOutline(poly, box, x.toFloat(), top, scale, fill, line)
             x += (box.width + gap) * scale
         }
     }

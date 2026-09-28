@@ -44,6 +44,8 @@ object BlouseDrafter {
     const val CAP_EASE = 1.0
     /** Distance of the balance notches from the underarm, measured along the seam. */
     const val ARMHOLE_NOTCH_FROM_UNDERARM = 7.0
+    /** Where the princess seam meets the armhole, as a fraction of armhole length from the underarm. */
+    const val PRINCESS_ARMHOLE_FRACTION = 0.5
 
     fun draft(model: BlouseModel, m: Measurements, options: DraftOptions = DraftOptions()): Pattern {
         val errors = m.validate(model.requiredMeasurements)
@@ -52,11 +54,11 @@ object BlouseDrafter {
         val warnings = ArrayList<String>()
         val bodice = BodiceFrame.create(model, m, warnings)
 
-        val front = draftBodiceHalf(bodice, isFront = true, model, m, warnings)
-        val back = draftBodiceHalf(bodice, isFront = false, model, m, warnings)
-        val pieces = mutableListOf(front, back)
+        val fronts = draftBodiceHalf(bodice, isFront = true, model, m, warnings)
+        val back = draftBodiceHalf(bodice, isFront = false, model, m, warnings).single()
+        val pieces = (fronts + back).toMutableList()
 
-        val frontArm = front.lengthOf(EdgeKind.ARMHOLE)
+        val frontArm = fronts.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
         val backArm = back.lengthOf(EdgeKind.ARMHOLE)
         val summary = mutableListOf(
             "Finished bust" to cm(bodice.frontBust * 2 + bodice.backBust * 2),
@@ -156,7 +158,7 @@ object BlouseDrafter {
         model: BlouseModel,
         m: Measurements,
         warnings: MutableList<String>,
-    ): Piece {
+    ): List<Piece> {
         val spec = if (isFront) model.front else model.back
         val bust = if (isFront) f.frontBust else f.backBust
         val waist = if (isFront) f.frontWaist else f.backWaist
@@ -229,6 +231,14 @@ object BlouseDrafter {
         val markings = ArrayList<Marking>()
         fun hemY(x: Double) = hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
 
+        if (isFront && model.princess) {
+            val sideExcess = sideBottom.dist(underarm) - sideSeamLength(f, isFront = false)
+            return draftPrincessFront(
+                f, model, spec, neckPath, centreTop, isOpening, armhole, underarm, shoulder, neck, hemCentre,
+                sideBottom, dartIntake, sideExcess, neckDepth, warnings,
+            )
+        }
+
         if (dartIntake > 0.3) {
             val half = dartIntake / 2
             val tipY = if (isFront) f.apexY + 2.5 else f.armDepth + 3.0
@@ -281,7 +291,7 @@ object BlouseDrafter {
             if (darts.isNotEmpty()) add("Darts: " + darts.joinToString(" + ") { cm(it.intake) })
         }
 
-        return withOutwardNotches(Piece(
+        return listOf(withOutwardNotches(Piece(
             id = if (isFront) "front" else "back",
             name = name,
             cut = cut,
@@ -291,7 +301,119 @@ object BlouseDrafter {
             points = mapOf("apex" to Pt(f.apexX, f.apexY), "underarm" to underarm, "shoulder" to shoulder, "neck" to neck),
             labelAt = Pt(bust * 0.52, f.armDepth - 3.5),
             notes = notes,
-        ), notches)
+        ), notches))
+    }
+
+    /**
+     * Princess-cut front: the waist dart and the bust (side) dart are replaced by a curved seam
+     * that starts on the armhole, passes through the bust point and ends at the hem. The
+     * waist-dart intake becomes the gap between the two curves at the hem; the extra front
+     * length is taken off the side panel at the side seam so it matches the back.
+     */
+    private fun draftPrincessFront(
+        f: BodiceFrame,
+        model: BlouseModel,
+        spec: NeckSpec,
+        neckPath: PathD,
+        centreTop: Pt,
+        isOpening: Boolean,
+        armhole: PathD,
+        underarm: Pt,
+        shoulder: Pt,
+        neck: Pt,
+        hemCentre: Pt,
+        sideBottom: Pt,
+        dartIntake: Double,
+        sideExcess: Double,
+        neckDepth: Double,
+        warnings: MutableList<String>,
+    ): List<Piece> {
+        val apex = Pt(f.apexX, f.apexY)
+        fun hemY(x: Double) = hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
+
+        // Princess seam leaves the armhole a little below the front hollow.
+        val armCurve = armhole.segs.single() as CubicTo
+        val (lowerArm, upperArm) = armCurve.splitAtLength(underarm, armhole.length() * PRINCESS_ARMHOLE_FRACTION)
+        val a = lowerArm.end
+
+        // Armhole point -> bust point, arriving vertically.
+        val upper = CubicTo(
+            Pt(a.x - 0.45 * (a.x - apex.x), a.y + 0.25 * (apex.y - a.y)),
+            Pt(apex.x, apex.y - 0.45 * (apex.y - a.y)),
+            apex,
+        )
+        val half = if (dartIntake > 0.3) dartIntake / 2 else 0.0
+        val hemL = Pt(apex.x - half, hemY(apex.x - half))
+        val hemR = Pt(apex.x + half, hemY(apex.x + half))
+        fun down(to: Pt) = CubicTo(Pt(apex.x, apex.y + (to.y - apex.y) * 0.4), Pt(to.x, to.y - (to.y - apex.y) * 0.4), to)
+        val lowerL = down(hemL)
+        val lowerR = down(hemR)
+
+        val excess = sideExcess.coerceIn(0.0, 6.0)
+        if (sideExcess > 6.0) warnings += "Front is much longer than back; ease the extra length into the princess seam."
+        val sideDir = (underarm - sideBottom).normalized()
+        val sideBottomR = sideBottom + sideDir * excess
+
+        val centreEdges = listOf(
+            Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, hemCentre)),
+            Edge(EdgeKind.HEM, PathD.line(hemCentre, hemL)),
+            Edge(EdgeKind.PRINCESS, PathD(hemL, listOf(lowerL.reversed(apex), upper.reversed(a)))),
+            Edge(EdgeKind.ARMHOLE, PathD(a, listOf(upperArm))),
+            Edge(EdgeKind.SHOULDER, PathD.line(shoulder, neck)),
+            Edge(EdgeKind.NECK, neckPath),
+        )
+        val sideEdges = listOf(
+            Edge(EdgeKind.HEM, PathD.line(hemR, sideBottomR)),
+            Edge(EdgeKind.SIDE, PathD.line(sideBottomR, underarm)),
+            Edge(EdgeKind.ARMHOLE, PathD(underarm, listOf(lowerArm))),
+            Edge(EdgeKind.PRINCESS, PathD(a, listOf(upper, lowerR))),
+        )
+
+        // Matching notches: at the bust point and (double) halfway up the upper curve.
+        val midUpper = upper.pointAt(a, 0.5)
+        val midTangent = (upper.pointAt(a, 0.51) - upper.pointAt(a, 0.49)).normalized()
+        val seamNotches = listOf(Notch(apex, Pt(0.0, 1.0)), Notch(midUpper, midTangent, double = true))
+        val sideNotches = seamNotches.toMutableList()
+        PathD(underarm, listOf(lowerArm)).pointAtDistance(ARMHOLE_NOTCH_FROM_UNDERARM).let { (p, t) -> sideNotches += Notch(p, t) }
+        PathD.line(sideBottomR, underarm).pointAtDistance(3.0).let { (p, t) -> sideNotches += Notch(p, t) }
+
+        val centreX = apex.x * 0.45
+        val sideX = (hemR.x + sideBottomR.x) / 2
+        val cross = listOf(
+            Marking(apex + Pt(-0.8, 0.0), apex + Pt(0.8, 0.0), Marking.Kind.GUIDE),
+            Marking(apex + Pt(0.0, -0.8), apex + Pt(0.0, 0.8), Marking.Kind.GUIDE),
+        )
+        val centre = withOutwardNotches(
+            Piece(
+                id = "front_centre",
+                name = "Front centre",
+                cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true),
+                edges = centreEdges,
+                markings = cross + Marking(Pt(centreX, centreTop.y + 3.0), Pt(centreX, hemCentre.y - 3.0), Marking.Kind.GRAIN),
+                points = mapOf("apex" to apex, "shoulder" to shoulder, "neck" to neck, "princessTop" to a),
+                labelAt = Pt(apex.x * 0.5, (centreTop.y + hemCentre.y) / 2 + 2.0),
+                notes = listOf(
+                    if (isOpening) "${model.opening.label}: ${cm(2.5)} overlap" else "Place centre on the fold",
+                    "Neck: ${spec.shape.label}, depth ${cm(neckDepth)}",
+                    "Princess seam: join to side panel",
+                ),
+            ),
+            seamNotches,
+        )
+        val side = withOutwardNotches(
+            Piece(
+                id = "front_side",
+                name = "Front side",
+                cut = CutInstruction(2, onFold = false),
+                edges = sideEdges,
+                markings = listOf(Marking(Pt(sideX, f.armDepth + 2.0), Pt(sideX, hemY(sideX) - 3.0), Marking.Kind.GRAIN)),
+                points = mapOf("apex" to apex, "underarm" to underarm, "princessTop" to a),
+                labelAt = Pt(sideX, f.armDepth + 5.0),
+                notes = listOf("Waist shaping ${cm(dartIntake)} in the seam"),
+            ),
+            sideNotches,
+        )
+        return listOf(centre, side)
     }
 
     private fun sideSeamLength(f: BodiceFrame, isFront: Boolean): Double {

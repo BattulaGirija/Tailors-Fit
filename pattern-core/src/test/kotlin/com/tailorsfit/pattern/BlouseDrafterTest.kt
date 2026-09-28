@@ -24,7 +24,7 @@ class BlouseDrafterTest {
     fun everyModelDraftsForEverySize() {
         for (model in BlouseCatalog.models) for (m in sizes) {
             val pattern = model.draft(m)
-            val expected = if (model.sleeve == SleeveStyle.SLEEVELESS) 2 else 3
+            val expected = (if (model.sleeve == SleeveStyle.SLEEVELESS) 2 else 3) + (if (model.princess) 1 else 0)
             assertEquals(expected, pattern.pieces.size, model.id)
             for (piece in pattern.pieces) {
                 val outline = piece.seamOutline()
@@ -40,7 +40,7 @@ class BlouseDrafterTest {
     fun shoulderSeamsMatch() {
         for (model in BlouseCatalog.models) {
             val p = model.draft(Measurements.defaults())
-            val front = p.pieces.first { it.id == "front" }
+            val front = p.pieces.first { it.id == "front" || it.id == "front_centre" }
             val back = p.pieces.first { it.id == "back" }
             assertEquals(front.lengthOf(EdgeKind.SHOULDER), back.lengthOf(EdgeKind.SHOULDER), 0.01, model.id)
         }
@@ -92,7 +92,7 @@ class BlouseDrafterTest {
     fun openingDecidesWhichCentreIsOnTheFold() {
         for (model in BlouseCatalog.models) {
             val p = model.draft(Measurements.defaults())
-            val front = p.pieces.first { it.id == "front" }
+            val front = p.pieces.first { it.id == "front" || it.id == "front_centre" }
             val back = p.pieces.first { it.id == "back" }
             if (model.opening == Opening.FRONT) {
                 assertTrue(back.cut.onFold && !front.cut.onFold && front.cut.count == 2)
@@ -144,5 +144,41 @@ class BlouseDrafterTest {
         assertTrue(MeasurementField.SLEEVE_LENGTH !in model.requiredMeasurements)
         val p = model.draft(Measurements.defaults().with(MeasurementField.SLEEVE_LENGTH, Double.NaN))
         assertEquals(3, p.pieces.size)
+    }
+
+    @Test
+    fun princessCutSplitsTheFrontIntoTwoMatchingPanels() {
+        val princessModels = BlouseCatalog.models.filter { it.princess }
+        assertTrue(princessModels.size >= 3)
+        for (model in princessModels) for (m in sizes) {
+            val p = model.draft(m)
+            val centre = p.pieces.first { it.id == "front_centre" }
+            val side = p.pieces.first { it.id == "front_side" }
+            val back = p.pieces.first { it.id == "back" }
+            assertTrue(p.pieces.none { it.id == "front" })
+            assertTrue(centre.darts.isEmpty() && side.darts.isEmpty(), "princess fronts have no darts")
+            assertEquals(2, side.cut.count)
+            // The two edges of the princess seam are sewn together, so they must be the same length.
+            assertEquals(centre.lengthOf(EdgeKind.PRINCESS), side.lengthOf(EdgeKind.PRINCESS), 0.3, model.id)
+            // Side seam matches the back without a side dart.
+            assertEquals(back.lengthOf(EdgeKind.SIDE), side.lengthOf(EdgeKind.SIDE), 0.05, model.id)
+            // Seam passes through the bust point, and both panels meet the armhole at the same point.
+            val apex = centre.points.getValue("apex")
+            assertTrue(centre.seamOutline().any { it.dist(apex) < 0.01 } && side.seamOutline().any { it.dist(apex) < 0.01 })
+            assertEquals(centre.points.getValue("princessTop"), side.points.getValue("princessTop"))
+            // Panels do not overlap: the side panel lies to the side of the centre panel at every height.
+            val sideMinX = side.seamOutline().minOf { it.x }
+            assertTrue(sideMinX > 0.0)
+            assertTrue(centre.area() > 100 && side.area() > 100)
+        }
+    }
+
+    @Test
+    fun princessArmholeEqualsDartedArmhole() {
+        val darted = BlouseCatalog.models.first { it.id == "blouse_round_back_open" }.draft(Measurements.defaults())
+        val princess = BlouseCatalog.models.first { it.id == "blouse_princess_round" }.draft(Measurements.defaults())
+        val a = darted.pieces.first { it.id == "front" }.lengthOf(EdgeKind.ARMHOLE)
+        val b = princess.pieces.filter { it.id.startsWith("front") }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
+        assertEquals(a, b, 0.05)
     }
 }

@@ -40,10 +40,18 @@ data class BlouseModel(
     val back: NeckSpec,
     val sleeve: SleeveStyle,
     val opening: Opening,
+    /** Front shaped by curved princess seams (two panels) instead of darts. */
+    val princess: Boolean = false,
 ) : GarmentModel {
     override val categoryId = "blouse"
     override val tags: List<String>
-        get() = listOf(front.shape.label + " front", back.shape.label + " back", sleeve.label, opening.label)
+        get() = listOfNotNull(
+            "Princess cut".takeIf { princess },
+            front.shape.label + " front",
+            back.shape.label + " back",
+            sleeve.label,
+            opening.label,
+        )
 
     override val requiredMeasurements: List<MeasurementField>
         get() = MeasurementField.entries.filter { f ->
@@ -122,6 +130,28 @@ object BlouseCatalog {
             "blouse_round_three_quarter", "Round Neck, 3/4 Sleeves",
             "Round neck with three-quarter sleeves. Measure sleeve length to below the elbow.",
             NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND), SleeveStyle.THREE_QUARTER, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_princess_round", "Princess Cut, Round Neck",
+            "Front in two panels joined by curved princess seams through the bust point — no darts. Back opening.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U), SleeveStyle.SHORT, Opening.BACK, princess = true,
+        ),
+        BlouseModel(
+            "blouse_princess_front_open", "Princess Cut, Front Hooks",
+            "Princess-seamed front with hooks at the centre front, round neck.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND), SleeveStyle.SHORT, Opening.FRONT, princess = true,
+        ),
+        BlouseModel(
+            "blouse_princess_sweetheart", "Princess Cut, Sweetheart",
+            "Princess-seamed front with a sweetheart neck, deep U back and cap sleeves.",
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.CAP, Opening.BACK,
+            princess = true,
+        ),
+        BlouseModel(
+            "blouse_princess_boat_elbow", "Princess Cut, Boat Neck",
+            "Princess-seamed front, boat neck and elbow sleeves. Measure sleeve length to the elbow.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55),
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.ELBOW, Opening.BACK, princess = true,
         ),
     )
 }
