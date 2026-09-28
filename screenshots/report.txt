@@ -1,0 +1,77 @@
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36467458297
+ScreenshotTest > projector FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+ScreenshotTest > pattern FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+ScreenshotTest > measurements FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+ScreenshotTest > home FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+ScreenshotTest > patternSweetheart FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+ScreenshotTest > catalog FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+ScreenshotTest > customers FAILED
+    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:50
+> Task :app:testDebugUnitTest FAILED
+BUILD FAILED in 1m 29s
+    <failure message="androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms" type="androidx.compose.ui.test.ComposeTimeoutException">androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.waitUntil(WindowCapture.android.kt:181)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.forceRedraw(WindowCapture.android.kt:124)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:51)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.withDrawingEnabled(WindowCapture.android.kt:91)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.access$withDrawingEnabled(WindowCapture.android.kt:1)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.runWithRetryWhenNoData(WindowCapture.android.kt:66)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.captureRegionToImage(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.AndroidImageHelpers_androidKt.captureToImage(AndroidImageHelpers.android.kt:97)
+	at com.tailorsfit.app.ScreenshotTest.save(ScreenshotTest.kt:50)
+--
+    <failure message="androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms" type="androidx.compose.ui.test.ComposeTimeoutException">androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.waitUntil(WindowCapture.android.kt:181)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.forceRedraw(WindowCapture.android.kt:124)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:51)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.withDrawingEnabled(WindowCapture.android.kt:91)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.access$withDrawingEnabled(WindowCapture.android.kt:1)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.runWithRetryWhenNoData(WindowCapture.android.kt:66)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.captureRegionToImage(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.AndroidImageHelpers_androidKt.captureToImage(AndroidImageHelpers.android.kt:97)
+	at com.tailorsfit.app.ScreenshotTest.save(ScreenshotTest.kt:50)
+--
+    <failure message="androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms" type="androidx.compose.ui.test.ComposeTimeoutException">androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.waitUntil(WindowCapture.android.kt:181)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.forceRedraw(WindowCapture.android.kt:124)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:51)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.withDrawingEnabled(WindowCapture.android.kt:91)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.access$withDrawingEnabled(WindowCapture.android.kt:1)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.runWithRetryWhenNoData(WindowCapture.android.kt:66)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.captureRegionToImage(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.AndroidImageHelpers_androidKt.captureToImage(AndroidImageHelpers.android.kt:97)
+	at com.tailorsfit.app.ScreenshotTest.save(ScreenshotTest.kt:50)
+--
+    <failure message="androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms" type="androidx.compose.ui.test.ComposeTimeoutException">androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.waitUntil(WindowCapture.android.kt:181)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.forceRedraw(WindowCapture.android.kt:124)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:51)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.withDrawingEnabled(WindowCapture.android.kt:91)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.access$withDrawingEnabled(WindowCapture.android.kt:1)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:49)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1.invoke(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.runWithRetryWhenNoData(WindowCapture.android.kt:66)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.captureRegionToImage(WindowCapture.android.kt:47)
+	at androidx.compose.ui.test.AndroidImageHelpers_androidKt.captureToImage(AndroidImageHelpers.android.kt:97)
+	at com.tailorsfit.app.ScreenshotTest.save(ScreenshotTest.kt:50)
+--
+    <failure message="androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms" type="androidx.compose.ui.test.ComposeTimeoutException">androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 2000 ms
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.waitUntil(WindowCapture.android.kt:181)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt.forceRedraw(WindowCapture.android.kt:124)
+	at androidx.compose.ui.test.android.WindowCapture_androidKt$captureRegionToImage$1$1.invoke(WindowCapture.android.kt:51)
