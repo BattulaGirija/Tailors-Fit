@@ -1,13 +1,13 @@
 name: Screenshots
 
-# Runs the app on an Android emulator, captures each screen and commits the images to
+# Renders every app screen with Robolectric and commits the images to
 # screenshots/ on the same branch. Pushes made with GITHUB_TOKEN do not trigger new runs.
 on:
   push:
     paths:
       - "app/**"
       - "pattern-core/src/main/**"
-      - "scripts/screenshots.sh"
+      - "app/src/test/**"
       - ".github/workflows/screenshots.yml"
   workflow_dispatch:
 
@@ -17,7 +17,7 @@ permissions:
 jobs:
   screenshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -28,24 +28,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug
+      - name: Render screens (Robolectric)
+        run: ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*' --stacktrace
 
-      - name: Enable KVM
+      - name: Collect screenshots
+        if: always()
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Run app and capture screens
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          disable-animations: true
-          script: ./scripts/screenshots.sh screenshots
+          mkdir -p screenshots
+          cp app/build/screenshots/*.png screenshots/ 2>/dev/null || true
 
       - name: Commit screenshots
         if: always()
