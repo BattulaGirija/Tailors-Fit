@@ -41,6 +41,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -216,7 +217,9 @@ private fun PhoneProjector(
                         Text("Tap the pattern to hide controls · drag to move", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                         IconButton(onClick = onBack) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White) }
                     }
-                    Controls(vm, frame, layout, calibSize, onCalibrated, dark = true)
+                    MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFFFFB0C8), secondaryContainer = Color(0xFF5A4300))) {
+                        Controls(vm, frame, layout, calibSize, onCalibrated, dark = true)
+                    }
                 }
             }
         }

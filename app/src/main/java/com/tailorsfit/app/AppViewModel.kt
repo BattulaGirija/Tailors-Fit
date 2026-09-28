@@ -80,7 +80,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun fillFrom(m: Measurements) {
         inputs.clear()
-        for ((f, v) in m.asMap()) if (!v.isNaN()) inputs[f] = format(unit.fromCm(v))
+        for ((f, v) in m.asMap()) {
+            if (v.isNaN()) continue
+            val shown = unit.fromCm(v)
+            // Tailors measure in quarter inches / half centimetres.
+            val rounded = if (unit == LengthUnit.INCH) Math.round(shown * 4) / 4.0 else Math.round(shown * 2) / 2.0
+            inputs[f] = format(rounded)
+        }
     }
 
     fun applyPreset(p: SizePreset) {
