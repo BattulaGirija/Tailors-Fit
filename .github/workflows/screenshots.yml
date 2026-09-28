@@ -29,13 +29,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Render screens (Robolectric)
-        run: ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*' --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*' 2>&1 | tee gradle.log
 
-      - name: Collect screenshots
+      - name: Collect screenshots and report
         if: always()
         run: |
           mkdir -p screenshots
+          rm -f screenshots/*.png
           cp app/build/screenshots/*.png screenshots/ 2>/dev/null || true
+          {
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            grep -E "^e: |error:|FAILED|Exception|BUILD" gradle.log | head -80 || true
+            for f in app/build/test-results/testDebugUnitTest/*.xml; do
+              [ -f "$f" ] && grep -A12 "<failure" "$f" | head -60
+            done
+          } > screenshots/report.txt 2>/dev/null || true
 
       - name: Commit screenshots
         if: always()
