@@ -1,13 +1,11 @@
 package com.tailorsfit.app
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.tailorsfit.app.ui.screens.CatalogScreen
@@ -47,7 +45,14 @@ class ScreenshotTest {
 
     private fun save(name: String) {
         compose.waitForIdle()
-        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        // Draw the window's view hierarchy directly; captureToImage() waits for a frame
+        // callback that Robolectric never delivers.
+        lateinit var bitmap: Bitmap
+        compose.runOnUiThread {
+            val root = compose.activity.window.decorView
+            bitmap = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+            root.draw(Canvas(bitmap))
+        }
         val dir = File("build/screenshots").apply { mkdirs() }
         File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
