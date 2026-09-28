@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,12 +21,20 @@ import com.tailorsfit.app.ui.screens.ProjectorScreen
 import com.tailorsfit.app.ui.theme.TailorsFitTheme
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val EXTRA_ROUTE = "route"
+        const val EXTRA_CUSTOMER = "customer"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Optional launch arguments, e.g. `adb shell am start ... --es route pattern/blouse_v`.
+        val startRoute = intent?.getStringExtra(EXTRA_ROUTE)
+        val customer = intent?.getStringExtra(EXTRA_CUSTOMER)
         setContent {
             TailorsFitTheme {
-                TailorsFitApp()
+                TailorsFitApp(startRoute, customer)
             }
         }
     }
@@ -41,9 +50,13 @@ object Routes {
 }
 
 @Composable
-fun TailorsFitApp() {
+fun TailorsFitApp(startRoute: String? = null, customer: String? = null) {
     val nav = rememberNavController()
     val vm: AppViewModel = viewModel()
+    LaunchedEffect(Unit) {
+        if (!customer.isNullOrBlank()) vm.customerName = customer
+        if (!startRoute.isNullOrBlank()) runCatching { nav.navigate(startRoute) }
+    }
     val back: () -> Unit = { nav.popBackStack() }
     val modelArg = listOf(navArgument("modelId") { type = NavType.StringType })
 
