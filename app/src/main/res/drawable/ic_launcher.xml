@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scissors over a blouse outline -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#8E244D"
+        android:pathData="M24,0a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F6D58E"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M17,11 L21,11 Q24,17 27,11 L31,11 L37,17 L34,21 L32,19 L32,36 L16,36 L16,19 L14,21 L11,17 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M19,26 L29,31 M19,31 L29,26" />
+</vector>
