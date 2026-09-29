@@ -1,17 +1,2 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36520110811
-ScreenshotTest > adminHome FAILED
-> Task :app:testDebugUnitTest FAILED
-BUILD FAILED in 1m 34s
-    <failure message="java.lang.AssertionError: Failed to inject touch input.&#10;Reason: Expected exactly '1' node but found '2' nodes that satisfy: (Text + EditableText contains 'Designs' (ignoreCase: false))&#10;Nodes found:&#10;1) Node #764 at (l=868.0, t=392.0, r=1009.0, b=443.0)px&#10;Text = '[Designs]'&#10;Actions = [SetTextSubstitution, ShowTextSubstitution, ClearTextSubstitution, GetTextLayoutResult]&#10;Has 1 sibling&#10;2) Node #773 at (l=616.0, t=533.0, r=1232.0, b=677.0)px&#10;Role = 'Tab'&#10;Focused = 'false'&#10;Selected = 'false'&#10;Text = '[Designs]'&#10;Actions = [OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution, ClearTextSubstitution, GetTextLayoutResult]&#10;MergeDescendants = 'true'&#10;Has 1 sibling&#10;" type="java.lang.AssertionError">java.lang.AssertionError: Failed to inject touch input.
-Reason: Expected exactly '1' node but found '2' nodes that satisfy: (Text + EditableText contains 'Designs' (ignoreCase: false))
-Nodes found:
-1) Node #764 at (l=868.0, t=392.0, r=1009.0, b=443.0)px
-Text = '[Designs]'
-Actions = [SetTextSubstitution, ShowTextSubstitution, ClearTextSubstitution, GetTextLayoutResult]
-Has 1 sibling
-2) Node #773 at (l=616.0, t=533.0, r=1232.0, b=677.0)px
-Role = 'Tab'
-Focused = 'false'
-Selected = 'false'
-Text = '[Designs]'
-Actions = [OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution, ClearTextSubstitution, GetTextLayoutResult]
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36520354548
+BUILD SUCCESSFUL in 1m 35s
