@@ -85,13 +85,59 @@ class BlouseDrafterTest {
     }
 
     @Test
-    fun armholeLengthIsCloseToTheMeasurement() {
+    fun armholeIsTheMeasurementPlusEase() {
         for (m in sizes) {
             val p = BlouseCatalog.models.first().draft(m)
             val arm = p.pieces.filter { it.id != "sleeve" }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
-            val measured = m[MeasurementField.ARMHOLE]
-            assertTrue(abs(arm - measured) / measured < 0.08, "armhole $arm vs $measured")
+            assertEquals(m[MeasurementField.ARMHOLE] + BlouseDrafter.ARMHOLE_EASE, arm, 0.05)
         }
+    }
+
+    @Test
+    fun followsTheTraditionalInchDraft() {
+        // Size 36 as in a tailor's inch draft: chest 36", waist 32", shoulder 12", armhole 16",
+        // lengths 14". Chest and waist quarters are +1", the armhole is about 6" deep.
+        val inch = BlouseDrafter.INCH
+        val m = Measurements.defaults()
+            .with(MeasurementField.BUST, 36 * inch).with(MeasurementField.WAIST, 32 * inch)
+            .with(MeasurementField.SHOULDER, 12 * inch).with(MeasurementField.ARMHOLE, 16 * inch)
+            .with(MeasurementField.FRONT_LENGTH, 14.5 * inch).with(MeasurementField.BACK_LENGTH, 14 * inch)
+        val p = BlouseCatalog.models.first { it.id == "blouse_round_classic" }.draft(m)
+        val front = p.pieces.first { it.id == "front" }
+        val back = p.pieces.first { it.id == "back" }
+        val underarm = front.points.getValue("underarm")
+        assertEquals(10.0, underarm.x / inch, 0.01)
+        assertEquals(6.0, (underarm.y - front.points.getValue("shoulder").y) / inch, 0.5)
+        assertEquals(6.0, front.points.getValue("shoulder").x / inch, 0.01)
+        assertEquals(0.5, front.points.getValue("shoulder").y / inch, 0.01)
+        // Front ½" longer than back: taken by a ½" side dart, no lift needed.
+        assertEquals(0.5, front.darts.last().intake / inch, 0.05)
+        assertEquals(back.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE) - front.darts.last().intake, 0.05)
+        // Sleeve cap about 3½–4½", like a traditional blouse sleeve.
+        val cap = p.pieces.first { it.id == "sleeve" }.points.getValue("capHeight").y / inch
+        assertTrue(cap in 3.5..4.5, "cap $cap")
+    }
+
+    @Test
+    fun extraFrontLengthLiftsTheFrontBottomAtTheSide() {
+        val inch = BlouseDrafter.INCH
+        val m = Measurements.defaults().with(MeasurementField.FRONT_LENGTH, 16.5 * inch).with(MeasurementField.BACK_LENGTH, 14 * inch)
+        val front = BlouseCatalog.models.first { it.id == "blouse_round_classic" }.draft(m).pieces.first { it.id == "front" }
+        val hem = front.edgesOf(EdgeKind.HEM).single().path.points()
+        // Centre stays at the full front length; the side comes up by 2½" − 1¼" side dart.
+        assertEquals(16.5, hem.first().y / inch, 0.01)
+        assertEquals(14 + 1.25, hem.last().y / inch, 0.01)
+        assertEquals(1.25, front.darts.last().intake / inch, 0.05)
+    }
+
+    @Test
+    fun potNeckIsNarrowAtTheTopAndWideBelow() {
+        val back = BlouseCatalog.models.first { it.id == "blouse_pot_neck" }.draft(Measurements.defaults()).pieces.first { it.id == "back" }
+        val neck = back.edgesOf(EdgeKind.NECK).single().path.points()
+        val top = neck.first()
+        val waist = neck.filter { it.y < top.y + (neck.maxOf { p -> p.y } - top.y) * 0.35 }.minOf { it.x }
+        val belly = neck.maxOf { it.x }
+        assertTrue(waist < top.x && belly > top.x + 1.0, "top ${top.x}, narrowest $waist, widest $belly")
     }
 
     @Test
@@ -225,7 +271,7 @@ class BlouseDrafterTest {
         val puffSleeve = puff.pieces.first { it.id == "sleeve" }
         assertTrue(puffSleeve.lengthOf(EdgeKind.SLEEVE_CAP) > plain.lengthOf(EdgeKind.SLEEVE_CAP) * 1.2)
         val band = puff.pieces.first { it.id == "sleeve_band" }
-        assertEquals(m[MeasurementField.SLEEVE_OPENING] + 2.0, band.lengthOf(EdgeKind.BAND) / 2 - 6.0, 0.01)
+        assertEquals(m[MeasurementField.SLEEVE_OPENING] + BlouseDrafter.SLEEVE_HEM_EASE, band.lengthOf(EdgeKind.BAND) / 2 - BlouseDrafter.SLEEVE_BAND_WIDTH, 0.01)
 
         // Bell: hem much wider than the arm.
         val bell = model("blouse_boat_bell").draft(m).pieces.first { it.id == "sleeve" }
@@ -237,7 +283,7 @@ class BlouseDrafterTest {
         val collar = collarPattern.pieces.first { it.id == "collar" }
         assertTrue(collar.cut.onFold)
         val neck = collarPattern.pieces.filter { it.id.startsWith("front") || it.id == "back" }.sumOf { it.lengthOf(EdgeKind.NECK) }
-        assertEquals(neck + 1.0, collar.edges.first().path.length(), 0.01)
+        assertEquals(neck + 0.5 * BlouseDrafter.INCH, collar.edges.first().path.length(), 0.01)
         assertEquals(2, model("blouse_dori_back").draft(m).pieces.first { it.id == "tie" }.cut.count)
 
         // Keyhole: a hole inside the back, touching the fold; whole when unfolded.

@@ -62,7 +62,7 @@ class ProjectorView(context: Context) : View(context) {
         val sink = CanvasSink(canvas, f.pxPerCmX, f.pxPerCmY, f.panCm.x, f.panCm.y, style)
         if (f.showGrid) {
             val visible = Rect(f.panCm.x, f.panCm.y, f.panCm.x + width / f.pxPerCmX, f.panCm.y + height / f.pxPerCmY)
-            PatternPainter.paintGrid(sink, visible)
+            PatternPainter.paintGrid(sink, visible, com.tailorsfit.pattern.model.Lengths.gridStepCm)
         }
         PatternPainter.paintFabric(layout, sink)
         PatternPainter.paintLayout(layout, sink, f.options)

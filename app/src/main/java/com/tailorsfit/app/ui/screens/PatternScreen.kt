@@ -144,7 +144,7 @@ private fun ClothOptions(vm: AppViewModel, layout: Layout) {
                     FilterChip(
                         selected = vm.fabricWidthCm == w,
                         onClick = { vm.setFabricWidth(w) },
-                        label = { Text(tr("pattern.width", w.toInt(), vm.format(w / 2.54).substringBefore('.'))) },
+                        label = { Text(tr("pattern.width", vm.clothWidth(w))) },
                     )
                 }
             }
@@ -248,10 +248,7 @@ private fun SummaryCard(vm: AppViewModel, pattern: Pattern, layout: Layout) {
             }
             Spacer(Modifier.height(8.dp))
             Text(tr("pattern.details"), style = MaterialTheme.typography.titleMedium)
-            pattern.summary.forEach { (k, v) ->
-                val cm = v.substringBefore(" cm").toDoubleOrNull()
-                Text("$k: ${if (cm != null) vm.formatCm(cm) else v}", style = MaterialTheme.typography.bodyMedium)
-            }
+            pattern.summary.forEach { (k, v) -> Text("$k: $v", style = MaterialTheme.typography.bodyMedium) }
         }
     }
 }

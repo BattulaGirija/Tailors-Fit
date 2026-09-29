@@ -259,7 +259,7 @@ private fun Controls(
             FilledTonalIconButton(onClick = { vm.projectorPan = vm.projectorPan + Pt(STEP_CM, 0.0) }) {
                 Icon(Icons.Filled.KeyboardArrowRight, contentDescription = tr("projector.right"))
             }
-            FilterChip(selected = vm.projectorGrid, onClick = { vm.projectorGrid = !vm.projectorGrid }, label = { Text(tr("projector.grid")) })
+            FilterChip(selected = vm.projectorGrid, onClick = { vm.projectorGrid = !vm.projectorGrid }, label = { Text(tr("projector.grid", com.tailorsfit.pattern.model.Lengths.format(com.tailorsfit.pattern.model.Lengths.gridStepCm))) })
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AssistChip(onClick = { vm.projectorPan = Pt(-2.0, -2.0) }, label = { Text(tr("projector.start")) })

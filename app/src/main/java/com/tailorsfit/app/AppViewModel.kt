@@ -30,6 +30,7 @@ import com.tailorsfit.pattern.model.Catalog
 import com.tailorsfit.pattern.model.DraftOptions
 import com.tailorsfit.pattern.model.GarmentModel
 import com.tailorsfit.pattern.model.LengthUnit
+import com.tailorsfit.pattern.model.Lengths
 import com.tailorsfit.pattern.model.MeasurementField
 import com.tailorsfit.pattern.model.Measurements
 import com.tailorsfit.pattern.model.Pattern
@@ -212,7 +213,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var customerName by mutableStateOf("")
     var customerPhone by mutableStateOf("")
 
-    var unit by mutableStateOf(settings.unit)
+    /** Unit for typing measurements and for the lengths written on patterns. */
+    var unit by mutableStateOf(settings.unit.also { Lengths.unit = it })
         private set
 
     /** Text typed in each measurement box, in [unit]. Kept as text so partial input survives. */
@@ -246,6 +248,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val cm = currentMeasurements()
         unit = newUnit
         settings.unit = newUnit
+        Lengths.unit = newUnit
         fillFrom(cm)
     }
 
@@ -354,7 +357,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      * the projector show exactly the same layout without computing it twice.
      */
     suspend fun draftAsync(model: GarmentModel): DraftResult {
-        val key = listOf(model.id, currentMeasurements(), fabricWidthCm, foldedCloth, showAllowance, allowTurning, language, customerName.trim())
+        val key = listOf(model.id, currentMeasurements(), fabricWidthCm, foldedCloth, showAllowance, allowTurning, language, unit, customerName.trim())
         lastDraft?.let { if (key == lastDraftKey) return it }
         val result = withContext(Dispatchers.Default) { draft(model) }
         // Always hand the result back on the main thread: it ends up in views and Compose state.
@@ -410,5 +413,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return s.trimEnd('0').trimEnd('.')
     }
 
-    fun formatCm(cm: Double): String = format(unit.fromCm(cm)) + " " + unit.label
+    fun formatCm(cm: Double): String = Lengths.format(cm)
+
+    /** Cloth width, in the tailor's unit first: `43" (110 cm)` or `110 cm (43")`. */
+    fun clothWidth(cm: Double): String {
+        val inches = Math.round(cm / Lengths.INCH).toString() + "\""
+        val metric = "${cm.toInt()} cm"
+        return if (unit == LengthUnit.INCH) "$inches ($metric)" else "$metric ($inches)"
+    }
 }

@@ -104,25 +104,26 @@ To build locally with Firebase, put `google-services.json` in `app/` (it is git-
 
 ## Drafting method (blouse)
 
-The draft is on the stitching line, in centimetres, with half pieces placed on the fold. It
-lives in `pattern-core/.../blouse/BlouseDrafter.kt`.
+The traditional Indian method, drafted in inches (as tailors mark it with chalk); patterns are
+labelled in inches (to the nearest ¼") unless the tailor switches to cm. The code lives in
+`pattern-core/.../blouse/BlouseDrafter.kt`; half pieces are drafted on the stitching line and
+cut on the fold.
 
 | Part | Rule |
 |---|---|
-| Bust | bust/4 + 1.5 front, bust/4 + 0.5 back (4 cm total ease) |
-| Waist | waist/4 + 1 front, waist/4 + 0.5 back (3 cm ease); the difference is split between side seam (≈⅓) and waist dart |
-| Armhole depth | armhole round / 2 from the shoulder-at-neck level |
-| Shoulder | shoulder/2 with a 3 cm slope; front and back seams are equal length |
-| Bust point | apex-to-apex / 2 across, apex length (corrected for the diagonal) down |
-| Side dart | takes up front length − back length, so front and back side seams match when sewn |
-| Sleeve | biceps + 2.5 cm ease; the cap height is **solved** so the cap is 1 cm longer than the drafted armhole |
-| Princess cut | the front is split along a curve from the armhole (halfway up) through the bust point to the bottom; the waist-dart width becomes the gap between the two curves at the bottom, and the bust-dart length is taken off the side panel so the side seam matches the back. Both seam edges are the same length |
-| Neck | the shape comes from the design, the depth from the customer's measurement (boat / deep designs scale it) |
+| Chest | chest / 4 + 1" for each of front and back (4" ease in all) |
+| Waist | waist / 4 + 1"; the difference from the chest is split between the side seam (about ⅓) and a dart under the bust (at most 1¾") |
+| Shoulder | shoulder / 2 from the centre, ½" slope; neck width about 2½" |
+| Armhole | as deep as needed for the front + back armhole curves to be the armhole round + 1" (for a size 36 with a 12" shoulder this is the usual 6" deep armhole). The front is scooped 1" in from the shoulder tip, the back ½" |
+| Bust point | apex-to-apex / 2 across, apex length (corrected for the slant) down |
+| Front length | the side dart takes up to 1¼" of the extra front length; any more lifts the bottom of the front at the side, so the front bottom curves down to the centre and both side seams match |
+| Sleeve | underarm width = arm round + 2"; the cap is ½" shorter than the blouse armhole (the armhole is eased onto it), which gives the low cap of a blouse sleeve (about 4") |
+| Princess cut | the front is split along a curve from the armhole through the bust point to the bottom; the dart under the bust becomes the gap between the two curves at the bottom |
+| Neck | the shape comes from the design, the depth from the customer's measurement. Pot (matka): narrow below the shoulder, a round belly wider than the neck, round at the bottom |
 
-Default seam allowances: neck 1 cm, shoulder 1.5, armhole 1, side 2.5 (room for alterations),
-bottom 2, hook opening 2.5, princess seam 1.5, sleeve cap 1, underarm 1.5, sleeve hem 2. The app also warns
-about suspicious measurements (for example, front shorter than back, or an arm round too big
-for the armhole).
+Seam allowances: neck and armhole ⅜", shoulder ⅝", side 1" (room to let out), bottom and sleeve
+hem ¾", hook overlap 1", princess seam ⅝". The app also warns about suspicious measurements (for
+example, front shorter than back, or an arm round too big for the armhole).
 
 ## Laying pieces on the cloth (nesting)
 

@@ -111,7 +111,7 @@ object PdfExporter {
             tr(
                 if (layout.folded) "pdf.cloth_folded" else "pdf.cloth_single",
                 "%.2f".format(layout.length / 100),
-                "%.0f".format(if (layout.folded) layout.width * 2 else layout.width),
+                com.tailorsfit.pattern.model.Lengths.format(if (layout.folded) layout.width * 2 else layout.width),
             ),
         )
         for (l in lines) {

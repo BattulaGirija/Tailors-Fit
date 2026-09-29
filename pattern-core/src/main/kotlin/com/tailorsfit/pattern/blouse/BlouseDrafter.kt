@@ -18,7 +18,8 @@ import com.tailorsfit.pattern.model.Measurements
 import com.tailorsfit.pattern.model.Notch
 import com.tailorsfit.pattern.model.Pattern
 import com.tailorsfit.pattern.model.Piece
-import java.util.Locale
+import com.tailorsfit.pattern.model.Lengths
+import com.tailorsfit.pattern.model.SeamAllowances
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -27,7 +28,15 @@ class InvalidMeasurementsException(val errors: Map<F, String>) :
     IllegalArgumentException(errors.values.joinToString("; "))
 
 /**
- * Drafts a fitted saree blouse (front, back and sleeve) from body measurements.
+ * Drafts a fitted saree blouse (front, back and sleeve) from body measurements, following the
+ * traditional Indian method tailors draft in inches:
+ *
+ * - chest and waist: a quarter of the measurement + 1" on each of front and back;
+ * - armhole: half the armhole round, laid as a slant from the shoulder tip down to the chest line;
+ * - shoulder: shoulder / 2 from the centre with a ½" slope;
+ * - front: side dart up to 1¼" and a dart under the bust; any extra front length lifts the
+ *   bottom of the front at the side (the front bottom curves down towards the centre);
+ * - sleeve: cap curve as long as the armhole it is sewn into, so it sets in without puckers.
  *
  * Coordinate system for the bodice halves: x = 0 is the centre front / centre back line and x
  * grows towards the side seam; y = 0 is the level of the shoulder next to the neck (HPS) and y
@@ -35,14 +44,29 @@ class InvalidMeasurementsException(val errors: Map<F, String>) :
  * later from [com.tailorsfit.pattern.model.SeamAllowances].
  */
 object BlouseDrafter {
+    const val INCH = 2.54
     /** Shoulder drop from the neck point to the shoulder tip. */
-    const val SHOULDER_SLOPE = 3.0
-    /** Total ease at bust and waist (split between front and back). */
-    const val BUST_EASE = 4.0
-    const val WAIST_EASE = 3.0
-    const val SLEEVE_EASE = 2.5
-    /** Extra length of the sleeve cap over the armhole, eased in when sewing. */
-    const val CAP_EASE = 1.0
+    const val SHOULDER_SLOPE = 0.5 * INCH
+    /** Total ease at bust and waist: 1" on each quarter. */
+    const val BUST_EASE = 4 * INCH
+    const val WAIST_EASE = 4 * INCH
+    /** Ease round the arm at the underarm line; a roomier sleeve also gets a lower cap. */
+    const val SLEEVE_EASE = 2 * INCH
+    /** Ease at the sleeve hem and in the puff sleeve band. */
+    const val SLEEVE_HEM_EASE = 0.75 * INCH
+    /** Armhole drafted this much bigger than the armhole round. */
+    const val ARMHOLE_EASE = 1 * INCH
+    /** Largest side dart; extra front length is taken by lifting the front bottom at the side. */
+    const val MAX_SIDE_DART = 1.25 * INCH
+    /** Largest dart under the bust (bottom dart). */
+    const val MAX_WAIST_DART = 1.75 * INCH
+    /** Narrowest shoulder strap left beside a wide neck. */
+    const val MIN_STRAP = 1.25 * INCH
+    /**
+     * Sleeve cap length compared with the blouse armhole. As in traditional blouse cutting the
+     * cap is ½" shorter and the armhole is eased onto it, which keeps the cap low (about 4").
+     */
+    const val CAP_EASE = -0.5 * INCH
     /** Distance of the balance notches from the underarm, measured along the seam. */
     const val ARMHOLE_NOTCH_FROM_UNDERARM = 7.0
     /** Puff sleeves: cap widened by this factor and raised, gathered into the armhole. */
@@ -50,7 +74,10 @@ object BlouseDrafter {
     const val PUFF_EXTRA_CAP = 3.0
     /** Bell sleeves: hem width relative to the biceps. */
     const val BELL_FLARE = 1.6
-    const val COLLAR_HEIGHT = 3.5
+    const val COLLAR_HEIGHT = 1.5 * INCH
+    const val SLEEVE_BAND_WIDTH = 2.5 * INCH
+    const val TIE_WIDTH = 1.25 * INCH
+    const val TIE_LENGTH = 18 * INCH
     /** Where the princess seam meets the armhole, as a fraction of armhole length from the underarm. */
     const val PRINCESS_ARMHOLE_FRACTION = 0.5
 
@@ -85,7 +112,7 @@ object BlouseDrafter {
         }
 
         if (model.collar) pieces += collarPiece(model, fronts, back)
-        if (model.backDetail == BackDetail.DORI) pieces += bandPiece("tie", tr("piece.tie"), 3.0, 45.0, 2, tr("note.tie"))
+        if (model.backDetail == BackDetail.DORI) pieces += bandPiece("tie", tr("piece.tie"), TIE_WIDTH, TIE_LENGTH, 2, tr("note.tie"))
         if (model.backDetail == BackDetail.KEYHOLE) {
             val i = pieces.indexOfFirst { it.id == "back" }
             pieces[i] = withKeyhole(pieces[i], bodice, warnings)
@@ -125,15 +152,30 @@ object BlouseDrafter {
         companion object {
             fun create(model: BlouseModel, m: Measurements, warnings: MutableList<String>): BodiceFrame {
                 var shoulderX = m[F.SHOULDER] / 2
-                if (model.sleeve == SleeveStyle.SLEEVELESS) shoulderX -= 1.0 // keeps straps off the arm
-                val neckBase = (m[F.SHOULDER] * 0.2).coerceIn(6.0, 8.5)
+                if (model.sleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
+                // Neck width about 2½" for an average shoulder.
+                val neckBase = (m[F.SHOULDER] * 0.18).coerceIn(2.25 * INCH, 3.25 * INCH)
                 val widen = max(model.front.widen, model.back.widen)
-                val neckX = min(neckBase + widen, shoulderX - 3.0)
-                if (neckBase + widen > shoulderX - 3.0) warnings += tr("warn.neck_wide")
+                val neckX = min(neckBase + widen, shoulderX - MIN_STRAP)
+                if (neckBase + widen > shoulderX - MIN_STRAP) warnings += tr("warn.neck_wide", cm(MIN_STRAP))
 
                 val frontLength = m[F.FRONT_LENGTH]
                 val backLength = m[F.BACK_LENGTH]
-                var armDepth = m[F.ARMHOLE] / 2
+                val chest = m[F.BUST] / 4 + BUST_EASE / 4
+                // Armhole depth: deep enough that the front and back armhole curves together are
+                // as long as the armhole round + 1" ease (like laying armhole / 2 as a slant from
+                // the shoulder tip to the chest line).
+                val shoulderTip = Pt(shoulderX, SHOULDER_SLOPE)
+                fun armholeFor(depth: Double) =
+                    armholePath(Pt(chest, depth), shoulderTip, isFront = true).length() + armholePath(Pt(chest, depth), shoulderTip, isFront = false).length()
+                val targetArm = m[F.ARMHOLE] + ARMHOLE_EASE
+                var lo = SHOULDER_SLOPE + 2.0
+                var hi = SHOULDER_SLOPE + 40.0
+                repeat(50) {
+                    val mid = (lo + hi) / 2
+                    if (armholeFor(mid) < targetArm) lo = mid else hi = mid
+                }
+                var armDepth = (lo + hi) / 2
                 val maxArm = min(frontLength, backLength) - 6.0
                 if (armDepth > maxArm) {
                     warnings += tr("warn.armhole_deep", cm(maxArm))
@@ -150,7 +192,7 @@ object BlouseDrafter {
                     apexY = frontLength - 4
                 }
                 if (frontLength < backLength) {
-                    warnings += tr("warn.front_short")
+                    warnings += tr("warn.front_short", cm(0.5 * INCH) + "–" + cm(2 * INCH))
                 }
                 if (m[F.WAIST] > m[F.BUST]) warnings += tr("warn.waist_big")
 
@@ -159,10 +201,10 @@ object BlouseDrafter {
                     neckBase = neckBase,
                     neckX = neckX,
                     armDepth = armDepth,
-                    frontBust = m[F.BUST] / 4 + BUST_EASE / 4 + 0.5,
-                    backBust = m[F.BUST] / 4 + BUST_EASE / 4 - 0.5,
-                    frontWaist = m[F.WAIST] / 4 + WAIST_EASE / 4 + 0.25,
-                    backWaist = m[F.WAIST] / 4 + WAIST_EASE / 4 - 0.25,
+                    frontBust = chest,
+                    backBust = chest,
+                    frontWaist = m[F.WAIST] / 4 + WAIST_EASE / 4,
+                    backWaist = m[F.WAIST] / 4 + WAIST_EASE / 4,
                     apexX = apexX,
                     apexY = apexY,
                     frontLength = frontLength,
@@ -183,7 +225,10 @@ object BlouseDrafter {
         val bust = if (isFront) f.frontBust else f.backBust
         val waist = if (isFront) f.frontWaist else f.backWaist
         val centreLength = if (isFront) f.frontLength else f.backLength
-        val sideBottomY = max(f.frontLength, f.backLength).let { if (isFront) it else f.backLength }
+        // The front side seam is as long as the back one plus the side dart; if the front is
+        // longer still, its bottom rises towards the side (the curve of an Indian blouse front).
+        val sideDart = if (isFront) (f.frontLength - f.backLength).coerceIn(0.0, MAX_SIDE_DART) else 0.0
+        val sideBottomY = if (isFront) max(f.frontLength, f.backLength).let { min(it, f.backLength + sideDart) } else f.backLength
 
         // Width lost between bust and waist: some at the side seam, the rest in a waist dart.
         val excess = bust - waist
@@ -195,7 +240,7 @@ object BlouseDrafter {
         } else {
             sideInset = min(excess * 0.35, 2.5)
             dartIntake = excess - sideInset
-            val maxDart = min(7.0, (f.apexX - 1.0) * 2)
+            val maxDart = min(MAX_WAIST_DART, (f.apexX - 1.0) * 2)
             if (dartIntake > maxDart) {
                 sideInset += dartIntake - maxDart
                 dartIntake = maxDart
@@ -224,23 +269,14 @@ object BlouseDrafter {
         val centreTop = neckPath.end
         val isOpening = (model.opening == Opening.FRONT) == isFront
 
-        // Armhole: front is scooped more than back.
-        val hollowX = shoulder.x - if (isFront) 1.8 else 1.0
-        val armDrop = f.armDepth - shoulder.y
-        val armhole = PathD(
-            underarm,
-            listOf(
-                CubicTo(
-                    Pt(hollowX + (bust - hollowX) * (if (isFront) 0.0 else 0.35), f.armDepth),
-                    Pt(hollowX, shoulder.y + armDrop * (if (isFront) 0.55 else 0.5)),
-                    shoulder,
-                ),
-            ),
-        )
+        val armhole = armholePath(underarm, shoulder, isFront)
 
+        // Bottom: level from the centre to under the bust point, then straight to the side.
+        val hemBend = Pt(min(f.apexX, sideBottom.x * 0.6), centreLength)
+        val hemPath = if (sideBottom.y < centreLength - 0.05) PathD(hemCentre, listOf(LineTo(hemBend), LineTo(sideBottom))) else PathD.line(hemCentre, sideBottom)
         val edges = listOf(
             Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, hemCentre)),
-            Edge(EdgeKind.HEM, PathD.line(hemCentre, sideBottom)),
+            Edge(EdgeKind.HEM, hemPath),
             Edge(EdgeKind.SIDE, PathD.line(sideBottom, underarm)),
             Edge(EdgeKind.ARMHOLE, armhole),
             Edge(EdgeKind.SHOULDER, PathD.line(shoulder, neck)),
@@ -249,7 +285,11 @@ object BlouseDrafter {
 
         val darts = ArrayList<Dart>()
         val markings = ArrayList<Marking>()
-        fun hemY(x: Double) = hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
+        fun hemY(x: Double) = when {
+            sideBottom.y >= centreLength - 0.05 -> hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
+            x <= hemBend.x -> centreLength
+            else -> centreLength + (sideBottom.y - centreLength) * ((x - hemBend.x) / (sideBottom.x - hemBend.x))
+        }
 
         if (isFront && model.princess) {
             val sideExcess = sideBottom.dist(underarm) - sideSeamLength(f, isFront = false)
@@ -271,13 +311,14 @@ object BlouseDrafter {
             // Side (bust) dart takes up the extra front length so both side seams match.
             val backSide = sideSeamLength(f, isFront = false)
             val frontSide = sideBottom.dist(underarm)
-            val intake = (frontSide - backSide).coerceIn(0.0, 6.0)
-            if (frontSide - backSide > 6.0) {
-                warnings += tr("warn.side_dart")
+            val intake = (frontSide - backSide).coerceIn(0.0, MAX_SIDE_DART)
+            if (f.frontLength - f.backLength > MAX_SIDE_DART + 0.5 * INCH) {
+                warnings += tr("warn.side_dart", cm(MAX_SIDE_DART))
             }
             if (intake > 0.3) {
                 val dir = (underarm - sideBottom).normalized()
-                val centre = sideBottom + dir * min(5.0 + intake / 2, frontSide / 2)
+                // About 2½" above the bottom of the side seam, pointing at the bust point.
+                val centre = sideBottom + dir * min(2.5 * INCH + intake / 2, frontSide / 2)
                 val legA = centre - dir * (intake / 2)
                 val legB = centre + dir * (intake / 2)
                 val apex = Pt(f.apexX, f.apexY)
@@ -306,7 +347,7 @@ object BlouseDrafter {
         val name = if (isFront) tr("piece.front") else tr("piece.back")
         val cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true)
         val notes = buildList {
-            add(if (isOpening) tr("note.opening", model.opening.label, cm(2.5)) else tr("note.fold"))
+            add(if (isOpening) tr("note.opening", model.opening.label, cm(SeamAllowances().opening)) else tr("note.fold"))
             add(tr("note.neck", spec.shape.label, cm(neckDepth)))
             if (darts.isNotEmpty()) add(tr("note.darts", darts.joinToString(" + ") { cm(it.intake) }))
         }
@@ -369,8 +410,8 @@ object BlouseDrafter {
         val lowerL = down(hemL)
         val lowerR = down(hemR)
 
-        val excess = sideExcess.coerceIn(0.0, 6.0)
-        if (sideExcess > 6.0) warnings += tr("warn.princess_long")
+        val excess = sideExcess.coerceIn(0.0, 2.5 * INCH)
+        if (sideExcess > 2.5 * INCH) warnings += tr("warn.princess_long")
         val sideDir = (underarm - sideBottom).normalized()
         val sideBottomR = sideBottom + sideDir * excess
 
@@ -414,7 +455,7 @@ object BlouseDrafter {
                 // Clear of the "place on fold" bracket that runs along the centre line.
                 labelAt = Pt(apex.x * 0.5 + 2.0, (centreTop.y + hemCentre.y) / 2 + 7.0),
                 notes = listOf(
-                    if (isOpening) tr("note.opening_short", model.opening.label, cm(2.5)) else tr("note.fold"),
+                    if (isOpening) tr("note.opening_short", model.opening.label, cm(SeamAllowances().opening)) else tr("note.fold"),
                     tr("note.neck", spec.shape.label, cm(neckDepth)),
                     tr("note.princess"),
                 ),
@@ -443,7 +484,7 @@ object BlouseDrafter {
         val excess = bust - waist
         val inset = if (excess <= 0) excess else {
             var s = min(excess * 0.35, 2.5)
-            val maxDart = min(7.0, (f.apexX - 1.0) * 2)
+            val maxDart = min(MAX_WAIST_DART, (f.apexX - 1.0) * 2)
             if (excess - s > maxDart) s += excess - s - maxDart
             s
         }
@@ -463,6 +504,25 @@ object BlouseDrafter {
             n.copy(outward = normal)
         }
         return piece.copy(notches = piece.notches + notches)
+    }
+
+    /**
+     * Armhole from the underarm point up to the shoulder tip. The front is scooped 1" in from
+     * the shoulder tip, the back ½" and flatter at the bottom.
+     */
+    internal fun armholePath(underarm: Pt, shoulder: Pt, isFront: Boolean): PathD {
+        val hollowX = shoulder.x - if (isFront) 1.0 * INCH else 0.5 * INCH
+        val armDrop = underarm.y - shoulder.y
+        return PathD(
+            underarm,
+            listOf(
+                CubicTo(
+                    Pt(hollowX + (underarm.x - hollowX) * (if (isFront) 0.0 else 0.35), underarm.y),
+                    Pt(hollowX, shoulder.y + armDrop * (if (isFront) 0.55 else 0.5)),
+                    shoulder,
+                ),
+            ),
+        )
     }
 
     /** Neckline from the neck point [n] (on the shoulder) to the centre line at [depth]. */
@@ -489,7 +549,17 @@ object BlouseDrafter {
                 // Bulges out below the shoulder, then narrows to a point on the centre line.
                 CubicTo(Pt(w * 1.35, n.y + drop * 0.62), Pt(w * 0.5, d - drop * 0.25), Pt(0.0, d)),
             )
-            NeckShape.POT -> listOf(CubicTo(Pt(w * 1.02, n.y + drop * 0.95), Pt(w * 0.6, d), Pt(0.0, d)))
+            NeckShape.POT -> {
+                // Matka: the pot's narrow neck just below the shoulder, then a round belly wider
+                // than the neck, closing in a round bottom on the centre line.
+                val neckIn = Pt(w * 0.82, n.y + drop * 0.28)
+                val belly = Pt(w * 1.28, n.y + drop * 0.66)
+                listOf(
+                    CubicTo(Pt(w, n.y + drop * 0.12), Pt(w * 0.82, n.y + drop * 0.16), neckIn),
+                    CubicTo(Pt(w * 0.82, n.y + drop * 0.42), Pt(w * 1.28, n.y + drop * 0.44), belly),
+                    CubicTo(Pt(w * 1.28, n.y + drop * 0.92), Pt(w * 0.62, d), Pt(0.0, d)),
+                )
+            }
             NeckShape.SWEETHEART -> {
                 val lift = min(3.0, drop * 0.25)
                 val lobe = Pt(w * 0.45, d)
@@ -559,7 +629,7 @@ object BlouseDrafter {
         }
         var hemHalf = when (model.sleeve) {
             SleeveStyle.CAP -> w - 0.5
-            else -> (m[F.SLEEVE_OPENING] + 2.0) / 2
+            else -> (m[F.SLEEVE_OPENING] + SLEEVE_HEM_EASE) / 2
         }
         if (hemHalf > w + 2) hemHalf = w + 2
 
@@ -623,7 +693,7 @@ object BlouseDrafter {
     /** Band for puff sleeves, frills for frill sleeves. */
     private fun sleeveExtras(model: BlouseModel, m: Measurements, hemHalf: Double): List<Piece> = when (model.sleeve) {
         SleeveStyle.PUFF ->
-            listOf(bandPiece("sleeve_band", tr("piece.sleeve_band"), 6.0, m[F.SLEEVE_OPENING] + 2.0, 2, tr("note.band")))
+            listOf(bandPiece("sleeve_band", tr("piece.sleeve_band"), SLEEVE_BAND_WIDTH, m[F.SLEEVE_OPENING] + SLEEVE_HEM_EASE, 2, tr("note.band")))
         SleeveStyle.FRILL ->
             // Two frill strips per sleeve (so each fits across folded cloth), 1.5× the hem for gathers.
             listOf(bandPiece("frill", tr("piece.frill"), 7.0, hemHalf * 2 * 1.5 / 2, 4, tr("note.frill")))
@@ -659,7 +729,7 @@ object BlouseDrafter {
     private fun collarPiece(model: BlouseModel, fronts: List<Piece>, back: Piece): Piece {
         val half = fronts.sumOf { it.lengthOf(EdgeKind.NECK) } + back.lengthOf(EdgeKind.NECK)
         val height = COLLAR_HEIGHT
-        val len = half + 1.0 // room to turn the ends at the opening
+        val len = half + 0.5 * INCH // room to turn the ends at the opening
         val a = Pt(0.0, 0.0)
         val b = Pt(len, 0.0)
         val c = Pt(len, height)
@@ -701,5 +771,6 @@ object BlouseDrafter {
         return back.copy(cutouts = back.cutouts + listOf(path.points()), notes = back.notes + tr("note.keyhole"))
     }
 
-    internal fun cm(v: Double) = String.format(Locale.US, "%.1f cm", v)
+    /** A length as written on the pattern, in the tailor's unit (inches by default). */
+    internal fun cm(v: Double) = Lengths.format(v)
 }

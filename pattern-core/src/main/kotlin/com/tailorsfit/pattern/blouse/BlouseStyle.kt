@@ -241,8 +241,8 @@ object BlouseCatalog {
         ),
         BlouseModel(
             "blouse_pot_neck", "Pot (Matka) Neck",
-            "Wide, deep pot-shaped neck in front and back.",
-            NeckSpec(NeckShape.POT, widen = 2.0), NeckSpec(NeckShape.POT, widen = 2.0, depthFactor = 1.1), SleeveStyle.SHORT, Opening.BACK,
+            "Round front neck with a deep pot-shaped (matka) back neck: narrow at the top, round and wide below; front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = 0.5), NeckSpec(NeckShape.POT, widen = 0.5, depthFactor = 1.5), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_princess_puff", "Princess Cut, Puff Sleeves",

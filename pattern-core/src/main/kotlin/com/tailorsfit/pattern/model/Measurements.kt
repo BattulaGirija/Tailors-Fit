@@ -11,6 +11,29 @@ enum class LengthUnit(val label: String, val cmPerUnit: Double) {
     fun fromCm(cm: Double) = cm / cmPerUnit
 }
 
+/** Lengths written on patterns and in messages, in the tailor's unit. */
+object Lengths {
+    const val INCH = 2.54
+
+    /** Set by the app from the tailor's choice; tailors in India usually work in inches. */
+    @Volatile
+    var unit: LengthUnit = LengthUnit.INCH
+
+    /** e.g. `9½"` (to the nearest ¼ inch, the way tailors read a tape) or `24.1 cm`. */
+    fun format(cm: Double): String = if (unit == LengthUnit.INCH) inches(cm) else String.format(java.util.Locale.US, "%.1f cm", cm)
+
+    fun inches(cm: Double): String {
+        val quarters = Math.round(kotlin.math.abs(cm) / INCH * 4).toInt()
+        val whole = quarters / 4
+        val frac = arrayOf("", "¼", "½", "¾")[quarters % 4]
+        val sign = if (cm < 0 && quarters > 0) "-" else ""
+        return sign + (if (whole == 0 && frac.isNotEmpty()) frac else "$whole$frac") + "\""
+    }
+
+    /** Spacing of the projector's help grid: 2 inches or 5 cm. */
+    val gridStepCm: Double get() = if (unit == LengthUnit.INCH) 2 * INCH else 5.0
+}
+
 /**
  * Every body measurement the app knows about. [defaultCm] is a medium size (Indian size 36),
  * [minCm]/[maxCm] are sanity limits used for validation.
@@ -43,8 +66,8 @@ enum class MeasurementField(
 
     fun validate(cm: Double): String? = when {
         cm.isNaN() -> tr("validate.required", label)
-        cm < minCm -> tr("validate.small", label, fmt(minCm))
-        cm > maxCm -> tr("validate.large", label, fmt(maxCm))
+        cm < minCm -> tr("validate.small", label, Lengths.format(minCm))
+        cm > maxCm -> tr("validate.large", label, Lengths.format(maxCm))
         else -> null
     }
 

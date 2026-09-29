@@ -396,7 +396,7 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
             Chips(NeckShape.entries, backShape, { it.label }) { backShape = it }
             LabeledSlider(tr("admin.depth"), backDepth, 0.4f..1.8f) { backDepth = it }
             Section(tr("admin.neck_width"))
-            LabeledSlider(tr("admin.wider_by"), widen, 0f..5f, suffix = " cm") { widen = it }
+            LabeledSlider(tr("admin.wider_by"), widen, 0f..5f, format = { com.tailorsfit.pattern.model.Lengths.format(it.toDouble()) }) { widen = it }
             Section(tr("admin.sleeves"))
             Chips(SleeveStyle.entries, sleeve, { it.label }) { sleeve = it }
             Section(tr("admin.opening"))
@@ -462,9 +462,15 @@ private fun <T> Chips(options: List<T>, selected: T, label: (T) -> String, onSel
 }
 
 @Composable
-private fun LabeledSlider(label: String, value: Float, range: ClosedFloatingPointRange<Float>, suffix: String = "×", onChange: (Float) -> Unit) {
+private fun LabeledSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    format: (Float) -> String = { "%.1f×".format(it) },
+    onChange: (Float) -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("$label  ${"%.1f".format(value)}$suffix", Modifier.width(120.dp), style = MaterialTheme.typography.bodyMedium)
+        Text("$label  ${format(value)}", Modifier.width(120.dp), style = MaterialTheme.typography.bodyMedium)
         Slider(value = value, onValueChange = onChange, valueRange = range, modifier = Modifier.weight(1f))
     }
 }

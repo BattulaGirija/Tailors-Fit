@@ -28,17 +28,19 @@ enum class EdgeKind(val label: String) {
 
 /** Seam allowances in cm per edge kind. A fold never gets an allowance. */
 data class SeamAllowances(
-    val neck: Double = 1.0,
-    val shoulder: Double = 1.5,
-    val armhole: Double = 1.0,
-    val side: Double = 2.5,
-    val hem: Double = 2.0,
-    val opening: Double = 2.5,
-    val sleeveCap: Double = 1.0,
-    val underarm: Double = 1.5,
-    val sleeveHem: Double = 2.0,
-    val princess: Double = 1.5,
-    val band: Double = 1.0,
+    // Tailors' usual allowances in inches: ⅜" neck/armhole, ⅝" shoulder, 1" side (room to
+    // let out), ¾" hems, 1" hook overlap.
+    val neck: Double = 0.375 * 2.54,
+    val shoulder: Double = 0.625 * 2.54,
+    val armhole: Double = 0.375 * 2.54,
+    val side: Double = 1.0 * 2.54,
+    val hem: Double = 0.75 * 2.54,
+    val opening: Double = 1.0 * 2.54,
+    val sleeveCap: Double = 0.375 * 2.54,
+    val underarm: Double = 0.625 * 2.54,
+    val sleeveHem: Double = 0.75 * 2.54,
+    val princess: Double = 0.625 * 2.54,
+    val band: Double = 0.375 * 2.54,
 ) {
     fun of(kind: EdgeKind): Double = when (kind) {
         EdgeKind.NECK -> neck
