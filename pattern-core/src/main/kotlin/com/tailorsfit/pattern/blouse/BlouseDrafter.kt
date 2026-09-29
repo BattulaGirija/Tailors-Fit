@@ -391,7 +391,8 @@ object BlouseDrafter {
                 edges = centreEdges,
                 markings = cross + Marking(Pt(centreX, centreTop.y + 3.0), Pt(centreX, hemCentre.y - 3.0), Marking.Kind.GRAIN),
                 points = mapOf("apex" to apex, "shoulder" to shoulder, "neck" to neck, "princessTop" to a),
-                labelAt = Pt(apex.x * 0.5, (centreTop.y + hemCentre.y) / 2 + 2.0),
+                // Clear of the "place on fold" bracket that runs along the centre line.
+                labelAt = Pt(apex.x * 0.5 + 2.0, (centreTop.y + hemCentre.y) / 2 + 7.0),
                 notes = listOf(
                     if (isOpening) "${model.opening.label}: ${cm(2.5)} overlap" else "Place centre on the fold",
                     "Neck: ${spec.shape.label}, depth ${cm(neckDepth)}",

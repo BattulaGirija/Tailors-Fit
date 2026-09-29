@@ -25,6 +25,10 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("allowance", true)
         set(v) = prefs.edit().putBoolean("allowance", v).apply()
 
+    var allowTurning: Boolean
+        get() = prefs.getBoolean("allow_turning", true)
+        set(v) = prefs.edit().putBoolean("allow_turning", v).apply()
+
     var projectorLineWidthPx: Float
         get() = prefs.getFloat("projector_line", 3f)
         set(v) = prefs.edit().putFloat("projector_line", v).apply()

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -78,7 +80,14 @@ private const val STEP_CM = 5.0
 fun ProjectorScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit) {
     val model = vm.model(modelId) ?: return
     val context = LocalContext.current
-    val result = remember(model) { vm.draft(model) }
+    val draft by produceState<DraftResult?>(null, model) { value = vm.draftAsync(model) }
+    val result = draft
+    if (result == null) {
+        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Color.White)
+        }
+        return
+    }
     if (result !is DraftResult.Ok) {
         Scaffold(topBar = { AppBar("Projector", onBack) }) { p ->
             Text("Fix the measurements first.", Modifier.padding(p).padding(16.dp))

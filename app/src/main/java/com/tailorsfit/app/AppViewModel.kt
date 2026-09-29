@@ -23,6 +23,8 @@ import com.tailorsfit.pattern.model.Measurements
 import com.tailorsfit.pattern.model.Pattern
 import com.tailorsfit.pattern.model.SeamAllowances
 import com.tailorsfit.pattern.model.SizePreset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /** Result of drafting: either a pattern with its layout, or the problems to fix first. */
@@ -55,6 +57,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var foldedCloth by mutableStateOf(settings.foldedCloth)
         private set
     var showAllowance by mutableStateOf(settings.showAllowance)
+        private set
+    /** False for one-way prints / napped cloth: pieces may not be turned upside down. */
+    var allowTurning by mutableStateOf(settings.allowTurning)
         private set
 
     // Projector state, shared between the phone controls and the external display.
@@ -154,6 +159,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         settings.showAllowance = v
     }
 
+    fun setAllowTurning(v: Boolean) {
+        allowTurning = v
+        settings.allowTurning = v
+    }
+
+    private var lastDraftKey: Any? = null
+    private var lastDraft: DraftResult? = null
+
+    /**
+     * Drafts and nests off the main thread. The result is cached, so the pattern screen and
+     * the projector show exactly the same layout without computing it twice.
+     */
+    suspend fun draftAsync(model: GarmentModel): DraftResult {
+        val key = listOf(model.id, currentMeasurements(), fabricWidthCm, foldedCloth, showAllowance, allowTurning, customerName.trim())
+        lastDraft?.let { if (key == lastDraftKey) return it }
+        val result = withContext(Dispatchers.Default) { draft(model) }
+        lastDraftKey = key
+        lastDraft = result
+        return result
+    }
+
     fun setLineWidth(px: Float) {
         projectorLineWidth = px
         settings.projectorLineWidthPx = px
@@ -172,6 +198,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 LayoutOptions(
                     fabricWidth = fabricWidthCm,
                     folded = foldedCloth,
+                    allowTurning = allowTurning,
                     allowances = if (showAllowance) allowances else SeamAllowances.NONE,
                 ),
             )

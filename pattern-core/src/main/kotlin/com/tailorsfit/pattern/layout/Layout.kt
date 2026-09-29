@@ -2,6 +2,7 @@ package com.tailorsfit.pattern.layout
 
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.geom.Rect
+import com.tailorsfit.pattern.geom.signedArea
 import com.tailorsfit.pattern.model.Pattern
 import com.tailorsfit.pattern.model.Piece
 import com.tailorsfit.pattern.model.SeamAllowances
@@ -25,6 +26,13 @@ data class Layout(
     val folded: Boolean,
 ) {
     val bounds get() = Rect(0.0, 0.0, width, length)
+
+    /** Share of the cloth area (0–1) that ends up inside pieces; the rest is waste. */
+    val efficiency: Double
+        get() {
+            val used = placed.sumOf { kotlin.math.abs(signedArea(it.piece.cutOutline(allowances))) }
+            return if (width <= 0 || length <= 0) 0.0 else (used / (width * length)).coerceAtMost(1.0)
+        }
 }
 
 data class LayoutOptions(
@@ -34,20 +42,40 @@ data class LayoutOptions(
     val folded: Boolean = true,
     val allowances: SeamAllowances = SeamAllowances(),
     /** Space kept between pieces. */
-    val gap: Double = 1.5,
+    val gap: Double = 1.0,
+    /**
+     * Pieces may be turned upside down to save cloth. Switch off for one-way prints, velvet
+     * and other napped cloth, where every piece must point the same way.
+     */
+    val allowTurning: Boolean = true,
+    /** How many piece orders the nesting tries; more = tighter but slower. */
+    val trials: Int = 16,
 )
 
 object LayoutEngine {
     /**
-     * Arranges the pieces in rows. On folded cloth every piece marked "cut on fold" starts a row
-     * at x = 0 so that its centre line lies exactly on the fold; pieces cut as pairs get both
-     * copies from the two layers. On single-layer cloth fold pieces are opened out and pairs are
-     * placed twice (the second copy mirrored).
+     * Arranges the pieces to use as little cloth length as possible (see [Nester]). On folded
+     * cloth pieces cut on the fold keep their centre line exactly on the fold, and pieces cut
+     * as pairs get both copies from the two layers. On single-layer cloth fold pieces are opened
+     * out and pairs are placed twice (the second copy mirrored). Grain always runs along the
+     * cloth.
      */
     fun layout(pattern: Pattern, options: LayoutOptions = LayoutOptions()): Layout {
         val usableWidth = if (options.folded) options.fabricWidth / 2 else options.fabricWidth
-        val items: List<Piece> = if (options.folded) {
-            pattern.pieces
+        val turn = options.allowTurning
+        val items: List<NestItem> = if (options.folded) {
+            pattern.pieces.map { p ->
+                if (p.cut.onFold) {
+                    NestItem(p, listOfNotNull(Orientation.NORMAL, Orientation.FLIPPED.takeIf { turn }), onFold = true)
+                } else {
+                    // Two layers give a left and a right piece whichever way round it lies.
+                    NestItem(
+                        p,
+                        listOfNotNull(Orientation.NORMAL, Orientation.MIRRORED, Orientation.ROTATED.takeIf { turn }, Orientation.FLIPPED.takeIf { turn }),
+                        onFold = false,
+                    )
+                }
+            }
         } else {
             pattern.pieces.flatMap { p ->
                 when {
@@ -55,38 +83,14 @@ object LayoutEngine {
                     p.cut.count >= 2 -> listOf(p, p.mirrored().copy(id = p.id + "_2"))
                     else -> listOf(p)
                 }
-            }
+            }.map { NestItem(it, listOfNotNull(Orientation.NORMAL, Orientation.ROTATED.takeIf { turn }), onFold = false) }
         }
 
-        // Fold pieces first (each anchored on the fold), then the rest by decreasing height.
-        val (foldPieces, freePieces) = items.partition { options.folded && it.cut.onFold }
-        val ordered = foldPieces + freePieces.sortedByDescending { it.bounds(options.allowances).height }
-
-        val placed = ArrayList<PlacedPiece>()
-        var rowY = 0.0
-        var rowX = 0.0
-        var rowH = 0.0
-        var maxX = 0.0
-        val gap = options.gap
-        for (piece in ordered) {
-            val b = piece.bounds(options.allowances)
-            val mustStartRow = options.folded && piece.cut.onFold
-            val fits = rowX == 0.0 || rowX + gap + b.width <= usableWidth
-            if (mustStartRow || !fits) {
-                if (rowH > 0) rowY += rowH + gap
-                rowX = 0.0
-                rowH = 0.0
-            }
-            val x = if (rowX == 0.0) 0.0 else rowX + gap
-            // Fold pieces have their fold at local x = 0 which is also their left bound.
-            val offset = Pt(x - b.minX, rowY - b.minY)
-            placed += PlacedPiece(piece, offset)
-            rowX = x + b.width
-            rowH = max(rowH, b.height)
-            maxX = max(maxX, rowX)
-        }
-        val length = rowY + rowH
-        return Layout(placed, max(usableWidth, maxX), length, options.allowances, options.folded)
+        val placed = Nester(usableWidth, options.allowances, options.gap, trials = options.trials).nest(items)
+        val box = placed
+            .map { it.piece.bounds(options.allowances).translated(it.offset.x, it.offset.y) }
+            .reduceOrNull(Rect::union) ?: Rect(0.0, 0.0, 0.0, 0.0)
+        return Layout(placed, max(usableWidth, box.maxX), box.maxY, options.allowances, options.folded)
     }
 }
 

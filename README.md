@@ -50,6 +50,23 @@ bottom 2, hook opening 2.5, princess seam 1.5, sleeve cap 1, underarm 1.5, sleev
 about suspicious measurements (for example, front shorter than back, or an arm round too big
 for the armhole).
 
+## Laying pieces on the cloth (nesting)
+
+The layout engine (`pattern-core/.../layout/Nesting.kt`) arranges pieces to use as little
+cloth length as possible, and the projector shows that same arrangement.
+
+- Pieces are handled by their real cut outline (on a 0.5 cm grid), not their bounding box, so
+  a sleeve cap can tuck under an armhole and a front can nest beside a back.
+- Grain always runs along the cloth. Pieces are only flipped or turned upside down, never
+  turned sideways. Pieces cut on the fold always keep their centre line on the cloth fold.
+- For each piece the engine picks the lowest spot where it fits (bottom-left fill). It
+  repeats this for every order of the pieces (all 120 for five pieces) and keeps the
+  shortest result.
+- Switch on **One-way print or velvet** to stop pieces being turned upside down.
+
+For example, for a size-36 classic blouse on 110 cm folded cloth, simple rows needed 102 cm;
+nesting needs 75 cm. The app shows how much of the cloth ends up inside the pieces.
+
 ## Project layout
 
 ```

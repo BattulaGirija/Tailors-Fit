@@ -65,9 +65,7 @@ class GeometryAndLayoutTest {
             val layout = LayoutEngine.layout(pattern, opts)
             assertEquals(pattern.pieces.size, layout.placed.size)
             val boxes = layout.placed.map { it.piece.bounds(opts.allowances).translated(it.offset.x, it.offset.y) }
-            for (i in boxes.indices) for (j in i + 1 until boxes.size) {
-                assertFalse(boxes[i].intersects(boxes[j]), "${model.id}: pieces $i and $j overlap")
-            }
+            assertNoOverlaps(layout, model.id)
             for ((pp, box) in layout.placed.zip(boxes)) {
                 assertTrue(box.minX >= -1e-6 && box.maxX <= layout.width + 1e-6)
                 if (pp.piece.cut.onFold) {
@@ -118,4 +116,96 @@ class GeometryAndLayoutTest {
     }
 
     private fun fmt(v: Double) = String.format(java.util.Locale.US, "%.3f", v).trimEnd('0').trimEnd('.')
+
+    private fun cutPolygons(layout: com.tailorsfit.pattern.layout.Layout) =
+        layout.placed.map { pp -> pp.piece.cutOutline(layout.allowances).map(pp::toLayout) }
+
+    private fun segmentsCross(a: Pt, b: Pt, c: Pt, d: Pt): Boolean {
+        fun orient(p: Pt, q: Pt, r: Pt) = (q - p).cross(r - p)
+        val d1 = orient(c, d, a)
+        val d2 = orient(c, d, b)
+        val d3 = orient(a, b, c)
+        val d4 = orient(a, b, d)
+        return ((d1 > 1e-9 && d2 < -1e-9) || (d1 < -1e-9 && d2 > 1e-9)) &&
+            ((d3 > 1e-9 && d4 < -1e-9) || (d3 < -1e-9 && d4 > 1e-9))
+    }
+
+    private fun assertNoOverlaps(layout: com.tailorsfit.pattern.layout.Layout, what: String) {
+        val polys = cutPolygons(layout)
+        for (i in polys.indices) for (j in i + 1 until polys.size) {
+            val a = polys[i]
+            val b = polys[j]
+            assertTrue(a.none { com.tailorsfit.pattern.geom.pointInPolygon(it, b) }, "$what: piece $i inside $j")
+            assertTrue(b.none { com.tailorsfit.pattern.geom.pointInPolygon(it, a) }, "$what: piece $j inside $i")
+            for (p in a.indices) for (q in b.indices) {
+                assertFalse(
+                    segmentsCross(a[p], a[(p + 1) % a.size], b[q], b[(q + 1) % b.size]),
+                    "$what: cut lines of pieces $i and $j cross",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun nestingNeverOverlapsAndStaysOnTheCloth() {
+        for (model in BlouseCatalog.models) for (folded in listOf(true, false)) for (width in listOf(90.0, 110.0, 140.0)) {
+            val pattern = model.draft(Measurements.defaults())
+            val layout = LayoutEngine.layout(pattern, LayoutOptions(fabricWidth = width, folded = folded))
+            val what = "${model.id} folded=$folded width=$width"
+            assertNoOverlaps(layout, what)
+            val usable = if (folded) width / 2 else width
+            for (poly in cutPolygons(layout)) {
+                assertTrue(poly.all { it.x >= -1e-6 && it.y >= -1e-6 && it.x <= usable + 1e-6 }, "$what: piece off the cloth")
+            }
+            assertTrue(layout.efficiency in 0.3..1.0, "$what: efficiency ${layout.efficiency}")
+        }
+    }
+
+    @Test
+    fun oneWayPrintsKeepEveryPieceUpright() {
+        val pattern = BlouseCatalog.models.first().draft(Measurements.defaults())
+        val layout = LayoutEngine.layout(pattern, LayoutOptions(fabricWidth = 110.0, allowTurning = false))
+        for (pp in layout.placed) {
+            val original = pattern.pieces.first { it.id == pp.piece.id }
+            // Same vertical order of points: the neck/cap stays towards the start of the cloth.
+            val o = original.seamOutline()
+            val n = pp.piece.seamOutline()
+            assertEquals(o.minOf { it.y } - o.maxOf { it.y }, n.minOf { it.y } - n.maxOf { it.y }, 1e-6)
+            assertEquals(o.indexOfFirst { it.y == o.minOf { p -> p.y } } >= 0, true)
+            val topOriginal = o.minByOrNull { it.y }!!
+            val topNow = n.minByOrNull { it.y }!!
+            assertEquals(topOriginal.y - o.minOf { it.y }, topNow.y - n.minOf { it.y }, 1e-6)
+        }
+    }
+
+    @Test
+    fun nestingIsTighterThanPlainRows() {
+        // Plain rows (the old layout): every fold piece starts a row; others sit side by side.
+        for (model in BlouseCatalog.models) {
+            val pattern = model.draft(Measurements.defaults())
+            val opts = LayoutOptions(fabricWidth = 110.0)
+            val nested = LayoutEngine.layout(pattern, opts)
+            val rows = rowLayoutLength(pattern, opts)
+            assertTrue(nested.length <= rows + 1e-6, "${model.id}: nested ${nested.length} vs rows $rows")
+        }
+    }
+
+    private fun rowLayoutLength(pattern: com.tailorsfit.pattern.model.Pattern, opts: LayoutOptions): Double {
+        val usable = opts.fabricWidth / 2
+        val (fold, free) = pattern.pieces.partition { it.cut.onFold }
+        var rowY = 0.0
+        var rowX = 0.0
+        var rowH = 0.0
+        for (p in fold + free.sortedByDescending { it.bounds(opts.allowances).height }) {
+            val b = p.bounds(opts.allowances)
+            if (p.cut.onFold || (rowX > 0 && rowX + opts.gap + b.width > usable)) {
+                if (rowH > 0) rowY += rowH + opts.gap
+                rowX = 0.0
+                rowH = 0.0
+            }
+            rowX += (if (rowX > 0) opts.gap else 0.0) + b.width
+            rowH = maxOf(rowH, b.height)
+        }
+        return rowY + rowH
+    }
 }

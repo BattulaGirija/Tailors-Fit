@@ -53,6 +53,13 @@ class ScreenshotTest {
         compose.waitForIdle()
     }
 
+    /** Waits until background work (drafting and nesting) has put [text] on screen. */
+    private fun awaitText(text: String) {
+        compose.waitUntil(timeoutMillis = 20_000) {
+            compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun save(name: String) {
         compose.waitForIdle()
         // Draw the window's view hierarchy directly; captureToImage() waits for a frame
@@ -120,15 +127,19 @@ class ScreenshotTest {
     fun pattern() {
         val vm = vm()
         show { PatternScreen(vm, model, onBack = {}, onProject = {}) }
+        awaitText("Pinch to zoom")
         save("05-pattern")
+        compose.onNodeWithText("Cloth needed", substring = true).performScrollTo()
+        save("06-pattern-cloth")
         compose.onNodeWithText("Details").performScrollTo()
-        save("06-pattern-details")
+        save("06b-pattern-details")
     }
 
     @Test
     fun patternSweetheart() {
         val vm = vm()
         show { PatternScreen(vm, "blouse_sweetheart", onBack = {}, onProject = {}) }
+        awaitText("Pinch to zoom")
         save("07-pattern-sweetheart")
     }
 
@@ -136,6 +147,7 @@ class ScreenshotTest {
     fun patternPrincess() {
         val vm = vm()
         show { PatternScreen(vm, "blouse_princess_round", onBack = {}, onProject = {}) }
+        awaitText("Pinch to zoom")
         save("07b-pattern-princess")
     }
 
@@ -151,6 +163,7 @@ class ScreenshotTest {
         val vm = vm()
         vm.projectorPan = com.tailorsfit.pattern.geom.Pt(0.0, 2.0)
         show { ProjectorScreen(vm, model, onBack = {}) }
+        awaitText("Line width")
         save("08-projector")
     }
 

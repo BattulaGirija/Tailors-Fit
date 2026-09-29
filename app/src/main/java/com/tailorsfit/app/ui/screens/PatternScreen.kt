@@ -25,6 +25,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -67,10 +69,19 @@ fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProje
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
 
-    val result = remember(model, vm.fabricWidthCm, vm.foldedCloth, vm.showAllowance, vm.customerName) { vm.draft(model) }
+    val draft by produceState<DraftResult?>(
+        null, model, vm.fabricWidthCm, vm.foldedCloth, vm.showAllowance, vm.allowTurning, vm.customerName,
+    ) { value = vm.draftAsync(model) }
 
     Scaffold(topBar = { AppBar(model.name, onBack) }) { padding ->
-        when (result) {
+        when (val result = draft) {
+            null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text("Arranging pieces on the cloth…", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
             is DraftResult.Invalid -> Column(Modifier.padding(padding).padding(16.dp)) {
                 Text("Some measurements need checking:", style = MaterialTheme.typography.titleMedium)
                 result.errors.values.forEach { Text("• $it") }
@@ -144,10 +155,27 @@ private fun ClothOptions(vm: AppViewModel, layout: Layout) {
                 Text("Include seam allowance", Modifier.weight(1f))
                 Switch(checked = vm.showAllowance, onCheckedChange = vm::setAllowance)
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("One-way print or velvet")
+                    Text(
+                        "Keep every piece pointing the same way",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = !vm.allowTurning, onCheckedChange = { vm.setAllowTurning(!it) })
+            }
             Text(
                 "Cloth needed: about ${"%.2f".format(layout.length / 100)} m (${vm.format(layout.length / 2.54 / 36)} yd)",
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                "Pieces are nested to save cloth: ${"%.0f".format(layout.efficiency * 100)}% of the cloth is used, " +
+                    "${"%.0f".format((1 - layout.efficiency) * 100)}% is left over.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
