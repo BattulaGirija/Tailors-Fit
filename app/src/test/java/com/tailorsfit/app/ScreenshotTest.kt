@@ -169,7 +169,9 @@ class ScreenshotTest {
         save("03-measurements")
         compose.onNodeWithText("Gold buttis").performClick()
         compose.onNodeWithText("L (38)").performScrollTo().performClick()
+        compose.onNodeWithText("Bust (chest round)").performScrollTo()
         save("03b-measurements-size-38")
+        compose.onNodeWithText("Size L (38) selected", substring = true).assertExists()
         compose.onNodeWithText("Generate pattern").performScrollTo()
         save("04-measurements-bottom")
     }
