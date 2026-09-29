@@ -11,7 +11,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
+import com.tailorsfit.app.ui.components.AppDrawerSheet
+import com.tailorsfit.app.ui.components.DrawerDestination
 import com.tailorsfit.app.ui.screens.CatalogScreen
+import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import com.tailorsfit.app.ui.screens.CustomersScreen
 import com.tailorsfit.app.ui.screens.HomeScreen
 import com.tailorsfit.app.ui.screens.MeasurementScreen
@@ -60,10 +66,38 @@ class ScreenshotTest {
         File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    private fun homeContent(vm: AppViewModel): @Composable () -> Unit = {
+        HomeScreen(vm, onMenu = {}, onCategory = {}, onModel = {}, onCustomers = {}, onCustomer = {})
+    }
+
     @Test
     fun home() {
-        show { HomeScreen(onCategory = {}, onCustomers = {}) }
+        val vm = vm()
+        vm.saveCustomer()
+        show(homeContent(vm))
         save("01-home")
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Featured designs"))
+        save("01b-home-collections")
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Measure twice, cut once."))
+        save("01c-home-bottom")
+    }
+
+    @Test
+    fun drawer() {
+        val vm = vm()
+        show {
+            ModalNavigationDrawer(
+                drawerState = rememberDrawerState(DrawerValue.Open),
+                drawerContent = { AppDrawerSheet(selected = DrawerDestination.HOME, onSelect = {}) },
+            ) { homeContent(vm)() }
+        }
+        save("01d-side-menu")
+    }
+
+    @Test
+    fun guide() {
+        show { MeasurementGuideScreen(onBack = {}) }
+        save("10-measuring-guide")
     }
 
     @Test
