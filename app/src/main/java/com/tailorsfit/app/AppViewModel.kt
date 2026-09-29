@@ -175,9 +175,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val key = listOf(model.id, currentMeasurements(), fabricWidthCm, foldedCloth, showAllowance, allowTurning, customerName.trim())
         lastDraft?.let { if (key == lastDraftKey) return it }
         val result = withContext(Dispatchers.Default) { draft(model) }
-        lastDraftKey = key
-        lastDraft = result
-        return result
+        // Always hand the result back on the main thread: it ends up in views and Compose state.
+        return withContext(Dispatchers.Main.immediate) {
+            lastDraftKey = key
+            lastDraft = result
+            result
+        }
     }
 
     fun setLineWidth(px: Float) {

@@ -33,7 +33,7 @@ class ProjectorView(context: Context) : View(context) {
     var frame: ProjectorFrame? = null
         set(value) {
             field = value
-            invalidate()
+            postInvalidate() // safe from any thread
         }
 
     init {
