@@ -1,5 +1,33 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36515380943
-> Task :app:compileDebugKotlin FAILED
-e: file:///home/runner/work/Tailors-Fit/Tailors-Fit/app/src/main/java/com/tailorsfit/app/AppViewModel.kt:63:9 Platform declaration clash: The following declarations have the same JVM signature (setAllowTurning(Z)V):
-e: file:///home/runner/work/Tailors-Fit/Tailors-Fit/app/src/main/java/com/tailorsfit/app/AppViewModel.kt:162:5 Platform declaration clash: The following declarations have the same JVM signature (setAllowTurning(Z)V):
-BUILD FAILED in 57s
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36515589735
+ScreenshotTest > projector FAILED
+    android.view.ViewRootImpl$CalledFromWrongThreadException at ViewRootImpl.java:9994
+    java.lang.ArrayIndexOutOfBoundsException at SlotTable.kt:4003
+> Task :app:testDebugUnitTest FAILED
+BUILD FAILED in 1m 24s
+    <failure message="android.view.ViewRootImpl$CalledFromWrongThreadException: Only the original thread that created a view hierarchy can touch its views. Expected: SDK 34 Main Thread Calling: DefaultDispatcher-worker-1 @coroutine#22" type="android.view.ViewRootImpl$CalledFromWrongThreadException">android.view.ViewRootImpl$CalledFromWrongThreadException: Only the original thread that created a view hierarchy can touch its views. Expected: SDK 34 Main Thread Calling: DefaultDispatcher-worker-1 @coroutine#22
+	at android.view.ViewRootImpl.checkThread(ViewRootImpl.java:9994)
+	at android.view.ViewRootImpl.requestLayout(ViewRootImpl.java:2082)
+	at android.view.View.requestLayout(View.java:27043)
+	at jdk.internal.reflect.GeneratedMethodAccessor5.invoke(Unknown Source)
+	at java.base@17.0.20.1/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.robolectric.shadows.ShadowView$_View_$$Reflector21.requestLayout(Unknown Source)
+	at org.robolectric.shadows.ShadowView.requestLayout(ShadowView.java:266)
+	at android.view.View.requestLayout(View.java)
+	at android.view.View.requestLayout(View.java:27043)
+	at jdk.internal.reflect.GeneratedMethodAccessor5.invoke(Unknown Source)
+	at java.base@17.0.20.1/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.robolectric.shadows.ShadowView$_View_$$Reflector21.requestLayout(Unknown Source)
+--
+    <failure message="java.lang.ArrayIndexOutOfBoundsException: Index -41 out of bounds for length 320" type="java.lang.ArrayIndexOutOfBoundsException">java.lang.ArrayIndexOutOfBoundsException: Index -41 out of bounds for length 320
+	at androidx.compose.runtime.SlotTableKt.dataAnchor(SlotTable.kt:4003)
+	at androidx.compose.runtime.SlotTableKt.access$dataAnchor(SlotTable.kt:1)
+	at androidx.compose.runtime.SlotWriter.moveSlotGapTo(SlotTable.kt:2989)
+	at androidx.compose.runtime.SlotWriter.removeSlots(SlotTable.kt:3198)
+	at androidx.compose.runtime.SlotWriter.removeGroup(SlotTable.kt:2266)
+	at androidx.compose.runtime.ComposerKt.removeCurrentGroup(Composer.kt:4182)
+	at androidx.compose.runtime.CompositionImpl.dispose(Composition.kt:783)
+	at androidx.compose.ui.platform.WrappedComposition.dispose(Wrapper.android.kt:169)
+	at androidx.compose.ui.platform.WrappedComposition.onStateChanged(Wrapper.android.kt:177)
+	at androidx.lifecycle.LifecycleRegistry$ObserverWithState.dispatchEvent(LifecycleRegistry.jvm.kt:320)
+	at androidx.lifecycle.LifecycleRegistry.backwardPass(LifecycleRegistry.jvm.kt:272)
+	at androidx.lifecycle.LifecycleRegistry.sync(LifecycleRegistry.jvm.kt:289)
