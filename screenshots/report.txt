@@ -1,2 +1,5 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36514326687
-BUILD SUCCESSFUL in 1m 7s
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36515380943
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/Tailors-Fit/Tailors-Fit/app/src/main/java/com/tailorsfit/app/AppViewModel.kt:63:9 Platform declaration clash: The following declarations have the same JVM signature (setAllowTurning(Z)V):
+e: file:///home/runner/work/Tailors-Fit/Tailors-Fit/app/src/main/java/com/tailorsfit/app/AppViewModel.kt:162:5 Platform declaration clash: The following declarations have the same JVM signature (setAllowTurning(Z)V):
+BUILD FAILED in 57s
