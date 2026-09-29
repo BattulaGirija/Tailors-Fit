@@ -5,6 +5,7 @@ import com.tailorsfit.pattern.blouse.BlouseDrafter
 import com.tailorsfit.pattern.blouse.InvalidMeasurementsException
 import com.tailorsfit.pattern.blouse.Opening
 import com.tailorsfit.pattern.blouse.SleeveStyle
+import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.geom.pointInPolygon
 import com.tailorsfit.pattern.model.EdgeKind
 import com.tailorsfit.pattern.model.MeasurementField
@@ -24,12 +25,17 @@ class BlouseDrafterTest {
     fun everyModelDraftsForEverySize() {
         for (model in BlouseCatalog.models) for (m in sizes) {
             val pattern = model.draft(m)
-            val expected = (if (model.sleeve == SleeveStyle.SLEEVELESS) 2 else 3) + (if (model.princess) 1 else 0)
+            val expected = (if (model.sleeve == SleeveStyle.SLEEVELESS) 2 else 3) +
+                (if (model.princess) 1 else 0) +
+                (if (model.sleeve == SleeveStyle.PUFF || model.sleeve == SleeveStyle.FRILL) 1 else 0) +
+                (if (model.collar) 1 else 0) +
+                (if (model.backDetail == com.tailorsfit.pattern.blouse.BackDetail.DORI) 1 else 0)
             assertEquals(expected, pattern.pieces.size, model.id)
             for (piece in pattern.pieces) {
                 val outline = piece.seamOutline()
                 assertTrue(outline.all { !it.x.isNaN() && !it.y.isNaN() }, "${model.id}/${piece.id} has NaN")
-                assertTrue(piece.area() > 100, "${model.id}/${piece.id} area ${piece.area()}")
+                val minArea = if (piece.edges.any { it.kind == EdgeKind.BAND }) 20.0 else 100.0
+                assertTrue(piece.area() > minArea, "${model.id}/${piece.id} area ${piece.area()}")
                 // Darts, notches and markings live on or inside the piece.
                 for (d in piece.darts) assertTrue(pointInPolygon(d.tip, outline), "${model.id}/${piece.id} dart tip outside")
             }
@@ -195,6 +201,8 @@ class BlouseDrafterTest {
                     SleeveStyle.entries[(front.ordinal + back.ordinal) % SleeveStyle.entries.size],
                     Opening.entries[(front.ordinal + (if (princess) 1 else 0)) % 2],
                     princess,
+                    com.tailorsfit.pattern.blouse.BackDetail.entries[(front.ordinal + back.ordinal + d.toInt()) % 3],
+                    collar = (front.ordinal + back.ordinal) % 4 == 0,
                 )
                 for (m in listOf(SizePreset.S.measurements(), SizePreset.XXL.measurements())) {
                     val p = model.draft(m)
@@ -204,5 +212,46 @@ class BlouseDrafterTest {
                     }
                 }
             }
+    }
+
+    @Test
+    fun trendyDetailsAreDrafted() {
+        val m = Measurements.defaults()
+        fun model(id: String) = BlouseCatalog.models.first { it.id == id }
+
+        // Puff: wider, taller cap than the plain sleeve, gathered into a band.
+        val plain = model("blouse_round_classic").draft(m).pieces.first { it.id == "sleeve" }
+        val puff = model("blouse_puff_sweetheart").draft(m)
+        val puffSleeve = puff.pieces.first { it.id == "sleeve" }
+        assertTrue(puffSleeve.lengthOf(EdgeKind.SLEEVE_CAP) > plain.lengthOf(EdgeKind.SLEEVE_CAP) * 1.2)
+        val band = puff.pieces.first { it.id == "sleeve_band" }
+        assertEquals(m[MeasurementField.SLEEVE_OPENING] + 2.0, band.lengthOf(EdgeKind.BAND) / 2 - 6.0, 0.01)
+
+        // Bell: hem much wider than the arm.
+        val bell = model("blouse_boat_bell").draft(m).pieces.first { it.id == "sleeve" }
+        assertTrue(bell.lengthOf(EdgeKind.SLEEVE_HEM) > m[MeasurementField.SLEEVE_ROUND] * 1.4)
+
+        // Frill strips, collar band, tie strings.
+        assertEquals(4, model("blouse_v_frill").draft(m).pieces.first { it.id == "frill" }.cut.count)
+        val collarPattern = model("blouse_mandarin_collar").draft(m)
+        val collar = collarPattern.pieces.first { it.id == "collar" }
+        assertTrue(collar.cut.onFold)
+        val neck = collarPattern.pieces.filter { it.id.startsWith("front") || it.id == "back" }.sumOf { it.lengthOf(EdgeKind.NECK) }
+        assertEquals(neck + 1.0, collar.edges.first().path.length(), 0.01)
+        assertEquals(2, model("blouse_dori_back").draft(m).pieces.first { it.id == "tie" }.cut.count)
+
+        // Keyhole: a hole inside the back, touching the fold; whole when unfolded.
+        val back = model("blouse_keyhole_back").draft(m).pieces.first { it.id == "back" }
+        assertEquals(1, back.cutouts.size)
+        val hole = back.cutouts.single()
+        assertTrue(hole.first().x < 1e-6 && hole.last().x < 1e-6 && hole.all { com.tailorsfit.pattern.geom.pointInPolygon(Pt(it.x + 0.01, it.y), back.seamOutline()) })
+        val full = back.unfolded().cutouts.single()
+        assertEquals(-full.minOf { it.x }, full.maxOf { it.x }, 1e-6)
+
+        // Paan and pot necks reach the centre line at the requested depth.
+        for (id in listOf("blouse_paan_back", "blouse_pot_neck")) {
+            val b = model(id).draft(m).pieces.first { it.id == "back" }
+            assertTrue(b.edgesOf(EdgeKind.NECK).single().path.end.x < 1e-9, id)
+        }
     }
 }

@@ -155,6 +155,27 @@ class ScreenshotTest {
         com.tailorsfit.pattern.i18n.I18n.language = com.tailorsfit.pattern.i18n.Language.EN
     }
 
+    private fun trendyPreview(id: String, name: String) {
+        val vm = vm()
+        show { MeasurementScreen(vm, id, onBack = {}, onGenerate = {}) }
+        save(name)
+    }
+
+    @Test fun trendyPuff() = trendyPreview("blouse_puff_sweetheart", "30-trendy-puff")
+
+    @Test fun trendyKeyhole() = trendyPreview("blouse_keyhole_back", "31-trendy-keyhole")
+
+    @Test fun trendyDori() = trendyPreview("blouse_dori_back", "32-trendy-dori")
+
+    @Test fun trendyCollar() = trendyPreview("blouse_mandarin_collar", "33-trendy-collar")
+
+    @Test
+    fun trendyCatalog() {
+        show { CatalogScreen("blouse", onBack = {}, onModel = {}) }
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Paan (Leaf) Back"))
+        save("34-catalog-trendy")
+    }
+
     @Test
     fun telugu() {
         val vm = vm()

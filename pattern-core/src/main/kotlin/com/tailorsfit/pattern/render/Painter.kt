@@ -74,6 +74,7 @@ object PatternPainter {
         val cut = piece.cutOutline(effective).map(t)
 
         sink.polyline(cut, closed = true, ink = Ink.CUT)
+        for (hole in piece.cutouts) sink.polyline(hole.map(t), closed = true, ink = Ink.CUT)
         if (options.showAllowance && options.showSeamLine) sink.polyline(seam, closed = true, ink = Ink.SEAM)
 
         val bounds = Rect.of(seam)

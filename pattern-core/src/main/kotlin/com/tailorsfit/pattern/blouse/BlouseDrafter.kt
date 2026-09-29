@@ -45,6 +45,12 @@ object BlouseDrafter {
     const val CAP_EASE = 1.0
     /** Distance of the balance notches from the underarm, measured along the seam. */
     const val ARMHOLE_NOTCH_FROM_UNDERARM = 7.0
+    /** Puff sleeves: cap widened by this factor and raised, gathered into the armhole. */
+    const val PUFF_WIDTH = 1.35
+    const val PUFF_EXTRA_CAP = 3.0
+    /** Bell sleeves: hem width relative to the biceps. */
+    const val BELL_FLARE = 1.6
+    const val COLLAR_HEIGHT = 3.5
     /** Where the princess seam meets the armhole, as a fraction of armhole length from the underarm. */
     const val PRINCESS_ARMHOLE_FRACTION = 0.5
 
@@ -69,19 +75,32 @@ object BlouseDrafter {
         )
 
         if (model.sleeve != SleeveStyle.SLEEVELESS) {
-            val sleeve = draftSleeve(model, m, frontArm, backArm, warnings)
-            pieces += sleeve
+            val sleevePieces = draftSleeve(model, m, frontArm, backArm, warnings)
+            val sleeve = sleevePieces.first()
+            pieces += sleevePieces
             summary += tr("summary.cap_height") to cm(sleeve.points.getValue("capHeight").y)
             summary += tr("summary.cap_length") to cm(sleeve.lengthOf(EdgeKind.SLEEVE_CAP))
         } else {
             warnings += tr("warn.sleeveless")
         }
 
+        if (model.collar) pieces += collarPiece(model, fronts, back)
+        if (model.backDetail == BackDetail.DORI) pieces += bandPiece("tie", tr("piece.tie"), 3.0, 45.0, 2, tr("note.tie"))
+        if (model.backDetail == BackDetail.KEYHOLE) {
+            val i = pieces.indexOfFirst { it.id == "back" }
+            pieces[i] = withKeyhole(pieces[i], bodice, warnings)
+        }
+
         val title = buildString {
             append(model.name)
             if (options.customerName.isNotBlank()) append(" — ").append(options.customerName)
         }
-        return Pattern(title, pieces, warnings, summary)
+        val meta = mapOf(
+            "sleeve" to model.sleeve.name,
+            "collar" to model.collar.toString(),
+            "back" to model.backDetail.name,
+        )
+        return Pattern(title, pieces, warnings, summary, meta)
     }
 
     /** Values shared by front and back so that shoulders and side seams match. */
@@ -466,6 +485,11 @@ object BlouseDrafter {
                 )
             }
             NeckShape.BOAT -> listOf(CubicTo(Pt(w * 0.6, n.y + drop * 0.9), Pt(w * 0.3, d), Pt(0.0, d)))
+            NeckShape.LEAF -> listOf(
+                // Bulges out below the shoulder, then narrows to a point on the centre line.
+                CubicTo(Pt(w * 1.35, n.y + drop * 0.62), Pt(w * 0.5, d - drop * 0.25), Pt(0.0, d)),
+            )
+            NeckShape.POT -> listOf(CubicTo(Pt(w * 1.02, n.y + drop * 0.95), Pt(w * 0.6, d), Pt(0.0, d)))
             NeckShape.SWEETHEART -> {
                 val lift = min(3.0, drop * 0.25)
                 val lobe = Pt(w * 0.45, d)
@@ -498,7 +522,7 @@ object BlouseDrafter {
         frontArm: Double,
         backArm: Double,
         warnings: MutableList<String>,
-    ): Piece {
+    ): List<Piece> {
         val w = (m[F.SLEEVE_ROUND] + SLEEVE_EASE) / 2
         val target = (frontArm + backArm) / 2 + CAP_EASE / 2
 
@@ -539,6 +563,19 @@ object BlouseDrafter {
         }
         if (hemHalf > w + 2) hemHalf = w + 2
 
+        // Puff: taller, wider cap and a wide hem, both gathered (into the armhole / a band).
+        // Bell: the hem flares out.
+        val puff = model.sleeve == SleeveStyle.PUFF
+        val capW = if (puff) w * PUFF_WIDTH else w
+        val capH = if (puff) h + PUFF_EXTRA_CAP else h
+        if (puff) hemHalf = capW
+        if (model.sleeve == SleeveStyle.BELL) hemHalf = w * BELL_FLARE
+        // A taller cap moves the hem down by the same amount, keeping the sleeve length.
+        return listOf(sleevePiece(model, capW, capH, length + (capH - h), hemHalf, bicepHalf = w)) +
+            sleeveExtras(model, m, hemHalf)
+    }
+
+    private fun sleevePiece(model: BlouseModel, w: Double, h: Double, length: Double, hemHalf: Double, bicepHalf: Double): Piece {
         val right = capHalf(w, h)
         val left = right.map(Pt::mirroredX).reversed()
         val cap = PathD(left.start, left.segs + right.segs)
@@ -574,11 +611,94 @@ object BlouseDrafter {
             markings = markings,
             points = mapOf("capHeight" to Pt(0.0, h), "underarmRight" to underR, "underarmLeft" to underL),
             labelAt = Pt(-w * 0.12, h * 0.62 + min(4.0, (length - h) * 0.3)),
-            notes = listOf(
+            notes = listOfNotNull(
                 tr("note.sleeve_length", model.sleeve.label, cm(length)),
                 tr("note.cap", cm(h)),
+                tr("note.gather_cap").takeIf { w > bicepHalf + 0.01 },
+                tr("note.gather_hem").takeIf { model.sleeve == SleeveStyle.PUFF },
             ),
         ), notches)
+    }
+
+    /** Band for puff sleeves, frills for frill sleeves. */
+    private fun sleeveExtras(model: BlouseModel, m: Measurements, hemHalf: Double): List<Piece> = when (model.sleeve) {
+        SleeveStyle.PUFF ->
+            listOf(bandPiece("sleeve_band", tr("piece.sleeve_band"), 6.0, m[F.SLEEVE_OPENING] + 2.0, 2, tr("note.band")))
+        SleeveStyle.FRILL ->
+            // Two frill strips per sleeve (so each fits across folded cloth), 1.5× the hem for gathers.
+            listOf(bandPiece("frill", tr("piece.frill"), 7.0, hemHalf * 2 * 1.5 / 2, 4, tr("note.frill")))
+        else -> emptyList()
+    }
+
+    /**
+     * A straight strip: [width] × [length] cm on the stitching line, standing upright so its
+     * length runs along the grain.
+     */
+    internal fun bandPiece(id: String, name: String, width: Double, length: Double, count: Int, note: String): Piece {
+        val a = Pt(0.0, 0.0)
+        val b = Pt(width, 0.0)
+        val c = Pt(width, length)
+        val d = Pt(0.0, length)
+        return Piece(
+            id = id,
+            name = name,
+            cut = CutInstruction(count, onFold = false),
+            edges = listOf(
+                Edge(EdgeKind.BAND, PathD.line(a, b)),
+                Edge(EdgeKind.BAND, PathD.line(b, c)),
+                Edge(EdgeKind.BAND, PathD.line(c, d)),
+                Edge(EdgeKind.BAND, PathD.line(d, a)),
+            ),
+            markings = listOf(Marking(Pt(width / 2, min(3.0, length * 0.2)), Pt(width / 2, length - min(3.0, length * 0.2)), Marking.Kind.GRAIN)),
+            labelAt = Pt(width / 2, length / 2),
+            notes = listOf(note, cm(width) + " × " + cm(length)),
+        )
+    }
+
+    /** Mandarin collar: a band as long as half the neckline, cut on the fold at the closed centre. */
+    private fun collarPiece(model: BlouseModel, fronts: List<Piece>, back: Piece): Piece {
+        val half = fronts.sumOf { it.lengthOf(EdgeKind.NECK) } + back.lengthOf(EdgeKind.NECK)
+        val height = COLLAR_HEIGHT
+        val len = half + 1.0 // room to turn the ends at the opening
+        val a = Pt(0.0, 0.0)
+        val b = Pt(len, 0.0)
+        val c = Pt(len, height)
+        val d = Pt(0.0, height)
+        return Piece(
+            id = "collar",
+            name = tr("piece.collar"),
+            cut = CutInstruction(2, onFold = true),
+            edges = listOf(
+                Edge(EdgeKind.BAND, PathD.line(a, b)),
+                Edge(EdgeKind.BAND, PathD.line(b, c)),
+                Edge(EdgeKind.BAND, PathD.line(c, d)),
+                Edge(EdgeKind.FOLD, PathD.line(d, a)),
+            ),
+            labelAt = Pt(len * 0.6, height / 2),
+            notes = listOf(tr("note.collar", model.opening.label)),
+        )
+    }
+
+    /** Cuts a teardrop keyhole below the back neck (back cut on the fold). */
+    private fun withKeyhole(back: Piece, f: BodiceFrame, warnings: MutableList<String>): Piece {
+        if (!back.hasFold) return back
+        val top = back.edges.first { it.kind == EdgeKind.FOLD }.path.start.y
+        val y0 = top + 2.5
+        val height = min(11.0, f.backLength - 6.0 - y0)
+        if (height < 5.0) {
+            warnings += tr("warn.keyhole_small")
+            return back
+        }
+        val halfW = height * 0.32
+        val y1 = y0 + height
+        val path = PathD(
+            Pt(0.0, y0),
+            listOf(
+                CubicTo(Pt(halfW * 0.25, y0 + height * 0.25), Pt(halfW, y0 + height * 0.4), Pt(halfW, y0 + height * 0.65)),
+                CubicTo(Pt(halfW, y0 + height * 0.9), Pt(halfW * 0.5, y1), Pt(0.0, y1)),
+            ),
+        )
+        return back.copy(cutouts = back.cutouts + listOf(path.points()), notes = back.notes + tr("note.keyhole"))
     }
 
     internal fun cm(v: Double) = String.format(Locale.US, "%.1f cm", v)

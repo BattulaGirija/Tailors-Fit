@@ -227,14 +227,16 @@ private fun PaperMenu(expanded: Boolean, onDismiss: () -> Unit, includeFull: Boo
 
 @Composable
 private fun SummaryCard(vm: AppViewModel, pattern: Pattern, layout: Layout) {
-    if (pattern.warnings.isNotEmpty()) {
+    val tooWide = layout.placed.filter { it.piece.id in layout.tooWide }.map { it.piece.name }.distinct()
+    val warnings = (if (tooWide.isEmpty()) emptyList() else listOf(tr("pattern.too_wide", tooWide.joinToString(", ")))) + pattern.warnings
+    if (warnings.isNotEmpty()) {
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Warning, contentDescription = null)
                     Text("  " + tr("pattern.warnings"), style = MaterialTheme.typography.titleSmall)
                 }
-                pattern.warnings.forEach { Text(tr("app.bullet", it), style = MaterialTheme.typography.bodySmall) }
+                warnings.forEach { Text(tr("app.bullet", it), style = MaterialTheme.typography.bodySmall) }
             }
         }
     }

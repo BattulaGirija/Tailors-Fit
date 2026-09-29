@@ -60,6 +60,10 @@ import com.tailorsfit.pattern.model.Catalog
 import com.tailorsfit.pattern.model.GarmentCategory
 
 private val FEATURED = listOf(
+    "blouse_puff_sweetheart",
+    "blouse_paan_back",
+    "blouse_keyhole_back",
+    "blouse_mandarin_collar",
     "blouse_princess_round",
     "blouse_boat",
     "blouse_sweetheart",

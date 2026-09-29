@@ -15,9 +15,15 @@ class IllustrationTest {
             val views = Illustration.blouse(model.draft(Measurements.defaults()))
             assertEquals(listOf("Front", "Back"), views.map { it.title }, model.id)
             for (v in views) {
-                val sleeves = if (model.sleeve == SleeveStyle.SLEEVELESS) 0 else 2
+                val sleeveParts = if (model.sleeve == SleeveStyle.PUFF || model.sleeve == SleeveStyle.FRILL) 2 else 1
+                val sleeves = if (model.sleeve == SleeveStyle.SLEEVELESS) 0 else 2 * sleeveParts
                 val bodice = if (model.princess && v.title == "Front") 3 else 1
-                assertEquals(sleeves + bodice, v.panels.size, "${model.id} ${v.title}")
+                val collar = if (model.collar) 1 else 0
+                assertEquals(sleeves + bodice + collar, v.panels.size, "${model.id} ${v.title}")
+                if (v.title == "Back") {
+                    assertEquals(if (model.backDetail == com.tailorsfit.pattern.blouse.BackDetail.KEYHOLE) 1 else 0, v.holes.size, model.id)
+                    assertEquals(if (model.backDetail == com.tailorsfit.pattern.blouse.BackDetail.DORI) 2 else 0, v.ties.size, model.id)
+                }
                 assertTrue(v.trims.isNotEmpty())
                 assertTrue(v.panels.flatten().none { it.x.isNaN() || it.y.isNaN() })
                 // Symmetric garment: as far left as right.

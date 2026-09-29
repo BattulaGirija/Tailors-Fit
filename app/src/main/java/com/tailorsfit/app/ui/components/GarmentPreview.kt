@@ -154,7 +154,7 @@ private fun DrawScope.drawViews(views: List<GarmentView>, cloth: Color, finish: 
     val gap = size.width * 0.08f
     val cellW = (size.width - gap * (views.size - 1)) / views.size
     val cellH = size.height - 16.dp.toPx() // room for the labels
-    val boxes = views.map { v -> Rect.of((v.panels + v.trims).flatten()) }
+    val boxes = views.map { v -> Rect.of((v.panels + v.trims + v.ties).flatten()) }
     // One scale for both views so front and back match.
     val scale = boxes.minOf { b -> min(cellW / b.width, cellH / b.height) }.toFloat() * 0.94f
     val dark = lerp(cloth, Color.Black, 0.45f)
@@ -214,7 +214,19 @@ private fun DrawScope.drawViews(views: List<GarmentView>, cloth: Color, finish: 
                 }
                 drawPath(p, dark, style = Stroke(width = 1.2f, join = StrokeJoin.Round))
             }
+            // Openings show the backdrop through the cloth.
+            for (h in v.holes) {
+                val hp = path(h, true)
+                drawPath(hp, Color(0xFFF2EBDF))
+                drawPath(hp, dark, style = Stroke(width = 1.2f, join = StrokeJoin.Round))
+            }
             for (s in v.seams) drawPath(path(s, false), dark.copy(alpha = 0.7f), style = Stroke(width = 1f, cap = StrokeCap.Round))
+            // Tie strings (dori) with a small tassel.
+            for (t in v.ties) {
+                drawPath(path(t, false), dark, style = Stroke(width = 0.35f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                val end = t.last()
+                drawCircle(Brand.Gold, radius = 0.9f * scale, center = Offset(((end.x - b.minX) * scale).toFloat(), ((end.y - b.minY) * scale).toFloat()))
+            }
             if (border) {
                 for (t in v.trims) drawPath(path(t, false), Brand.Gold, style = Stroke(width = 0.55f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
             }

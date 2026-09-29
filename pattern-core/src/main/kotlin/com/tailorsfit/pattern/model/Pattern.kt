@@ -22,6 +22,8 @@ enum class EdgeKind(val label: String) {
     UNDERARM("Underarm seam"),
     SLEEVE_HEM("Sleeve hem"),
     PRINCESS("Princess seam"),
+    /** Straight edges of bands, collars, frills and tie strings. */
+    BAND("Band"),
 }
 
 /** Seam allowances in cm per edge kind. A fold never gets an allowance. */
@@ -36,6 +38,7 @@ data class SeamAllowances(
     val underarm: Double = 1.5,
     val sleeveHem: Double = 2.0,
     val princess: Double = 1.5,
+    val band: Double = 1.0,
 ) {
     fun of(kind: EdgeKind): Double = when (kind) {
         EdgeKind.NECK -> neck
@@ -49,10 +52,11 @@ data class SeamAllowances(
         EdgeKind.UNDERARM -> underarm
         EdgeKind.SLEEVE_HEM -> sleeveHem
         EdgeKind.PRINCESS -> princess
+        EdgeKind.BAND -> band
     }
 
     companion object {
-        val NONE = SeamAllowances(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        val NONE = SeamAllowances(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 }
 
@@ -100,6 +104,11 @@ data class Piece(
     val points: Map<String, Pt> = emptyMap(),
     val labelAt: Pt,
     val notes: List<String> = emptyList(),
+    /**
+     * Holes cut inside the piece (e.g. a keyhole). On a piece cut on the fold, a hole that
+     * touches the fold is stored as its half: a path from the fold, round, back to the fold.
+     */
+    val cutouts: List<List<Pt>> = emptyList(),
 ) {
     init {
         require(edges.isNotEmpty())
@@ -164,6 +173,7 @@ data class Piece(
             markings = markings.map { it.map(f) },
             points = points.mapValues { f(it.value) },
             labelAt = f(labelAt),
+            cutouts = cutouts.map { c -> c.map(f) },
         )
     }
 
@@ -193,6 +203,11 @@ data class Piece(
             } + mirroredHalf.markings.filter { it.kind != Marking.Kind.GRAIN },
             points = points + mirroredHalf.points.mapKeys { it.key + "_mirror" },
             labelAt = Pt(0.0, labelAt.y),
+            cutouts = cutouts.map { c ->
+                // Half hole on the fold + its mirror image = the whole hole.
+                if (c.first().x < 1e-6 && c.last().x < 1e-6) c + c.reversed().drop(1).dropLast(1).map(Pt::mirroredX)
+                else c
+            } + cutouts.filter { c -> !(c.first().x < 1e-6 && c.last().x < 1e-6) }.map { c -> c.map(Pt::mirroredX) },
         )
     }
 }
@@ -202,4 +217,6 @@ data class Pattern(
     val pieces: List<Piece>,
     val warnings: List<String> = emptyList(),
     val summary: List<Pair<String, String>> = emptyList(),
+    /** Design details for sketches, e.g. "sleeve" -> "PUFF", "collar" -> "true", "back" -> "DORI". */
+    val meta: Map<String, String> = emptyMap(),
 )

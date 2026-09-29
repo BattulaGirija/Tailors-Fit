@@ -24,6 +24,8 @@ data class Layout(
     val length: Double,
     val allowances: SeamAllowances,
     val folded: Boolean,
+    /** Ids of pieces wider than the cloth (they cannot be cut as laid out). */
+    val tooWide: List<String> = emptyList(),
 ) {
     val bounds get() = Rect(0.0, 0.0, width, length)
 
@@ -86,11 +88,12 @@ object LayoutEngine {
             }.map { NestItem(it, listOfNotNull(Orientation.NORMAL, Orientation.ROTATED.takeIf { turn }), onFold = false) }
         }
 
+        val tooWide = items.filter { it.piece.bounds(options.allowances).width > usableWidth + 1e-6 }.map { it.piece.id }
         val placed = Nester(usableWidth, options.allowances, options.gap, trials = options.trials).nest(items)
         val box = placed
             .map { it.piece.bounds(options.allowances).translated(it.offset.x, it.offset.y) }
             .reduceOrNull(Rect::union) ?: Rect(0.0, 0.0, 0.0, 0.0)
-        return Layout(placed, max(usableWidth, box.maxX), box.maxY, options.allowances, options.folded)
+        return Layout(placed, max(usableWidth, box.maxX), box.maxY, options.allowances, options.folded, tooWide)
     }
 }
 

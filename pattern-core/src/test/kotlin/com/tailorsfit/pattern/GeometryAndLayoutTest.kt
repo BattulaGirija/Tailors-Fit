@@ -154,8 +154,13 @@ class GeometryAndLayoutTest {
             val what = "${model.id} folded=$folded width=$width"
             assertNoOverlaps(layout, what)
             val usable = if (folded) width / 2 else width
-            for (poly in cutPolygons(layout)) {
-                assertTrue(poly.all { it.x >= -1e-6 && it.y >= -1e-6 && it.x <= usable + 1e-6 }, "$what: piece off the cloth")
+            for ((pp, poly) in layout.placed.zip(cutPolygons(layout))) {
+                if (pp.piece.id in layout.tooWide) continue // reported to the tailor instead
+                assertTrue(poly.all { it.x >= -1e-6 && it.y >= -1e-6 && it.x <= usable + 1e-6 }, "$what: ${pp.piece.id} off the cloth")
+            }
+            for (id in layout.tooWide) {
+                val piece = layout.placed.first { it.piece.id == id }.piece
+                assertTrue(piece.bounds(layout.allowances).width > usable, "$what: $id wrongly reported too wide")
             }
             assertTrue(layout.efficiency in 0.3..1.0, "$what: efficiency ${layout.efficiency}")
         }

@@ -10,7 +10,12 @@ import com.tailorsfit.pattern.model.Measurements
 import com.tailorsfit.pattern.model.Pattern
 
 enum class NeckShape {
-    ROUND, U, V, SQUARE, BOAT, SWEETHEART;
+    ROUND, U, V, SQUARE, BOAT, SWEETHEART,
+    /** Paan / betel-leaf: rounded shoulders narrowing to a point at the centre. */
+    LEAF,
+    /** Pot / matka: wide, deep and flat at the bottom. */
+    POT,
+    ;
 
     val label: String get() = tr("neck.${name.lowercase()}")
 }
@@ -22,9 +27,28 @@ enum class NeckShape {
 data class NeckSpec(val shape: NeckShape, val widen: Double = 0.0, val depthFactor: Double = 1.0)
 
 enum class SleeveStyle {
-    SLEEVELESS, CAP, SHORT, ELBOW, THREE_QUARTER;
+    SLEEVELESS, CAP, SHORT, ELBOW, THREE_QUARTER,
+    /** Gathered at the cap and the hem, finished with a band. */
+    PUFF,
+    /** Flares out to a wide hem. */
+    BELL,
+    /** Short sleeve with a gathered frill at the hem. */
+    FRILL,
+    ;
 
     val label: String get() = tr("sleeve.${name.lowercase()}")
+}
+
+/** Extra detail on the back bodice. */
+enum class BackDetail {
+    NONE,
+    /** A teardrop-shaped opening below the back neck. */
+    KEYHOLE,
+    /** Tie-up strings (dori) at the back neck. */
+    DORI,
+    ;
+
+    val label: String get() = tr("back.${name.lowercase()}")
 }
 
 /** Where the blouse opens (hooks / zip). The other centre is cut on the fold. */
@@ -45,6 +69,9 @@ data class BlouseModel(
     val opening: Opening,
     /** Front shaped by curved princess seams (two panels) instead of darts. */
     val princess: Boolean = false,
+    val backDetail: BackDetail = BackDetail.NONE,
+    /** Mandarin (band) collar around a high neckline. */
+    val collar: Boolean = false,
 ) : GarmentModel {
     override val categoryId = "blouse"
     override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
@@ -55,6 +82,8 @@ data class BlouseModel(
             tr("tag.front", front.shape.label),
             tr("tag.back", back.shape.label),
             sleeve.label,
+            tr("tag.collar").takeIf { collar },
+            backDetail.label.takeIf { backDetail != BackDetail.NONE },
             opening.label,
         )
 
@@ -157,6 +186,75 @@ object BlouseCatalog {
             "Princess-seamed front, boat neck and elbow sleeves. Measure sleeve length to the elbow.",
             NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55),
             NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.ELBOW, Opening.BACK, princess = true,
+        ),
+
+        // ---- Trending designs ----------------------------------------------------------
+        BlouseModel(
+            "blouse_puff_sweetheart", "Sweetheart, Puff Sleeves",
+            "Sweetheart front, U back and gathered puff sleeves finished with a band.",
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U), SleeveStyle.PUFF, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_square_puff", "Square Neck, Puff Sleeves",
+            "Wide square neck front and back with puff sleeves.",
+            NeckSpec(NeckShape.SQUARE, widen = 1.5), NeckSpec(NeckShape.SQUARE, widen = 1.5), SleeveStyle.PUFF, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_paan_back", "Paan (Leaf) Back",
+            "Round front with a betel-leaf shaped back neck.",
+            NeckSpec(NeckShape.ROUND, widen = 1.0), NeckSpec(NeckShape.LEAF, widen = 1.0, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_keyhole_back", "Keyhole Back",
+            "Round neck with a teardrop keyhole opening at the back.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.6), SleeveStyle.SHORT, Opening.FRONT,
+            backDetail = BackDetail.KEYHOLE,
+        ),
+        BlouseModel(
+            "blouse_dori_back", "Dori Tie-up Back",
+            "Round front and a deep U back held with tie-up strings (dori).",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.6), SleeveStyle.SHORT, Opening.FRONT,
+            backDetail = BackDetail.DORI,
+        ),
+        BlouseModel(
+            "blouse_mandarin_collar", "Mandarin Collar",
+            "High neck with a band collar, 3/4 sleeves and a back zip.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.25), SleeveStyle.THREE_QUARTER, Opening.BACK,
+            collar = true,
+        ),
+        BlouseModel(
+            "blouse_high_neck_sleeveless", "High Neck Sleeveless",
+            "Sleeveless blouse with a high band collar and back opening.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.25), SleeveStyle.SLEEVELESS, Opening.BACK,
+            collar = true,
+        ),
+        BlouseModel(
+            "blouse_boat_bell", "Boat Neck, Bell Sleeves",
+            "Boat neck with flared bell sleeves.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55),
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.BELL, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_v_frill", "V Neck, Frill Sleeves",
+            "V neck front with ruffled frills at the sleeve hem.",
+            NeckSpec(NeckShape.V, depthFactor = 1.1), NeckSpec(NeckShape.ROUND), SleeveStyle.FRILL, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_pot_neck", "Pot (Matka) Neck",
+            "Wide, deep pot-shaped neck in front and back.",
+            NeckSpec(NeckShape.POT, widen = 2.0), NeckSpec(NeckShape.POT, widen = 2.0, depthFactor = 1.1), SleeveStyle.SHORT, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_princess_puff", "Princess Cut, Puff Sleeves",
+            "Corset-style princess front with a sweetheart neck and puff sleeves.",
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U), SleeveStyle.PUFF, Opening.BACK,
+            princess = true,
+        ),
+        BlouseModel(
+            "blouse_v_dori_sleeveless", "Sleeveless, Deep V Tie Back",
+            "Sleeveless blouse with a deep V back and tie-up strings.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            backDetail = BackDetail.DORI,
         ),
     )
 }

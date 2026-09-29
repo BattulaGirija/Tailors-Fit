@@ -4,9 +4,11 @@ An Android app that drafts sewing patterns from a customer's measurements, so a 
 **print the pieces at true size** or **project them straight onto the cloth** and cut along
 the lines. There is no manual drafting with chalk and no separate cutting master.
 
-The first category is **saree blouses**, with 16 designs: round, boat, V, sweetheart, square,
+The first category is **saree blouses**, with 28 designs: round, boat, V, sweetheart, square,
 deep U back, sleeveless, cap / elbow / ¾ sleeves, front or back opening, and **princess cut**
-fronts (two panels joined by a curved seam through the bust point instead of darts).
+fronts (two panels joined by a curved seam through the bust point instead of darts), plus
+trending styles: puff, bell and frill sleeves, paan (leaf) and pot (matka) necks, keyhole and
+dori tie-up backs, and mandarin / high-neck collars.
 
 ## Download (test version)
 

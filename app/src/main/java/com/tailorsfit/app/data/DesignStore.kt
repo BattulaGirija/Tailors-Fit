@@ -1,5 +1,6 @@
 package com.tailorsfit.app.data
 
+import com.tailorsfit.pattern.blouse.BackDetail
 import android.content.Context
 import com.tailorsfit.pattern.blouse.BlouseModel
 import com.tailorsfit.pattern.blouse.NeckShape
@@ -51,6 +52,7 @@ class DesignStore(context: Context) {
         put("id", m.id); put("name", m.baseName); put("description", m.baseDescription)
         put("front", neckJson(m.front)); put("back", neckJson(m.back))
         put("sleeve", m.sleeve.name); put("opening", m.opening.name); put("princess", m.princess)
+        put("backDetail", m.backDetail.name); put("collar", m.collar)
     }
 
     private fun fromJson(o: JSONObject) = BlouseModel(
@@ -62,5 +64,7 @@ class DesignStore(context: Context) {
         sleeve = SleeveStyle.valueOf(o.getString("sleeve")),
         opening = Opening.valueOf(o.getString("opening")),
         princess = o.optBoolean("princess"),
+        backDetail = runCatching { BackDetail.valueOf(o.optString("backDetail")) }.getOrDefault(BackDetail.NONE),
+        collar = o.optBoolean("collar"),
     )
 }

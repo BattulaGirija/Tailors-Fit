@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.blouse.BackDetail
 import com.tailorsfit.pattern.i18n.I18n
 import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.BorderStroke
@@ -294,6 +295,8 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
     var sleeve by rememberSaveable { mutableStateOf(existing?.sleeve ?: SleeveStyle.SHORT) }
     var opening by rememberSaveable { mutableStateOf(existing?.opening ?: Opening.BACK) }
     var princess by rememberSaveable { mutableStateOf(existing?.princess ?: false) }
+    var backDetail by rememberSaveable { mutableStateOf(existing?.backDetail ?: BackDetail.NONE) }
+    var collar by rememberSaveable { mutableStateOf(existing?.collar ?: false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -306,6 +309,8 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
         sleeve = sleeve,
         opening = opening,
         princess = princess,
+        backDetail = backDetail,
+        collar = collar,
     )
     val warnings = remember(model) { runCatching { model.draft(Measurements.defaults()).warnings }.getOrElse { listOf(it.message ?: tr("admin.cannot_draft")) } }
 
@@ -339,6 +344,15 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
                     Text(tr("admin.princess.text"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(checked = princess, onCheckedChange = { princess = it })
+            }
+            Section(tr("admin.back_detail"))
+            Chips(BackDetail.entries, backDetail, { it.label }) { backDetail = it }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(tr("admin.collar"), style = MaterialTheme.typography.titleMedium)
+                    Text(tr("admin.collar.text"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(checked = collar, onCheckedChange = { collar = it })
             }
             if (warnings.isNotEmpty()) {
                 Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp)) {
