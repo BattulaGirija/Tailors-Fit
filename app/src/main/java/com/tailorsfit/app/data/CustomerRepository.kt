@@ -41,6 +41,13 @@ class CustomerRepository(context: Context, ownerId: String? = null) {
         return all.sortedByDescending { it.updatedAt }
     }
 
+    /** Replaces the whole book (after merging with the copy on the server). */
+    @Synchronized
+    fun replaceAll(all: List<Customer>): List<Customer> {
+        write(all)
+        return all.sortedByDescending { it.updatedAt }
+    }
+
     @Synchronized
     fun delete(id: String): List<Customer> {
         val all = loadAll().filter { it.id != id }
@@ -59,30 +66,32 @@ class CustomerRepository(context: Context, ownerId: String? = null) {
         }
     }
 
-    private fun toJson(c: Customer) = JSONObject().apply {
-        put("id", c.id)
-        put("name", c.name)
-        put("phone", c.phone)
-        put("notes", c.notes)
-        put("updatedAt", c.updatedAt)
-        put("measurements", JSONObject().apply {
-            c.measurements.asMap().forEach { (f, v) -> if (!v.isNaN()) put(f.key, v) }
-        })
-    }
-
-    private fun fromJson(o: JSONObject): Customer {
-        val mo = o.optJSONObject("measurements") ?: JSONObject()
-        val values = HashMap<MeasurementField, Double>()
-        mo.keys().forEach { key ->
-            MeasurementField.byKey(key)?.let { values[it] = mo.getDouble(key) }
+    companion object {
+        fun toJson(c: Customer) = JSONObject().apply {
+            put("id", c.id)
+            put("name", c.name)
+            put("phone", c.phone)
+            put("notes", c.notes)
+            put("updatedAt", c.updatedAt)
+            put("measurements", JSONObject().apply {
+                c.measurements.asMap().forEach { (f, v) -> if (!v.isNaN()) put(f.key, v) }
+            })
         }
-        return Customer(
-            id = o.getString("id"),
-            name = o.optString("name"),
-            phone = o.optString("phone"),
-            notes = o.optString("notes"),
-            measurements = Measurements(values),
-            updatedAt = o.optLong("updatedAt"),
-        )
+
+        fun fromJson(o: JSONObject): Customer {
+            val mo = o.optJSONObject("measurements") ?: JSONObject()
+            val values = HashMap<MeasurementField, Double>()
+            mo.keys().forEach { key ->
+                MeasurementField.byKey(key)?.let { values[it] = mo.getDouble(key) }
+            }
+            return Customer(
+                id = o.getString("id"),
+                name = o.optString("name"),
+                phone = o.optString("phone"),
+                notes = o.optString("notes"),
+                measurements = Measurements(values),
+                updatedAt = o.optLong("updatedAt"),
+            )
+        }
     }
 }

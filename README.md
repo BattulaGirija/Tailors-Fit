@@ -57,26 +57,50 @@ help, design names, warnings, and the labels printed on patterns and shown on th
 
 ## Accounts and admin
 
-- **Tailors** sign up with a name, an optional shop name, a phone number or e-mail, and a
-  password, and pick a **security question** with an answer. Each tailor has their own
-  customer book. The app stays logged in until they choose **Log out** in the side menu, and
-  the login screen comes filled in with the phone / e-mail used last time.
-- **Forgot password?** on the login screen: enter the phone / e-mail, answer the security
-  question, and choose a new password. Answers ignore case and extra spaces; after 5 wrong
-  answers the reset is locked for 15 minutes. Tailors who signed up before security questions
-  existed can ask the admin, who can set a new password from the tailor's page.
-- **Admin**: tap **Admin login** on the login screen. The first time, you choose the admin
-  password. The admin can:
-  - see tailor accounts: customers, patterns generated, last active; and delete accounts;
-  - add **new designs** by combining the drafting options (front/back neck shape and depth,
-    neck width, sleeves, opening, princess cut), with a live preview;
-  - hide any design from tailors.
-- Passwords and security answers are salted and hashed (PBKDF2); they are never stored as
-  plain text.
-- **Today everything is stored on the phone**, so the admin only sees tailors who signed up
-  on the same device. Accounts go through the `AccountStore` interface, so an online backend
-  (e.g. Firebase Auth + Firestore) can replace `LocalAccountStore` to see tailors on every
-  phone.
+- **Tailors** sign up with a name, an optional shop name and phone number, their **e-mail** and
+  a **4-digit PIN**, then log in with e-mail + PIN. The login screen comes filled in with the
+  e-mail used last time, and the app stays logged in until they choose **Log out**.
+- **Forgot PIN?** sends an e-mail with a link. The link opens a small page
+  ([`docs/reset.html`](docs/reset.html)) where the tailor chooses a new PIN.
+- **Online (Firebase)**: accounts, each tailor's customers and the admin's designs are stored
+  online, so a tailor can log in on any phone and the admin sees every tailor. Customers saved
+  offline are uploaded when the phone is back online.
+- **Admin** (tap **Admin login** on the login screen) can:
+  - see tailor accounts: phone, customers, patterns generated, last active;
+  - send a tailor a PIN reset link, or remove a tailor (they can no longer log in);
+  - add **new designs** by combining the drafting options, with a live preview, and hide any
+    design. Designs reach every tailor's phone.
+- A build without the Firebase config keeps everything on the phone (the first admin log in
+  chooses the admin password there, and the admin sets forgotten PINs by hand).
+
+A 4-digit PIN is easy to remember but only has 10,000 combinations. Firebase slows down and
+blocks repeated wrong attempts, so keep **e-mail enumeration protection** switched on in
+Firebase (it is on by default).
+
+### Setting up Firebase (once)
+
+1. Go to <https://console.firebase.google.com>, **Create a project** (e.g. "Tailors Fit").
+   Google Analytics is not needed. The free **Spark** plan is enough.
+2. **Add app → Android**, package name `com.tailorsfit.app`, then **Download
+   google-services.json**. (The SHA-1 is not needed.)
+3. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable**.
+4. **Build → Firestore Database → Create database** (production mode, a location near you,
+   e.g. `asia-south1` Mumbai). Open the **Rules** tab, replace everything with the contents of
+   [`firestore.rules`](firestore.rules), and **Publish**.
+5. **PIN reset page**: on GitHub open the repository **Settings → Pages**, choose **Deploy from a
+   branch**, branch `claude/wizardly-franklin-ooznvg` (or `main` once merged), folder `/docs`, and
+   save. Then in Firebase **Authentication → Templates → Password reset → ✏️ → Customize action
+   URL**, enter `https://battulagirija.github.io/Tailors-Fit/reset.html` and save. You can also
+   change the e-mail's wording there (say "PIN" instead of "password").
+6. **Admin account**: in **Authentication → Users → Add user**, enter the admin's e-mail and a
+   strong password. Copy the new user's **User UID**. In **Firestore Database → Start collection**,
+   collection ID `admins`, document ID = that UID, add any field (e.g. `name` = `Admin`), and save.
+7. **Give the config to the build**: on GitHub open **Settings → Secrets and variables →
+   Actions → New repository secret**, name `GOOGLE_SERVICES_JSON`, paste the whole contents of
+   `google-services.json`, and save. Then re-run the "Test release" workflow (or push a change).
+   The build log shows `Firebase: on`.
+
+To build locally with Firebase, put `google-services.json` in `app/` (it is git-ignored).
 
 ## Drafting method (blouse)
 

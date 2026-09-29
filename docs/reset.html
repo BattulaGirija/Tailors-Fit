@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tailors Fit – New PIN</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&family=Noto+Serif:wght@600&display=swap" rel="stylesheet">
+<!--
+  Page opened from the "reset your PIN" e-mail (Firebase Authentication → Templates →
+  Password reset → action URL). Firebase adds ?mode=resetPassword&oobCode=…&apiKey=…&lang=…
+  The PIN is stretched to a password exactly like Pin.toPassword() in the app.
+-->
+<style>
+  :root {
+    --aubergine: #3E1A36; --deep: #26101F; --plum: #6B2D5C; --gold: #B8913F; --gold-light: #E6C98A;
+    --ivory: #FBF7F1; --ink: #2A2027; --muted: #75676F; --line: #E2D6C6; --error: #B3261E; --ok: #1E7A55;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
+    background: linear-gradient(160deg, var(--plum), var(--aubergine) 55%, var(--deep)); color: var(--ink);
+    display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px;
+  }
+  main { width: 100%; max-width: 420px; text-align: center; }
+  .brand { color: var(--gold-light); letter-spacing: .2em; font-size: 12px; font-weight: 600; }
+  h1 { color: var(--ivory); font-family: "Noto Serif", "Noto Sans Telugu", "Noto Sans Devanagari", Georgia, serif; font-size: 32px; margin: 10px 0 6px; }
+  .rule { width: 110px; height: 1px; background: var(--gold); margin: 14px auto 22px; position: relative; }
+  .rule::after { content: ""; position: absolute; left: 50%; top: -4px; width: 8px; height: 8px; background: var(--gold); transform: translateX(-50%) rotate(45deg); }
+  .card { background: var(--ivory); border-radius: 24px; padding: 24px 20px; text-align: left; box-shadow: 0 12px 32px rgba(0,0,0,.3); }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 14px 0 6px; }
+  input {
+    width: 100%; font-size: 28px; letter-spacing: .5em; text-align: center; padding: 12px; border-radius: 12px;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--gold); border-color: transparent; }
+  button {
+    font-family: inherit; width: 100%; margin-top: 20px; padding: 15px; border: 0; border-radius: 999px; font-size: 16px; font-weight: 600;
+    background: var(--aubergine); color: var(--ivory); cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: default; }
+  .who { font-size: 14px; color: var(--muted); margin: 0; }
+  .msg { font-size: 15px; line-height: 1.5; margin: 12px 0 0; }
+  .error { color: var(--error); }
+  .ok { color: var(--ok); font-weight: 600; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">TAILORS FIT</div>
+  <h1 id="title">Choose a new PIN</h1>
+  <div class="rule"></div>
+  <div class="card">
+    <p class="who" id="who"></p>
+    <form id="form" hidden>
+      <label for="pin" id="pinLabel">New 4-digit PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="4" pattern="[0-9]{4}" required>
+      <label for="pin2" id="pin2Label">Enter the PIN again</label>
+      <input id="pin2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="4" pattern="[0-9]{4}" required>
+      <button id="save" type="submit">Save PIN</button>
+    </form>
+    <p class="msg" id="msg">Checking the link…</p>
+  </div>
+</main>
+<script>
+  const TEXT = {
+    en: {
+      title: "Choose a new PIN", checking: "Checking the link…", pin: "New 4-digit PIN", pin2: "Enter the PIN again",
+      save: "Save PIN", saving: "Saving…", forAccount: "For %s", badPin: "The PIN must be exactly 4 digits.",
+      mismatch: "The two PINs do not match.", done: "PIN changed. Open Tailors Fit and log in with your new PIN.",
+      expired: "This link has expired or was already used. In the app, tap “Forgot PIN?” to get a new one.",
+      invalid: "This link is not complete. Open it again from the e-mail.", network: "Could not reach the server. Check your internet and try again.",
+    },
+    hi: {
+      title: "नया PIN चुनें", checking: "लिंक जाँचा जा रहा है…", pin: "नया 4 अंकों का PIN", pin2: "PIN फिर से डालें",
+      save: "PIN सेव करें", saving: "सेव हो रहा है…", forAccount: "%s के लिए", badPin: "PIN ठीक 4 अंकों का होना चाहिए।",
+      mismatch: "दोनों PIN मेल नहीं खाते।", done: "PIN बदल गया। Tailors Fit खोलें और नए PIN से लॉग इन करें।",
+      expired: "यह लिंक पुराना हो गया या पहले ही इस्तेमाल हो चुका है। ऐप में “PIN भूल गए?” दबाकर नया लिंक लें।",
+      invalid: "यह लिंक अधूरा है। ई-मेल से फिर से खोलें।", network: "सर्वर से जुड़ नहीं पाए। इंटरनेट जाँचकर फिर कोशिश करें।",
+    },
+    te: {
+      title: "కొత్త PIN ఎంచుకోండి", checking: "లింక్ చూస్తున్నాం…", pin: "కొత్త 4 అంకెల PIN", pin2: "PIN మళ్లీ ఇవ్వండి",
+      save: "PIN సేవ్ చేయండి", saving: "సేవ్ అవుతోంది…", forAccount: "%s కోసం", badPin: "PIN సరిగ్గా 4 అంకెలు ఉండాలి.",
+      mismatch: "రెండు PIN లు సరిపోలడం లేదు.", done: "PIN మారింది. Tailors Fit తెరిచి కొత్త PIN తో లాగిన్ అవ్వండి.",
+      expired: "ఈ లింక్ గడువు ముగిసింది లేదా ఇప్పటికే వాడారు. యాప్‌లో “PIN మర్చిపోయారా?” నొక్కి కొత్తది పొందండి.",
+      invalid: "ఈ లింక్ పూర్తిగా లేదు. ఇ-మెయిల్ నుండి మళ్లీ తెరవండి.", network: "సర్వర్‌ను చేరలేకపోయాం. ఇంటర్నెట్ చూసి మళ్లీ ప్రయత్నించండి.",
+    },
+  };
+  const params = new URLSearchParams(location.search);
+  const lang = (params.get("lang") || navigator.language || "en").slice(0, 2);
+  const t = TEXT[lang] || TEXT.en;
+  document.documentElement.lang = TEXT[lang] ? lang : "en";
+  const $ = (id) => document.getElementById(id);
+  $("title").textContent = t.title;
+  $("pinLabel").textContent = t.pin;
+  $("pin2Label").textContent = t.pin2;
+  $("save").textContent = t.save;
+
+  function show(text, kind) {
+    $("msg").textContent = text;
+    $("msg").className = "msg " + (kind || "");
+  }
+
+  const code = params.get("oobCode");
+  const key = params.get("apiKey");
+
+  // Firebase Authentication REST API: verify / confirm a password reset code.
+  async function resetPassword(body) {
+    const res = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=" + encodeURIComponent(key), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({ oobCode: code }, body)),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data.error && data.error.message) || "ERROR");
+    return data;
+  }
+
+  function explain(err) {
+    const m = String(err && err.message);
+    if (m.includes("OOB_CODE")) return t.expired;
+    if (m === "Failed to fetch" || err instanceof TypeError) return t.network;
+    return t.expired + " (" + m + ")";
+  }
+
+  async function start() {
+    if (params.get("mode") !== "resetPassword" || !code || !key) return show(t.invalid, "error");
+    show(t.checking);
+    try {
+      const data = await resetPassword({});
+      if (data.email) $("who").textContent = t.forAccount.replace("%s", data.email);
+      $("form").hidden = false;
+      show("");
+      $("pin").focus();
+    } catch (e) {
+      show(explain(e), "error");
+    }
+  }
+
+  for (const id of ["pin", "pin2"]) {
+    $(id).addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
+  }
+
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pin = $("pin").value;
+    if (!/^[0-9]{4}$/.test(pin)) return show(t.badPin, "error");
+    if (pin !== $("pin2").value) return show(t.mismatch, "error");
+    $("save").disabled = true;
+    $("save").textContent = t.saving;
+    try {
+      await resetPassword({ newPassword: "TailorsFit-pin-" + pin });
+      $("form").hidden = true;
+      show(t.done, "ok");
+    } catch (err) {
+      $("save").disabled = false;
+      $("save").textContent = t.save;
+      show(explain(err), "error");
+    }
+  });
+
+  start();
+</script>
+</body>
+</html>

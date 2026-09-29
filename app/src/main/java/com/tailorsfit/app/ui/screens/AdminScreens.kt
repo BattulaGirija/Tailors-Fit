@@ -61,6 +61,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.tailorsfit.app.AppViewModel
 import com.tailorsfit.app.data.Account
+import com.tailorsfit.app.data.Customer
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.launch
 import com.tailorsfit.app.ui.components.AppBar
 import com.tailorsfit.app.ui.components.ModelThumbnail
 import com.tailorsfit.app.ui.components.Pill
@@ -91,8 +97,9 @@ fun AdminHomeScreen(
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val version = vm.adminVersion
-    val tailors = remember(version) { vm.tailors() }
-    val customerCounts = remember(version, tailors) { tailors.associate { it.id to vm.tailorCustomers(it.id).size } }
+    // Loaded in the background (from the server when accounts are online); null while loading.
+    val loaded by produceState<List<Account>?>(null, version) { value = vm.tailors() }
+    val tailors = loaded ?: emptyList()
     val designs = remember(version) { Catalog.allModels }
     val hidden = remember(version) { Catalog.hidden }
 
@@ -127,7 +134,9 @@ fun AdminHomeScreen(
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(tr("admin.designs")) })
             }
             if (tab == 0) {
-                if (tailors.isEmpty()) {
+                if (loaded == null) {
+                    Text(tr("app.loading"), modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else if (tailors.isEmpty()) {
                     Text(
                         tr("admin.no_tailors"),
                         modifier = Modifier.padding(24.dp),
@@ -135,7 +144,7 @@ fun AdminHomeScreen(
                     )
                 }
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(tailors, key = { it.id }) { t -> TailorRow(t, customerCounts[t.id] ?: 0) { onTailor(t.id) } }
+                    items(tailors, key = { it.id }) { t -> TailorRow(t, t.customerCount) { onTailor(t.id) } }
                 }
             } else {
                 LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -226,14 +235,17 @@ private fun DesignRow(model: GarmentModel, custom: Boolean, visible: Boolean, on
 
 @Composable
 fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
-    val tailor = remember(vm.adminVersion) { vm.accounts.find(tailorId) }
-    val customers = remember(tailorId) { vm.tailorCustomers(tailorId) }
+    // Pair of (loaded, tailor) so "still loading" and "no such tailor" look different.
+    val tailorState by produceState<Pair<Boolean, Account?>>(false to null, tailorId, vm.adminVersion) { value = true to vm.findTailor(tailorId) }
+    val customers by produceState(emptyList<Customer>(), tailorId) { value = vm.tailorCustomers(tailorId) }
+    val scope = rememberCoroutineScope()
     var confirmDelete by remember { mutableStateOf(false) }
     var resetOpen by remember { mutableStateOf(false) }
-    var resetDone by remember { mutableStateOf(false) }
+    var resetDone by remember { mutableStateOf<String?>(null) }
+    val tailor = tailorState.second
     Scaffold(topBar = { AppBar(tailor?.name ?: tr("admin.tailor"), onBack) }) { padding ->
         if (tailor == null) {
-            Text(tr("admin.gone"), Modifier.padding(padding).padding(24.dp))
+            Text(if (tailorState.first) tr("admin.gone") else tr("app.loading"), Modifier.padding(padding).padding(24.dp))
             return@Scaffold
         }
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -243,18 +255,14 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
                         Text(tailor.name, style = MaterialTheme.typography.headlineSmall, color = Brand.Ivory)
                         if (tailor.shopName.isNotBlank()) Text(tailor.shopName, color = Brand.GoldLight)
                         Text(tr("admin.login_id", tailor.login), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
+                        if (tailor.phone.isNotBlank()) Text(tr("admin.phone", tailor.phone), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
                         Text(tr("admin.joined", date(tailor.createdAt), date(tailor.lastActiveAt)), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
                         Text("${count(customers.size, "customer")} · ${count(tailor.patternsGenerated, "pattern")} ${tr("admin.generated")}", color = Brand.GoldLight, style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            if (tailor.securityQuestion.isNotEmpty()) tr("admin.question_set") else tr("admin.question_missing"),
-                            color = Brand.Ivory.copy(alpha = 0.85f),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                OutlinedButton(onClick = { resetOpen = true; resetDone = false }) { Text(tr("admin.reset_password")) }
-                if (resetDone) Text(tr("admin.reset_done"), color = Brand.Emerald, style = MaterialTheme.typography.bodySmall)
+                OutlinedButton(onClick = { resetOpen = true; resetDone = null }) { Text(tr("admin.reset_pin")) }
+                resetDone?.let { Text(it, color = Brand.Emerald, style = MaterialTheme.typography.bodySmall) }
                 Spacer(Modifier.height(12.dp))
                 Text(tr("admin.customers"), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             }
@@ -284,29 +292,52 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(tr("customers.delete", tailor?.name)) },
-            text = { Text(tr("admin.delete_tailor.text")) },
-            confirmButton = { TextButton(onClick = { vm.deleteTailor(tailorId); confirmDelete = false; onBack() }) { Text(tr("app.delete")) } },
+            text = { Text(if (vm.backend.online) tr("admin.delete_tailor.online") else tr("admin.delete_tailor.text")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    scope.launch { vm.deleteTailor(tailorId); onBack() }
+                }) { Text(tr("app.delete")) }
+            },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("app.cancel")) } },
         )
     }
     if (resetOpen) {
-        var password by remember { mutableStateOf("") }
+        val online = vm.backend.online
+        var pin by remember { mutableStateOf("") }
         var error by remember { mutableStateOf<String?>(null) }
+        var busy by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { resetOpen = false },
-            title = { Text(tr("admin.reset_password")) },
+            title = { Text(tr("admin.reset_pin")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(tr("admin.reset_password.text", tailor?.name))
-                    OutlinedTextField(value = password, onValueChange = { password = it; error = null }, label = { Text(tr("forgot.new_password")) }, singleLine = true)
+                    // Online the tailor gets an e-mail link; on this phone the admin types the new PIN.
+                    Text(if (online) tr("admin.reset_pin.online", tailor?.login) else tr("admin.reset_pin.text", tailor?.name))
+                    if (!online) {
+                        OutlinedTextField(
+                            value = pin,
+                            onValueChange = { v -> pin = v.filter { it.isDigit() }.take(4); error = null },
+                            label = { Text(tr("auth.new_pin")) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        )
+                    }
                     if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    error = vm.adminResetPassword(tailorId, password)
-                    if (error == null) { resetOpen = false; resetDone = true }
-                }) { Text(tr("forgot.reset")) }
+                TextButton(enabled = !busy, onClick = {
+                    busy = true
+                    scope.launch {
+                        error = vm.adminResetPin(tailorId, pin)
+                        busy = false
+                        if (error == null) {
+                            resetOpen = false
+                            resetDone = if (online) tr("admin.reset_pin.sent") else tr("admin.reset_pin.done")
+                        }
+                    }
+                }) { Text(if (online) tr("forgot.send") else tr("admin.reset_pin.set")) }
             },
             dismissButton = { TextButton(onClick = { resetOpen = false }) { Text(tr("app.cancel")) } },
         )

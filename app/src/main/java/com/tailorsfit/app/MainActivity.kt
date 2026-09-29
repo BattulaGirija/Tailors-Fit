@@ -24,7 +24,7 @@ import com.tailorsfit.app.ui.screens.AdminHomeScreen
 import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AdminTailorScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
-import com.tailorsfit.app.ui.screens.ForgotPasswordScreen
+import com.tailorsfit.app.ui.screens.ForgotPinScreen
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import kotlinx.coroutines.launch
@@ -154,7 +154,7 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
                 )
             }
             composable(Routes.FORGOT, listOf(navArgument("login") { type = NavType.StringType; defaultValue = "" })) {
-                ForgotPasswordScreen(vm, it.arguments?.getString("login") ?: "", onDone = ::toAuth, onBack = back)
+                ForgotPinScreen(vm, it.arguments?.getString("login") ?: "", onSent = ::toAuth, onBack = back)
             }
             composable(Routes.ADMIN_LOGIN) {
                 AdminLoginScreen(vm, onLoggedIn = ::toAdmin, onBack = back)

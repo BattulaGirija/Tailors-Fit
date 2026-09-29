@@ -22,7 +22,9 @@ import androidx.compose.ui.test.performClick
 import com.tailorsfit.app.ui.screens.AdminHomeScreen
 import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
-import com.tailorsfit.app.ui.screens.ForgotPasswordScreen
+import com.tailorsfit.app.ui.screens.ForgotPinScreen
+import com.tailorsfit.app.ui.screens.AdminTailorScreen
+import kotlinx.coroutines.runBlocking
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.CatalogScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
@@ -53,7 +55,10 @@ class ScreenshotTest {
 
     private val model = "blouse_deep_back_u"
 
-    private fun vm() = AppViewModel(ApplicationProvider.getApplicationContext()).apply { customerName = "Lakshmi" }
+    private fun vm(): AppViewModel {
+        com.tailorsfit.app.data.Backends.forceLocal = true
+        return AppViewModel(ApplicationProvider.getApplicationContext()).apply { customerName = "Lakshmi" }
+    }
 
     private fun show(content: @Composable () -> Unit) {
         compose.setContent { TailorsFitTheme { content() } }
@@ -116,36 +121,34 @@ class ScreenshotTest {
         save("00-login")
         compose.onNodeWithText("Sign up").performClick()
         save("00b-signup")
-        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Security question"))
-        save("00c-signup-question")
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Create account"))
+        save("00c-signup-pin")
     }
 
     @Test
-    fun forgotPassword() {
+    fun forgotPin() {
         val vm = vm()
-        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1", "sq.city", "Hyderabad")
+        runBlocking { vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "ravi@tailors.in", "1234") }
         vm.logOut()
-        show { ForgotPasswordScreen(vm, vm.lastLogin, onDone = {}, onBack = {}) }
-        compose.onNodeWithText("Next").performClick()
-        awaitText("In which town")
-        save("00d-forgot-password")
+        show { ForgotPinScreen(vm, vm.lastLogin, onSent = {}, onBack = {}) }
+        save("00d-forgot-pin")
     }
 
     @Test
-    fun loginRemembersId() {
+    fun loginRemembersEmail() {
         val vm = vm()
-        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1", "sq.city", "Hyderabad")
+        runBlocking { vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "ravi@tailors.in", "1234") }
         vm.logOut()
-        assert(vm.resetPassword(vm.lastLogin, "hyderabad", "secret2") == null)
+        vm.authNotice = com.tailorsfit.pattern.i18n.tr("forgot.sent", vm.lastLogin)
         show { AuthScreen(vm, onLoggedIn = {}, onAdmin = {}) }
-        awaitText("9876543210")
-        save("00e-login-after-reset")
+        awaitText("ravi@tailors.in")
+        save("00e-login-after-reset-link")
     }
 
     @Test
     fun admin() {
         val vm = vm()
-        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1")
+        runBlocking { vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "ravi@tailors.in", "1234") }
         vm.saveCustomer()
         show { AdminLoginScreen(vm, onLoggedIn = {}, onBack = {}) }
         save("11-admin-login")
@@ -154,23 +157,40 @@ class ScreenshotTest {
     @Test
     fun adminHome() {
         val vm = vm()
-        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1")
-        vm.customerName = "Lakshmi"
-        vm.saveCustomer()
-        vm.customerName = "Padma"
-        vm.saveCustomer()
-        vm.signUp("Meena", "Meena Boutique", "meena@boutique.in", "secret1")
-        vm.adminLogIn("admin-pass")
+        runBlocking {
+            vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "ravi@tailors.in", "1234")
+            vm.customerName = "Lakshmi"
+            vm.saveCustomer()
+            vm.customerName = "Padma"
+            vm.saveCustomer()
+            vm.signUp("Meena", "Meena Boutique", "", "meena@boutique.in", "1234")
+            vm.adminLogIn("", "admin-pass")
+        }
         show { AdminHomeScreen(vm, onTailor = {}, onNewDesign = {}, onEditDesign = {}, onLogOut = {}) }
+        awaitText("Meena")
         save("12-admin-tailors")
         compose.onNode(hasText("Designs") and hasClickAction()).performClick()
         save("13-admin-designs")
     }
 
     @Test
+    fun adminTailor() {
+        val vm = vm()
+        val id = runBlocking {
+            vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "ravi@tailors.in", "1234")
+            vm.saveCustomer()
+            vm.adminLogIn("", "admin-pass")
+            vm.tailors().first().id
+        }
+        show { AdminTailorScreen(vm, id, onBack = {}) }
+        awaitText("Lakshmi")
+        save("15-admin-tailor")
+    }
+
+    @Test
     fun designEditor() {
         val vm = vm()
-        vm.adminLogIn("admin-pass")
+        runBlocking { vm.adminLogIn("", "admin-pass") }
         show { DesignEditorScreen(vm, designId = null, onDone = {}) }
         save("14-admin-new-design")
     }

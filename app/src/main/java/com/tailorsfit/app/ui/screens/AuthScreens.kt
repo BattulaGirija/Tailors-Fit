@@ -3,13 +3,6 @@ package com.tailorsfit.app.ui.screens
 import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import com.tailorsfit.app.data.SecurityQuestions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -30,6 +23,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -171,6 +168,17 @@ private fun AuthCard(
 
 @Composable
 private fun PasswordField(value: String, onChange: (String) -> Unit, label: String, last: Boolean = true) {
+    SecretField(value, onChange, label, KeyboardType.Password, last)
+}
+
+/** 4-digit PIN: digits only, at most four. */
+@Composable
+private fun PinField(value: String, onChange: (String) -> Unit, label: String, last: Boolean = true) {
+    SecretField(value, { v -> onChange(v.filter { it.isDigit() }.take(4)) }, label, KeyboardType.NumberPassword, last)
+}
+
+@Composable
+private fun SecretField(value: String, onChange: (String) -> Unit, label: String, type: KeyboardType, last: Boolean) {
     var visible by remember { mutableStateOf(false) }
     OutlinedTextField(
         value = value,
@@ -179,7 +187,16 @@ private fun PasswordField(value: String, onChange: (String) -> Unit, label: Stri
         singleLine = true,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = { TextButton(onClick = { visible = !visible }) { Text(if (visible) tr("auth.hide") else tr("auth.show")) } },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = if (last) ImeAction.Done else ImeAction.Next),
+        keyboardOptions = KeyboardOptions(keyboardType = type, imeAction = if (last) ImeAction.Done else ImeAction.Next),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun TextInput(value: String, onChange: (String) -> Unit, label: String, type: KeyboardType = KeyboardType.Text) {
+    OutlinedTextField(
+        value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = type, imeAction = ImeAction.Next),
         modifier = Modifier.fillMaxWidth(),
     )
 }
@@ -198,48 +215,24 @@ private fun NoticeText(notice: String?) {
     }
 }
 
+/** Main button; while [busy] (waiting for the server) it shows a spinner and ignores taps. */
 @Composable
-private fun LoginField(value: String, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = onChange, label = { Text(tr("auth.id")) }, singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-        modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-/** Pick one of the [SecurityQuestions]; the answer lets the tailor reset a forgotten password. */
-@Composable
-private fun QuestionPicker(question: String, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = if (question.isEmpty()) "" else tr(question),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(tr("auth.question")) },
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        // The read-only field swallows taps, so a transparent layer on top opens the menu.
-        Box(Modifier.matchParentSize().clickable { open = true })
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            SecurityQuestions.keys.forEach { key ->
-                DropdownMenuItem(text = { Text(tr(key)) }, onClick = { onPick(key); open = false })
-            }
-        }
+private fun PrimaryButton(text: String, busy: Boolean = false, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = !busy,
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Brand.Aubergine, contentColor = Brand.Ivory,
+            disabledContainerColor = Brand.Aubergine.copy(alpha = 0.7f), disabledContentColor = Brand.Ivory,
+        ),
+    ) {
+        if (busy) CircularProgressIndicator(Modifier.size(22.dp), color = Brand.Ivory, strokeWidth = 2.dp)
+        else Text(text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
-@Composable
-private fun PrimaryButton(text: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(50.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Brand.Aubergine, contentColor = Brand.Ivory),
-    ) { Text(text, style = MaterialTheme.typography.labelLarge) }
-}
-
-/** Log in / sign up for tailors. */
+/** Log in / sign up for tailors: e-mail and a 4-digit PIN. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreen(
@@ -252,13 +245,14 @@ fun AuthScreen(
     var signUp by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
     var shop by rememberSaveable { mutableStateOf("") }
-    // The phone / e-mail used last time on this phone, so tailors only type their password.
-    var login by rememberSaveable { mutableStateOf(vm.lastLogin) }
-    var password by remember { mutableStateOf("") }
+    var phone by rememberSaveable { mutableStateOf("") }
+    // The e-mail used last time on this phone, so tailors only type their PIN.
+    var email by rememberSaveable { mutableStateOf(vm.lastLogin) }
+    var pin by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
-    var question by rememberSaveable { mutableStateOf("") }
-    var answer by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     AuthCard(
         title = if (signUp) tr("auth.join") else tr("auth.welcome"),
@@ -275,42 +269,37 @@ fun AuthScreen(
                 }
             }
             if (signUp) {
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it }, label = { Text(tr("auth.name")) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = shop, onValueChange = { shop = it }, label = { Text(tr("auth.shop")) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), modifier = Modifier.fillMaxWidth(),
-                )
+                TextInput(name, { name = it }, tr("auth.name"))
+                TextInput(shop, { shop = it }, tr("auth.shop"))
+                TextInput(phone, { phone = it }, tr("auth.phone"), KeyboardType.Phone)
+            } else {
+                NoticeText(vm.authNotice)
             }
-            if (!signUp) NoticeText(vm.authNotice)
-            LoginField(login) { login = it }
-            PasswordField(password, { password = it }, tr("auth.password"), last = !signUp)
+            TextInput(email, { email = it }, tr("auth.email"), KeyboardType.Email)
+            PinField(pin, { pin = it }, if (signUp) tr("auth.new_pin") else tr("auth.pin"), last = !signUp)
             if (signUp) {
-                PasswordField(confirm, { confirm = it }, tr("auth.confirm"), last = false)
-                QuestionPicker(question) { question = it }
-                OutlinedTextField(
-                    value = answer, onValueChange = { answer = it }, label = { Text(tr("auth.answer")) }, singleLine = true,
-                    supportingText = { Text(tr("auth.answer.help")) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), modifier = Modifier.fillMaxWidth(),
-                )
+                PinField(confirm, { confirm = it }, tr("auth.confirm_pin"))
+                Text(tr("auth.pin.help"), style = MaterialTheme.typography.bodySmall, color = Brand.Muted)
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = { vm.authNotice = null; onForgot(login) }) { Text(tr("auth.forgot"), color = Brand.Plum) }
+                    TextButton(onClick = { vm.authNotice = null; onForgot(email) }) { Text(tr("auth.forgot"), color = Brand.Plum) }
                 }
             }
             ErrorText(error)
-            PrimaryButton(if (signUp) tr("auth.create") else tr("auth.login")) {
-                error = when {
-                    signUp && password != confirm -> tr("auth.mismatch")
-                    signUp && question.isEmpty() -> tr("err.question")
-                    signUp -> vm.signUp(name, shop, login, password, question, answer)
-                    else -> vm.logIn(login, password)
+            PrimaryButton(if (signUp) tr("auth.create") else tr("auth.login"), busy) {
+                if (signUp && pin != confirm) {
+                    error = tr("auth.mismatch")
+                    return@PrimaryButton
                 }
-                if (error == null) {
-                    vm.authNotice = null
-                    onLoggedIn()
+                busy = true
+                error = null
+                scope.launch {
+                    error = if (signUp) vm.signUp(name, shop, phone, email, pin) else vm.logIn(email, pin)
+                    busy = false
+                    if (error == null) {
+                        vm.authNotice = null
+                        onLoggedIn()
+                    }
                 }
             }
             TextButton(onClick = { signUp = !signUp; error = null }, modifier = Modifier.fillMaxWidth()) {
@@ -328,46 +317,29 @@ fun AuthScreen(
 }
 
 /**
- * Reset a forgotten password on this phone: enter the phone / e-mail, answer the security
- * question chosen at sign-up, then choose a new password.
+ * Forgot PIN: the tailor enters their e-mail and gets a link for choosing a new PIN
+ * (the page is docs/reset.html). Without online accounts the admin resets it instead.
  */
 @Composable
-fun ForgotPasswordScreen(vm: AppViewModel, initialLogin: String, onDone: () -> Unit, onBack: () -> Unit) {
-    var login by rememberSaveable { mutableStateOf(initialLogin) }
-    var question by rememberSaveable { mutableStateOf<String?>(null) }
-    var answer by rememberSaveable { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirm by remember { mutableStateOf("") }
+fun ForgotPinScreen(vm: AppViewModel, initialEmail: String, onSent: () -> Unit, onBack: () -> Unit) {
+    var email by rememberSaveable { mutableStateOf(initialEmail) }
     var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val online = vm.backend.online
 
     AuthCard(
         title = tr("forgot.title"),
-        subtitle = if (question == null) tr("forgot.text") else tr("forgot.answer_text"),
+        subtitle = if (online) tr("forgot.text") else tr("forgot.offline"),
         body = {
-            val q = question
-            if (q == null) {
-                LoginField(login) { login = it; error = null }
-                ErrorText(error)
-                PrimaryButton(tr("forgot.next")) {
-                    question = vm.securityQuestion(login)
-                    error = if (question == null) tr("forgot.no_question") else null
-                }
-            } else {
-                Text(tr("auth.id") + ": " + login.trim(), style = MaterialTheme.typography.bodySmall, color = Brand.Muted)
-                Text(tr(q), style = MaterialTheme.typography.titleMedium, color = Brand.Aubergine)
-                OutlinedTextField(
-                    value = answer, onValueChange = { answer = it }, label = { Text(tr("auth.answer")) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), modifier = Modifier.fillMaxWidth(),
-                )
-                PasswordField(password, { password = it }, tr("forgot.new_password"), last = false)
-                PasswordField(confirm, { confirm = it }, tr("auth.confirm"))
-                ErrorText(error)
-                PrimaryButton(tr("forgot.reset")) {
-                    error = if (password != confirm) tr("auth.mismatch") else vm.resetPassword(login, answer, password)
-                    if (error == null) onDone()
-                }
-                TextButton(onClick = { question = null; error = null }, modifier = Modifier.fillMaxWidth()) {
-                    Text(tr("forgot.other_id"), color = Brand.Plum)
+            TextInput(email, { email = it; error = null }, tr("auth.email"), KeyboardType.Email)
+            ErrorText(error)
+            PrimaryButton(tr("forgot.send"), busy) {
+                busy = true
+                scope.launch {
+                    error = vm.sendPinReset(email)
+                    busy = false
+                    if (error == null) onSent()
                 }
             }
         },
@@ -377,23 +349,39 @@ fun ForgotPasswordScreen(vm: AppViewModel, initialLogin: String, onDone: () -> U
     )
 }
 
-/** Admin password (set on first use). */
+/**
+ * Admin log in. Online: an admin account made in the Firebase console (e-mail + password).
+ * On this phone only: just a password, chosen the first time.
+ */
 @Composable
 fun AdminLoginScreen(vm: AppViewModel, onLoggedIn: () -> Unit, onBack: () -> Unit) {
-    val setUp = remember { !vm.accounts.adminExists() }
+    val online = vm.backend.online
+    val setUp = remember { vm.backend.adminNeedsSetup() }
+    var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     AuthCard(
         title = tr("auth.admin"),
         subtitle = if (setUp) tr("auth.admin.setup") else tr("auth.admin.text"),
         body = {
+            if (online) TextInput(email, { email = it }, tr("auth.email"), KeyboardType.Email)
             PasswordField(password, { password = it }, if (setUp) tr("auth.admin.new_password") else tr("auth.admin.password"), last = !setUp)
             if (setUp) PasswordField(confirm, { confirm = it }, tr("auth.confirm"))
             ErrorText(error)
-            PrimaryButton(if (setUp) tr("auth.admin.set") else tr("auth.admin.login")) {
-                error = if (setUp && password != confirm) tr("auth.mismatch") else vm.adminLogIn(password)
-                if (error == null) onLoggedIn()
+            PrimaryButton(if (setUp) tr("auth.admin.set") else tr("auth.admin.login"), busy) {
+                if (setUp && password != confirm) {
+                    error = tr("auth.mismatch")
+                    return@PrimaryButton
+                }
+                busy = true
+                scope.launch {
+                    error = vm.adminLogIn(email, password)
+                    busy = false
+                    if (error == null) onLoggedIn()
+                }
             }
         },
         footer = {

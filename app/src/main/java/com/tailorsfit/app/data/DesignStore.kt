@@ -19,10 +19,12 @@ class DesignStore(context: Context) {
     data class State(val custom: List<BlouseModel>, val hidden: Set<String>)
 
     @Synchronized
-    fun load(): State {
-        if (!file.exists()) return State(emptyList(), emptySet())
+    fun load(): State = if (file.exists()) decode(file.readText()) else State(emptyList(), emptySet())
+
+    /** Reads a saved state (from the file or the server); an unreadable one counts as empty. */
+    fun decode(json: String): State {
         return try {
-            val o = JSONObject(file.readText())
+            val o = JSONObject(json)
             val arr = o.optJSONArray("custom") ?: JSONArray()
             val hidden = o.optJSONArray("hidden") ?: JSONArray()
             State(
@@ -34,12 +36,16 @@ class DesignStore(context: Context) {
         }
     }
 
-    @Synchronized
-    fun save(state: State) {
+    fun encode(state: State): String {
         val o = JSONObject()
         o.put("custom", JSONArray().apply { state.custom.forEach { put(toJson(it)) } })
         o.put("hidden", JSONArray().apply { state.hidden.forEach { put(it) } })
-        file.writeText(o.toString())
+        return o.toString()
+    }
+
+    @Synchronized
+    fun save(state: State) {
+        file.writeText(encode(state))
         apply(state)
     }
 

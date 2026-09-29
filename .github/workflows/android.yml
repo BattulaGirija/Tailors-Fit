@@ -18,6 +18,17 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Firebase config (online accounts)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+            echo "Firebase: on"
+          else
+            echo "Firebase: off (GOOGLE_SERVICES_JSON secret not set; accounts stay on the phone)"
+          fi
+
       - name: Test pattern engine and build debug APK
         run: ./gradlew :pattern-core:test :app:assembleDebug --stacktrace
 

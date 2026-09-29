@@ -4,6 +4,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Online accounts (Firebase) are switched on when app/google-services.json is present; CI writes
+// it from the GOOGLE_SERVICES_JSON secret. Without it the app keeps accounts on the phone.
+if (file("google-services.json").exists()) {
+    apply(plugin = libs.plugins.google.services.get().pluginId)
+}
+
 android {
     namespace = "com.tailorsfit.app"
     compileSdk = 35
@@ -70,6 +76,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     debugImplementation(libs.androidx.compose.ui.test.manifest)
