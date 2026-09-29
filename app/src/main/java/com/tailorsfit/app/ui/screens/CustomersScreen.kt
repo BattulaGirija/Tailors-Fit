@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,10 +39,10 @@ import java.util.Date
 @Composable
 fun CustomersScreen(vm: AppViewModel, onBack: () -> Unit, onOpen: (Customer) -> Unit) {
     var toDelete by remember { mutableStateOf<Customer?>(null) }
-    Scaffold(topBar = { AppBar("Customers", onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(tr("customers.title"), onBack) }) { padding ->
         if (vm.customers.isEmpty()) {
             Text(
-                "No saved customers yet. Enter measurements for a design and tap \"Save customer\".",
+                tr("customers.empty"),
                 modifier = Modifier.padding(padding).padding(16.dp),
             )
         }
@@ -58,12 +59,12 @@ fun CustomersScreen(vm: AppViewModel, onBack: () -> Unit, onOpen: (Customer) -> 
                             val bust = c.measurements[MeasurementField.BUST]
                             val details = listOfNotNull(
                                 c.phone.takeIf { it.isNotBlank() },
-                                if (bust.isNaN()) null else "Bust ${vm.formatCm(bust)}",
+                                if (bust.isNaN()) null else tr("customers.bust", vm.formatCm(bust)),
                                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(c.updatedAt)),
                             )
                             Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                         }
-                        IconButton(onClick = { toDelete = c }) { Icon(Icons.Filled.Delete, contentDescription = "Delete") }
+                        IconButton(onClick = { toDelete = c }) { Icon(Icons.Filled.Delete, contentDescription = tr("app.delete")) }
                     }
                 }
             }
@@ -72,10 +73,10 @@ fun CustomersScreen(vm: AppViewModel, onBack: () -> Unit, onOpen: (Customer) -> 
     toDelete?.let { c ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
-            title = { Text("Delete ${c.name}?") },
-            text = { Text("Their saved measurements will be removed from this phone.") },
-            confirmButton = { TextButton(onClick = { vm.deleteCustomer(c.id); toDelete = null }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancel") } },
+            title = { Text(tr("customers.delete", c.name)) },
+            text = { Text(tr("customers.delete.text")) },
+            confirmButton = { TextButton(onClick = { vm.deleteCustomer(c.id); toDelete = null }) { Text(tr("app.delete")) } },
+            dismissButton = { TextButton(onClick = { toDelete = null }) { Text(tr("app.cancel")) } },
         )
     }
 }

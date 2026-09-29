@@ -1,12 +1,12 @@
 package com.tailorsfit.pattern.model
 
+import com.tailorsfit.pattern.i18n.tr
+
 /** A top-level category shown on the home screen (Blouses, Kurtis ...). */
-data class GarmentCategory(
-    val id: String,
-    val name: String,
-    val description: String,
-    val available: Boolean,
-)
+class GarmentCategory(val id: String, val available: Boolean) {
+    val name: String get() = tr("category.$id")
+    val description: String get() = if (available) tr("category.$id.desc") else tr("category.soon")
+}
 
 /** Options that affect drafting, independent of the chosen design. */
 data class DraftOptions(
@@ -30,11 +30,11 @@ interface GarmentModel {
 
 object Catalog {
     val categories = listOf(
-        GarmentCategory("blouse", "Saree Blouses", "Round, boat, V, sweetheart and more", available = true),
-        GarmentCategory("kurti", "Kurtis", "Coming soon", available = false),
-        GarmentCategory("salwar", "Salwar / Pants", "Coming soon", available = false),
-        GarmentCategory("lehenga", "Lehenga / Skirts", "Coming soon", available = false),
-        GarmentCategory("petticoat", "Petticoats", "Coming soon", available = false),
+        GarmentCategory("blouse", available = true),
+        GarmentCategory("kurti", available = false),
+        GarmentCategory("salwar", available = false),
+        GarmentCategory("lehenga", available = false),
+        GarmentCategory("petticoat", available = false),
     )
 
     /** Designs that ship with the app. */

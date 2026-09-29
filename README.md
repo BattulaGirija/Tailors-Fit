@@ -28,6 +28,21 @@ fronts (two panels joined by a curved seam through the bust point instead of dar
      **Calibrate** once per projector: measure the projected square with a tape and enter the
      numbers. The scale is saved.
 
+## Languages
+
+The app is in **English, Hindi (हिन्दी) and Telugu (తెలుగు)**. You can switch language on
+the login screen or under **Language** in the side menu. On first launch it follows the
+phone's language. Everything is translated: screens, measurement names and how-to-measure
+help, design names, warnings, and the labels printed on patterns and shown on the projector.
+
+- All texts live in `pattern-core/.../i18n/` (`StringsEn.kt`, `StringsHi.kt`,
+  `StringsTe.kt`). Tests check that every language has every text with the same
+  placeholders.
+- To add a language (e.g. Tamil or Kannada), add a `Language` entry and a table with the
+  same keys.
+- Tailoring terms that tailors usually say in English (blouse, armhole, apex, dart …) are
+  written as loanwords. The translations should be reviewed by native speakers.
+
 ## Accounts and admin
 
 - **Tailors** sign up with a name, an optional shop name, a phone number or e-mail, and a
@@ -114,4 +129,4 @@ GitHub Actions runs both on every push and uploads the debug APK as a build arti
 - Katori blouses, back princess seams, collars, padded cups.
 - Keystone correction for projectors mounted at an angle.
 - Save the tailor's own ease and allowance preferences.
-- Telugu / Hindi / Tamil translations.
+- More languages (Tamil, Kannada, Marathi …).

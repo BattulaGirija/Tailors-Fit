@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.components
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,13 +30,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.tailorsfit.app.ui.theme.Brand
 
-enum class DrawerDestination(val label: String, val icon: ImageVector) {
-    HOME("Home", Icons.Filled.Home),
-    DESIGNS("Blouse designs", Icons.Filled.Star),
-    CUSTOMERS("Customers", Icons.Filled.Person),
-    GUIDE("How to measure", Icons.Filled.Edit),
-    ABOUT("About", Icons.Filled.Info),
-    LOG_OUT("Log out", Icons.AutoMirrored.Filled.ExitToApp),
+enum class DrawerDestination(private val key: String, val icon: ImageVector) {
+    HOME("drawer.home", Icons.Filled.Home),
+    DESIGNS("drawer.designs", Icons.Filled.Star),
+    CUSTOMERS("drawer.customers", Icons.Filled.Person),
+    GUIDE("drawer.guide", Icons.Filled.Edit),
+    LANGUAGE("app.language", Icons.Filled.Settings),
+    ABOUT("drawer.about", Icons.Filled.Info),
+    LOG_OUT("drawer.logout", Icons.AutoMirrored.Filled.ExitToApp),
+    ;
+
+    val label: String get() = tr(key)
 }
 
 @Composable
@@ -52,9 +58,9 @@ fun AppDrawerSheet(
                 .statusBarsPadding()
                 .padding(24.dp),
         ) {
-            Text("TAILORS FIT", style = MaterialTheme.typography.labelSmall, color = Brand.GoldLight)
+            Text(tr("app.brand"), style = MaterialTheme.typography.labelSmall, color = Brand.GoldLight)
             Spacer(Modifier.height(8.dp))
-            Text(userName ?: "Cut to measure", style = MaterialTheme.typography.headlineMedium, color = Brand.Ivory)
+            Text(userName ?: tr("drawer.tagline"), style = MaterialTheme.typography.headlineMedium, color = Brand.Ivory)
             if (!shopName.isNullOrBlank()) Text(shopName, style = MaterialTheme.typography.bodyMedium, color = Brand.GoldLight)
             Spacer(Modifier.height(10.dp))
             OrnamentDivider(color = Brand.Gold, width = 88)
@@ -78,7 +84,7 @@ fun AppDrawerSheet(
         }
         Spacer(Modifier.weight(1f))
         Text(
-            "Version 0.1 · Made for tailors",
+            tr("drawer.version"),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(24.dp).navigationBarsPadding(),

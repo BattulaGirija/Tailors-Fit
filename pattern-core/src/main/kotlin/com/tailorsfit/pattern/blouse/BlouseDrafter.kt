@@ -6,6 +6,7 @@ import com.tailorsfit.pattern.geom.PathD
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.geom.Seg
 import com.tailorsfit.pattern.geom.pointInPolygon
+import com.tailorsfit.pattern.i18n.tr
 import com.tailorsfit.pattern.model.CutInstruction
 import com.tailorsfit.pattern.model.Dart
 import com.tailorsfit.pattern.model.DraftOptions
@@ -61,19 +62,19 @@ object BlouseDrafter {
         val frontArm = fronts.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
         val backArm = back.lengthOf(EdgeKind.ARMHOLE)
         val summary = mutableListOf(
-            "Finished bust" to cm(bodice.frontBust * 2 + bodice.backBust * 2),
-            "Finished waist" to cm((bodice.frontWaist + bodice.backWaist) * 2),
-            "Armhole drafted (front + back)" to cm(frontArm + backArm),
-            "Armhole measurement" to cm(m[F.ARMHOLE]),
+            tr("summary.bust") to cm(bodice.frontBust * 2 + bodice.backBust * 2),
+            tr("summary.waist") to cm((bodice.frontWaist + bodice.backWaist) * 2),
+            tr("summary.armhole_drafted") to cm(frontArm + backArm),
+            tr("summary.armhole_measured") to cm(m[F.ARMHOLE]),
         )
 
         if (model.sleeve != SleeveStyle.SLEEVELESS) {
             val sleeve = draftSleeve(model, m, frontArm, backArm, warnings)
             pieces += sleeve
-            summary += "Sleeve cap height" to cm(sleeve.points.getValue("capHeight").y)
-            summary += "Sleeve cap length" to cm(sleeve.lengthOf(EdgeKind.SLEEVE_CAP))
+            summary += tr("summary.cap_height") to cm(sleeve.points.getValue("capHeight").y)
+            summary += tr("summary.cap_length") to cm(sleeve.lengthOf(EdgeKind.SLEEVE_CAP))
         } else {
-            warnings += "Sleeveless: finish the armholes with bias facing (not included in the allowance)."
+            warnings += tr("warn.sleeveless")
         }
 
         val title = buildString {
@@ -109,14 +110,14 @@ object BlouseDrafter {
                 val neckBase = (m[F.SHOULDER] * 0.2).coerceIn(6.0, 8.5)
                 val widen = max(model.front.widen, model.back.widen)
                 val neckX = min(neckBase + widen, shoulderX - 3.0)
-                if (neckBase + widen > shoulderX - 3.0) warnings += "Neck is very wide; shoulder strap kept at 3 cm."
+                if (neckBase + widen > shoulderX - 3.0) warnings += tr("warn.neck_wide")
 
                 val frontLength = m[F.FRONT_LENGTH]
                 val backLength = m[F.BACK_LENGTH]
                 var armDepth = m[F.ARMHOLE] / 2
                 val maxArm = min(frontLength, backLength) - 6.0
                 if (armDepth > maxArm) {
-                    warnings += "Armhole is deep compared to the blouse length; armhole depth limited to ${cm(maxArm)}."
+                    warnings += tr("warn.armhole_deep", cm(maxArm))
                     armDepth = maxArm
                 }
                 if (armDepth < SHOULDER_SLOPE + 8) armDepth = SHOULDER_SLOPE + 8
@@ -126,13 +127,13 @@ object BlouseDrafter {
                 val apexLen = m[F.APEX_LENGTH]
                 var apexY = if (apexLen > kotlin.math.abs(dx)) sqrt(apexLen * apexLen - dx * dx) else apexLen
                 if (apexY > frontLength - 4) {
-                    warnings += "Bust point is very close to the blouse bottom; check apex length and front length."
+                    warnings += tr("warn.apex_low")
                     apexY = frontLength - 4
                 }
                 if (frontLength < backLength) {
-                    warnings += "Front length is shorter than back length; usually it is 2–5 cm longer. Please re-check."
+                    warnings += tr("warn.front_short")
                 }
-                if (m[F.WAIST] > m[F.BUST]) warnings += "Waist is larger than bust; the blouse will flare at the bottom."
+                if (m[F.WAIST] > m[F.BUST]) warnings += tr("warn.waist_big")
 
                 return BodiceFrame(
                     shoulderX = shoulderX,
@@ -192,11 +193,11 @@ object BlouseDrafter {
         var neckDepth = depthMeasure * spec.depthFactor
         val minDepth = neck.y + 1.5
         val maxDepth = if (isFront) f.apexY - 2.0 else centreLength - 6.0
-        val who = if (isFront) "Front" else "Back"
+        val who = if (isFront) tr("piece.front") else tr("piece.back")
         if (neckDepth < minDepth) {
             neckDepth = minDepth
         } else if (neckDepth > maxDepth) {
-            warnings += "$who neck depth ${cm(neckDepth)} is too deep; limited to ${cm(maxDepth)}."
+            warnings += tr("warn.neck_deep", who, cm(neckDepth), cm(maxDepth))
             neckDepth = maxDepth
         }
 
@@ -253,7 +254,7 @@ object BlouseDrafter {
             val frontSide = sideBottom.dist(underarm)
             val intake = (frontSide - backSide).coerceIn(0.0, 6.0)
             if (frontSide - backSide > 6.0) {
-                warnings += "Front is much longer than back; side dart limited to 6 cm, ease in the rest."
+                warnings += tr("warn.side_dart")
             }
             if (intake > 0.3) {
                 val dir = (underarm - sideBottom).normalized()
@@ -283,12 +284,12 @@ object BlouseDrafter {
         // Notch near the bottom of the side seam to line up front and back.
         PathD.line(sideBottom, underarm).pointAtDistance(3.0).let { (p, t) -> notches += Notch(p, t) }
 
-        val name = if (isFront) "Front" else "Back"
+        val name = if (isFront) tr("piece.front") else tr("piece.back")
         val cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true)
         val notes = buildList {
-            add(if (isOpening) "${model.opening.label}: ${cm(2.5)} overlap for hooks included" else "Place centre on the fold")
-            add("Neck: ${spec.shape.label}, depth ${cm(neckDepth)}")
-            if (darts.isNotEmpty()) add("Darts: " + darts.joinToString(" + ") { cm(it.intake) })
+            add(if (isOpening) tr("note.opening", model.opening.label, cm(2.5)) else tr("note.fold"))
+            add(tr("note.neck", spec.shape.label, cm(neckDepth)))
+            if (darts.isNotEmpty()) add(tr("note.darts", darts.joinToString(" + ") { cm(it.intake) }))
         }
 
         return listOf(withOutwardNotches(Piece(
@@ -350,7 +351,7 @@ object BlouseDrafter {
         val lowerR = down(hemR)
 
         val excess = sideExcess.coerceIn(0.0, 6.0)
-        if (sideExcess > 6.0) warnings += "Front is much longer than back; ease the extra length into the princess seam."
+        if (sideExcess > 6.0) warnings += tr("warn.princess_long")
         val sideDir = (underarm - sideBottom).normalized()
         val sideBottomR = sideBottom + sideDir * excess
 
@@ -386,7 +387,7 @@ object BlouseDrafter {
         val centre = withOutwardNotches(
             Piece(
                 id = "front_centre",
-                name = "Front centre",
+                name = tr("piece.front_centre"),
                 cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true),
                 edges = centreEdges,
                 markings = cross + Marking(Pt(centreX, centreTop.y + 3.0), Pt(centreX, hemCentre.y - 3.0), Marking.Kind.GRAIN),
@@ -394,9 +395,9 @@ object BlouseDrafter {
                 // Clear of the "place on fold" bracket that runs along the centre line.
                 labelAt = Pt(apex.x * 0.5 + 2.0, (centreTop.y + hemCentre.y) / 2 + 7.0),
                 notes = listOf(
-                    if (isOpening) "${model.opening.label}: ${cm(2.5)} overlap" else "Place centre on the fold",
-                    "Neck: ${spec.shape.label}, depth ${cm(neckDepth)}",
-                    "Princess seam: join to side panel",
+                    if (isOpening) tr("note.opening_short", model.opening.label, cm(2.5)) else tr("note.fold"),
+                    tr("note.neck", spec.shape.label, cm(neckDepth)),
+                    tr("note.princess"),
                 ),
             ),
             seamNotches,
@@ -404,13 +405,13 @@ object BlouseDrafter {
         val side = withOutwardNotches(
             Piece(
                 id = "front_side",
-                name = "Front side",
+                name = tr("piece.front_side"),
                 cut = CutInstruction(2, onFold = false),
                 edges = sideEdges,
                 markings = listOf(Marking(Pt(sideX, f.armDepth + 2.0), Pt(sideX, hemY(sideX) - 3.0), Marking.Kind.GRAIN)),
                 points = mapOf("apex" to apex, "underarm" to underarm, "princessTop" to a),
                 labelAt = Pt(sideX, f.armDepth + 5.0),
-                notes = listOf("Waist shaping ${cm(dartIntake)} in the seam"),
+                notes = listOf(tr("note.waist_shaping", cm(dartIntake))),
             ),
             sideNotches,
         )
@@ -506,10 +507,10 @@ object BlouseDrafter {
         val h: Double
         if (capHalf(w, lo).length() >= target) {
             h = lo
-            warnings += "Arm round is large for this armhole; the sleeve cap is very flat. Check armhole and arm round."
+            warnings += tr("warn.arm_large")
         } else if (capHalf(w, hi).length() <= target) {
             h = hi
-            warnings += "Armhole is large for this arm round; the sleeve cap is very tall."
+            warnings += tr("warn.arm_small")
         } else {
             repeat(60) {
                 val mid = (lo + hi) / 2
@@ -523,14 +524,14 @@ object BlouseDrafter {
             else -> m[F.SLEEVE_LENGTH]
         }
         if (length < h + 2.0) {
-            warnings += "Sleeve length is shorter than the cap height; using ${cm(h + 2.0)}."
+            warnings += tr("warn.sleeve_short", cm(h + 2.0))
             length = h + 2.0
         }
         if (model.sleeve == SleeveStyle.ELBOW && length < h + 12) {
-            warnings += "Elbow sleeve looks short (${cm(length)}); measure from shoulder tip to elbow."
+            warnings += tr("warn.elbow_short", cm(length))
         }
         if (model.sleeve == SleeveStyle.THREE_QUARTER && length < h + 20) {
-            warnings += "3/4 sleeve looks short (${cm(length)}); measure from shoulder tip to below the elbow."
+            warnings += tr("warn.threeq_short", cm(length))
         }
         var hemHalf = when (model.sleeve) {
             SleeveStyle.CAP -> w - 0.5
@@ -567,15 +568,15 @@ object BlouseDrafter {
 
         return withOutwardNotches(Piece(
             id = "sleeve",
-            name = "Sleeve",
+            name = tr("piece.sleeve"),
             cut = CutInstruction(2, onFold = false),
             edges = edges,
             markings = markings,
             points = mapOf("capHeight" to Pt(0.0, h), "underarmRight" to underR, "underarmLeft" to underL),
             labelAt = Pt(-w * 0.12, h * 0.62 + min(4.0, (length - h) * 0.3)),
             notes = listOf(
-                "${model.sleeve.label}: length ${cm(length)}",
-                "Cap height ${cm(h)}; front = single notch",
+                tr("note.sleeve_length", model.sleeve.label, cm(length)),
+                tr("note.cap", cm(h)),
             ),
         ), notches)
     }

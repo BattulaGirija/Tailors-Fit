@@ -1,5 +1,6 @@
 package com.tailorsfit.app.export
 
+import com.tailorsfit.pattern.i18n.tr
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -31,9 +32,9 @@ object Sharing {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         try {
-            context.startActivity(Intent.createChooser(send, "Share pattern").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            context.startActivity(Intent.createChooser(send, tr("share.title")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(context, "No app available to share with", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, tr("share.none"), Toast.LENGTH_LONG).show()
         }
     }
 

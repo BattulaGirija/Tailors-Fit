@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.components
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,24 +55,30 @@ import com.tailorsfit.pattern.render.GarmentView
 import com.tailorsfit.pattern.render.Illustration
 import kotlin.math.min
 
-data class ClothColour(val name: String, val color: Color)
+class ClothColour(private val key: String, val color: Color) {
+    val name: String get() = tr("colour.$key")
+}
 
 val CLOTH_COLOURS = listOf(
-    ClothColour("Maroon", Color(0xFF7B1E2B)),
-    ClothColour("Ruby", Color(0xFFB0203A)),
-    ClothColour("Rani pink", Color(0xFFD1307A)),
-    ClothColour("Peach", Color(0xFFF2A07B)),
-    ClothColour("Mustard", Color(0xFFD9A21B)),
-    ClothColour("Parrot green", Color(0xFF5DAA2E)),
-    ClothColour("Emerald", Color(0xFF1E7A55)),
-    ClothColour("Peacock", Color(0xFF0E6E7E)),
-    ClothColour("Royal blue", Color(0xFF25459A)),
-    ClothColour("Lavender", Color(0xFF9C86C9)),
-    ClothColour("Black", Color(0xFF1C1B1F)),
-    ClothColour("Ivory", Color(0xFFEFE6D2)),
+    ClothColour("maroon", Color(0xFF7B1E2B)),
+    ClothColour("ruby", Color(0xFFB0203A)),
+    ClothColour("rani", Color(0xFFD1307A)),
+    ClothColour("peach", Color(0xFFF2A07B)),
+    ClothColour("mustard", Color(0xFFD9A21B)),
+    ClothColour("parrot", Color(0xFF5DAA2E)),
+    ClothColour("emerald", Color(0xFF1E7A55)),
+    ClothColour("peacock", Color(0xFF0E6E7E)),
+    ClothColour("royal", Color(0xFF25459A)),
+    ClothColour("lavender", Color(0xFF9C86C9)),
+    ClothColour("black", Color(0xFF1C1B1F)),
+    ClothColour("ivory", Color(0xFFEFE6D2)),
 )
 
-enum class ClothFinish(val label: String) { PLAIN("Plain"), SILK("Silk sheen"), BUTTIS("Gold buttis"), STRIPES("Stripes") }
+enum class ClothFinish {
+    PLAIN, SILK, BUTTIS, STRIPES;
+
+    val label: String get() = tr("finish.${name.lowercase()}")
+}
 
 /**
  * Sketch of the finished blouse (front and back), drawn from the design's real pattern and the
@@ -99,7 +106,7 @@ fun GarmentPreviewCard(model: GarmentModel, measurements: Measurements, modifier
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
-                Text("Preview", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                Text(tr("preview.title"), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
                 Text("${colour.name} · ${finish.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Box(
@@ -136,7 +143,7 @@ fun GarmentPreviewCard(model: GarmentModel, measurements: Measurements, modifier
             }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ClothFinish.entries.forEach { f -> FilterChip(selected = f == finish, onClick = { finish = f }, label = { Text(f.label) }) }
-                FilterChip(selected = border, onClick = { border = !border }, label = { Text("Gold border") })
+                FilterChip(selected = border, onClick = { border = !border }, label = { Text(tr("preview.border")) })
             }
         }
     }

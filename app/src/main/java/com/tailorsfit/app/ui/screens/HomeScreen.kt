@@ -1,5 +1,7 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.I18n
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,17 +83,17 @@ fun HomeScreen(
     ) {
         item { Hero(onMenu, onStart = { onCategory("blouse") }, onCustomers) }
 
-        item { SectionHeader("How it works") }
+        item { SectionHeader(tr("home.how")) }
         item { Steps() }
 
-        item { SectionHeader("Collections", "Every design is drafted from your customer's own measurements.") }
+        item { SectionHeader(tr("home.collections"), tr("home.collections.text")) }
         item {
             LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 items(Catalog.categories, key = { it.id }) { CollectionCard(it, onCategory) }
             }
         }
 
-        item { SectionHeader("Featured designs", action = "See all", onAction = { onCategory("blouse") }) }
+        item { SectionHeader(tr("home.featured"), action = tr("home.see_all"), onAction = { onCategory("blouse") }) }
         item {
             LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 items(FEATURED.mapNotNull { id -> Catalog.models.firstOrNull { it.id == id } }, key = { it.id }) { model ->
@@ -120,7 +122,7 @@ fun HomeScreen(
         }
 
         if (vm.customers.isNotEmpty()) {
-            item { SectionHeader("Recent customers", action = "All", onAction = onCustomers) }
+            item { SectionHeader(tr("home.recent"), action = tr("home.all"), onAction = onCustomers) }
             items(vm.customers.take(3), key = { it.id }) { c ->
                 Row(
                     Modifier
@@ -152,7 +154,7 @@ fun HomeScreen(
             ) {
                 OrnamentDivider()
                 Spacer(Modifier.height(10.dp))
-                Text("Measure twice, cut once.", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(tr("home.motto"), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -185,22 +187,22 @@ private fun Hero(onMenu: () -> Unit, onStart: () -> Unit, onCustomers: () -> Uni
         }
         Column(Modifier.statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onMenu) { Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = Brand.Ivory) }
+                IconButton(onClick = onMenu) { Icon(Icons.Filled.Menu, contentDescription = tr("app.menu"), tint = Brand.Ivory) }
                 Text(
-                    "TAILORS FIT",
+                    tr("app.brand"),
                     style = MaterialTheme.typography.labelSmall,
                     color = Brand.GoldLight,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = onCustomers) { Icon(Icons.Filled.Person, contentDescription = "Customers", tint = Brand.Ivory) }
+                IconButton(onClick = onCustomers) { Icon(Icons.Filled.Person, contentDescription = tr("home.customers"), tint = Brand.Ivory) }
             }
             Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 20.dp)) {
-                Text("Patterns,\ncut to measure", style = MaterialTheme.typography.displaySmall, color = Brand.Ivory)
+                Text(tr("home.hero_title"), style = MaterialTheme.typography.displaySmall, color = Brand.Ivory)
                 Spacer(Modifier.height(12.dp))
                 OrnamentDivider(color = Brand.Gold, width = 96)
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Pick a design, enter measurements, then print the pieces or project them straight onto the cloth.",
+                    tr("home.hero_text"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Brand.Ivory.copy(alpha = 0.82f),
                     modifier = Modifier.fillMaxWidth(0.82f),
@@ -210,12 +212,12 @@ private fun Hero(onMenu: () -> Unit, onStart: () -> Unit, onCustomers: () -> Uni
                     Button(
                         onClick = onStart,
                         colors = ButtonDefaults.buttonColors(containerColor = Brand.Gold, contentColor = Brand.AubergineDeep),
-                    ) { Text("Start a pattern") }
+                    ) { Text(tr("home.start")) }
                     OutlinedButton(
                         onClick = onCustomers,
                         border = BorderStroke(1.dp, Brand.Ivory.copy(alpha = 0.6f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Brand.Ivory),
-                    ) { Text("Customers") }
+                    ) { Text(tr("home.customers")) }
                 }
             }
             TapeMeasure(Modifier.padding(bottom = 0.dp).alpha(0.7f), color = Brand.Gold)
@@ -226,9 +228,9 @@ private fun Hero(onMenu: () -> Unit, onStart: () -> Unit, onCustomers: () -> Uni
 @Composable
 private fun Steps() {
     val steps = listOf(
-        "Choose a design" to "Round, boat, sweetheart, princess cut and more.",
-        "Enter measurements" to "In inches or cm — saved for each customer.",
-        "Print or project" to "True-size pages, or lines projected on the cloth.",
+        tr("home.step1") to tr("home.step1.text"),
+        tr("home.step2") to tr("home.step2.text"),
+        tr("home.step3") to tr("home.step3.text"),
     )
     Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         steps.forEachIndexed { i, (title, text) ->
@@ -276,7 +278,7 @@ private fun CollectionCard(cat: GarmentCategory, onCategory: (String) -> Unit) {
                 )
             }
             if (!cat.available) {
-                Pill("Coming soon", Brand.Gold.copy(alpha = 0.18f), Color(0xFF7A5A1C), Modifier.align(Alignment.TopEnd).padding(10.dp))
+                Pill(tr("category.soon"), Brand.Gold.copy(alpha = 0.18f), Color(0xFF7A5A1C), Modifier.align(Alignment.TopEnd).padding(10.dp))
             }
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
@@ -286,7 +288,7 @@ private fun CollectionCard(cat: GarmentCategory, onCategory: (String) -> Unit) {
                 color = if (cat.available) Brand.Ivory else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                if (cat.available) "${models.size} designs" else cat.description,
+                if (cat.available) I18n.plural("count.design", models.size) else cat.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (cat.available) Brand.GoldLight else MaterialTheme.colorScheme.onSurfaceVariant,
             )

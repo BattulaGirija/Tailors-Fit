@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,13 +81,13 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
             CustomerCard(vm)
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Units", style = MaterialTheme.typography.titleSmall)
+                Text(tr("measure.units"), style = MaterialTheme.typography.titleSmall)
                 LengthUnit.entries.forEach { u ->
-                    FilterChip(selected = vm.unit == u, onClick = { vm.changeUnit(u) }, label = { Text(if (u == LengthUnit.CM) "cm" else "inch") })
+                    FilterChip(selected = vm.unit == u, onClick = { vm.changeUnit(u) }, label = { Text(if (u == LengthUnit.CM) tr("measure.cm") else tr("measure.inch")) })
                 }
             }
 
-            Text("Start from a standard size", style = MaterialTheme.typography.titleSmall)
+            Text(tr("measure.start_size"), style = MaterialTheme.typography.titleSmall)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SizePreset.entries.forEach { p ->
                     val selected = vm.selectedPreset == p
@@ -110,16 +111,16 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
             ) {
                 Text(
                     when {
-                        preset != null -> "Size ${preset.label} selected — change any measurement below to fit your customer."
-                        vm.customerId != null -> "Using ${vm.customerName}'s saved measurements."
-                        else -> "Custom measurements."
+                        preset != null -> tr("measure.size_selected", preset.label)
+                        vm.customerId != null -> tr("measure.using_customer", vm.customerName)
+                        else -> tr("measure.custom")
                     },
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 )
             }
 
-            Text("Measurements (${vm.unit.label})", style = MaterialTheme.typography.titleMedium)
+            Text(tr("measure.title", vm.unit.label), style = MaterialTheme.typography.titleMedium)
             model.requiredMeasurements.forEach { f ->
                 OutlinedTextField(
                     value = vm.inputs[f] ?: "",
@@ -140,17 +141,17 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = {
                     val err = vm.saveCustomer()
-                    scope.launch { snackbar.showSnackbar(err ?: "Saved ${vm.customerName}") }
-                }) { Text("Save customer") }
+                    scope.launch { snackbar.showSnackbar(err ?: tr("measure.saved", vm.customerName)) }
+                }) { Text(tr("measure.save")) }
                 Button(onClick = {
                     val found = vm.currentMeasurements().validate(model.requiredMeasurements)
                     errors = found
                     if (found.isEmpty()) {
                         onGenerate()
                     } else {
-                        scope.launch { snackbar.showSnackbar("Please check ${found.size} measurement(s)") }
+                        scope.launch { snackbar.showSnackbar(tr("measure.check", found.size)) }
                     }
-                }) { Text("Generate pattern") }
+                }) { Text(tr("measure.generate")) }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -163,14 +164,14 @@ private fun CustomerCard(vm: AppViewModel) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Customer", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(tr("measure.customer"), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Box {
                     OutlinedButton(onClick = { menu = true }, enabled = vm.customers.isNotEmpty() || vm.customerId != null) {
-                        Text("Load saved")
+                        Text(tr("measure.load"))
                         Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
                     }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("New customer") }, onClick = { vm.startNewCustomer(); menu = false })
+                        DropdownMenuItem(text = { Text(tr("measure.new_customer")) }, onClick = { vm.startNewCustomer(); menu = false })
                         vm.customers.forEach { c ->
                             DropdownMenuItem(
                                 text = { Text(if (c.phone.isBlank()) c.name else "${c.name} · ${c.phone}") },
@@ -183,14 +184,14 @@ private fun CustomerCard(vm: AppViewModel) {
             OutlinedTextField(
                 value = vm.customerName,
                 onValueChange = { vm.customerName = it },
-                label = { Text("Name") },
+                label = { Text(tr("measure.name")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = vm.customerPhone,
                 onValueChange = { vm.customerPhone = it },
-                label = { Text("Phone (optional)") },
+                label = { Text(tr("measure.phone")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),

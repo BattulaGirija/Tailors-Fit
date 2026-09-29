@@ -1,18 +1,18 @@
 package com.tailorsfit.pattern.blouse
 
+import com.tailorsfit.pattern.i18n.I18n
+import com.tailorsfit.pattern.i18n.tr
+
 import com.tailorsfit.pattern.model.DraftOptions
 import com.tailorsfit.pattern.model.GarmentModel
 import com.tailorsfit.pattern.model.MeasurementField
 import com.tailorsfit.pattern.model.Measurements
 import com.tailorsfit.pattern.model.Pattern
 
-enum class NeckShape(val label: String) {
-    ROUND("Round"),
-    U("U"),
-    V("V"),
-    SQUARE("Square"),
-    BOAT("Boat"),
-    SWEETHEART("Sweetheart"),
+enum class NeckShape {
+    ROUND, U, V, SQUARE, BOAT, SWEETHEART;
+
+    val label: String get() = tr("neck.${name.lowercase()}")
 }
 
 /**
@@ -21,21 +21,24 @@ enum class NeckShape(val label: String) {
  */
 data class NeckSpec(val shape: NeckShape, val widen: Double = 0.0, val depthFactor: Double = 1.0)
 
-enum class SleeveStyle(val label: String) {
-    SLEEVELESS("Sleeveless"),
-    CAP("Cap sleeve"),
-    SHORT("Short sleeve"),
-    ELBOW("Elbow sleeve"),
-    THREE_QUARTER("3/4 sleeve"),
+enum class SleeveStyle {
+    SLEEVELESS, CAP, SHORT, ELBOW, THREE_QUARTER;
+
+    val label: String get() = tr("sleeve.${name.lowercase()}")
 }
 
 /** Where the blouse opens (hooks / zip). The other centre is cut on the fold. */
-enum class Opening(val label: String) { FRONT("Front opening"), BACK("Back opening") }
+enum class Opening {
+    FRONT, BACK;
+
+    val label: String get() = tr("opening.${name.lowercase()}")
+}
 
 data class BlouseModel(
     override val id: String,
-    override val name: String,
-    override val description: String,
+    /** Name as typed (used for admin-made designs; built-in designs are translated). */
+    val baseName: String,
+    val baseDescription: String,
     val front: NeckSpec,
     val back: NeckSpec,
     val sleeve: SleeveStyle,
@@ -44,11 +47,13 @@ data class BlouseModel(
     val princess: Boolean = false,
 ) : GarmentModel {
     override val categoryId = "blouse"
+    override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
+    override val description: String get() = if (I18n.has("model.$id.desc")) tr("model.$id.desc") else baseDescription
     override val tags: List<String>
         get() = listOfNotNull(
-            "Princess cut".takeIf { princess },
-            front.shape.label + " front",
-            back.shape.label + " back",
+            tr("tag.princess").takeIf { princess },
+            tr("tag.front", front.shape.label),
+            tr("tag.back", back.shape.label),
             sleeve.label,
             opening.label,
         )

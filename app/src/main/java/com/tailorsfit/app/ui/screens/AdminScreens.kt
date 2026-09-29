@@ -1,5 +1,7 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.I18n
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -74,7 +76,7 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.UUID
 
-private fun count(n: Int, word: String) = "$n $word" + if (n == 1) "" else "s"
+private fun count(n: Int, word: String) = I18n.plural("count.$word", n)
 
 private fun date(ms: Long) = if (ms <= 0) "—" else DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(ms))
 
@@ -95,9 +97,9 @@ fun AdminHomeScreen(
 
     Scaffold(
         topBar = {
-            AppBar("Admin") {
+            AppBar(tr("admin.title")) {
                 IconButton(onClick = { vm.adminLogOut(); onLogOut() }) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Log out")
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = tr("admin.logout"))
                 }
             }
         },
@@ -106,7 +108,7 @@ fun AdminHomeScreen(
                 ExtendedFloatingActionButton(
                     onClick = onNewDesign,
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    text = { Text("New design") },
+                    text = { Text(tr("admin.new_design")) },
                     containerColor = Brand.Gold,
                     contentColor = Brand.AubergineDeep,
                 )
@@ -115,18 +117,18 @@ fun AdminHomeScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Stat("Tailors", tailors.size.toString(), Modifier.weight(1f))
-                Stat("Patterns made", tailors.sumOf { it.patternsGenerated }.toString(), Modifier.weight(1f))
-                Stat("Designs", "${designs.size - hidden.size}/${designs.size}", Modifier.weight(1f))
+                Stat(tr("admin.tailors"), tailors.size.toString(), Modifier.weight(1f))
+                Stat(tr("admin.patterns"), tailors.sumOf { it.patternsGenerated }.toString(), Modifier.weight(1f))
+                Stat(tr("admin.designs"), "${designs.size - hidden.size}/${designs.size}", Modifier.weight(1f))
             }
             TabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
-                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Tailors") })
-                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Designs") })
+                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(tr("admin.tailors")) })
+                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(tr("admin.designs")) })
             }
             if (tab == 0) {
                 if (tailors.isEmpty()) {
                     Text(
-                        "No tailor accounts on this device yet.",
+                        tr("admin.no_tailors"),
                         modifier = Modifier.padding(24.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -183,7 +185,7 @@ private fun TailorRow(t: Account, customers: Int, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "${count(customers, "customer")} · ${count(t.patternsGenerated, "pattern")} · active ${date(t.lastActiveAt)}",
+                    "${count(customers, "customer")} · ${count(t.patternsGenerated, "pattern")} · ${tr("admin.active", date(t.lastActiveAt))}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Brand.Plum,
                 )
@@ -210,12 +212,12 @@ private fun DesignRow(model: GarmentModel, custom: Boolean, visible: Boolean, on
                     Text(model.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     if (custom) {
                         Spacer(Modifier.width(6.dp))
-                        Pill("Custom", Brand.Gold.copy(alpha = 0.18f), Brand.Plum)
+                        Pill(tr("admin.custom"), Brand.Gold.copy(alpha = 0.18f), Brand.Plum)
                     }
                 }
-                Text(if (visible) "Shown to tailors" else "Hidden", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (visible) tr("admin.shown") else tr("admin.hidden"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (custom) IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = "Edit") }
+            if (custom) IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = tr("app.edit")) }
             Switch(checked = visible, onCheckedChange = onVisible)
         }
     }
@@ -226,9 +228,9 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
     val tailor = remember(vm.adminVersion) { vm.accounts.find(tailorId) }
     val customers = remember(tailorId) { vm.tailorCustomers(tailorId) }
     var confirmDelete by remember { mutableStateOf(false) }
-    Scaffold(topBar = { AppBar(tailor?.name ?: "Tailor", onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(tailor?.name ?: tr("admin.tailor"), onBack) }) { padding ->
         if (tailor == null) {
-            Text("This account no longer exists.", Modifier.padding(padding).padding(24.dp))
+            Text(tr("admin.gone"), Modifier.padding(padding).padding(24.dp))
             return@Scaffold
         }
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -237,21 +239,21 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(tailor.name, style = MaterialTheme.typography.headlineSmall, color = Brand.Ivory)
                         if (tailor.shopName.isNotBlank()) Text(tailor.shopName, color = Brand.GoldLight)
-                        Text("Login: ${tailor.login}", color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
-                        Text("Joined ${date(tailor.createdAt)} · last active ${date(tailor.lastActiveAt)}", color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
-                        Text("${count(customers.size, "customer")} · ${count(tailor.patternsGenerated, "pattern")} generated", color = Brand.GoldLight, style = MaterialTheme.typography.bodySmall)
+                        Text(tr("admin.login_id", tailor.login), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
+                        Text(tr("admin.joined", date(tailor.createdAt), date(tailor.lastActiveAt)), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
+                        Text("${count(customers.size, "customer")} · ${count(tailor.patternsGenerated, "pattern")} ${tr("admin.generated")}", color = Brand.GoldLight, style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                Text("Customers", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                Text(tr("admin.customers"), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             }
-            if (customers.isEmpty()) item { Text("No customers saved yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            if (customers.isEmpty()) item { Text(tr("admin.no_customers"), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             items(customers, key = { it.id }) { c ->
                 Surface(color = MaterialTheme.colorScheme.surfaceContainerLowest, shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Brand.Line), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp)) {
                         Text(c.name, style = MaterialTheme.typography.titleSmall)
                         Text(
-                            listOfNotNull(c.phone.takeIf { it.isNotBlank() }, count(c.measurements.asMap().size, "measurement"), "updated ${date(c.updatedAt)}").joinToString(" · "),
+                            listOfNotNull(c.phone.takeIf { it.isNotBlank() }, count(c.measurements.asMap().size, "measurement"), tr("admin.updated", date(c.updatedAt))).joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -262,7 +264,7 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
                 OutlinedButton(onClick = { confirmDelete = true }) {
                     Icon(Icons.Filled.Delete, contentDescription = null)
-                    Text("  Delete this tailor account")
+                    Text("  " + tr("admin.delete_tailor"))
                 }
             }
         }
@@ -270,10 +272,10 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${tailor?.name}?") },
-            text = { Text("They will no longer be able to log in. Their saved customers stay on this phone.") },
-            confirmButton = { TextButton(onClick = { vm.deleteTailor(tailorId); confirmDelete = false; onBack() }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            title = { Text(tr("customers.delete", tailor?.name)) },
+            text = { Text(tr("admin.delete_tailor.text")) },
+            confirmButton = { TextButton(onClick = { vm.deleteTailor(tailorId); confirmDelete = false; onBack() }) { Text(tr("app.delete")) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("app.cancel")) } },
         )
     }
 }
@@ -282,8 +284,8 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
 @Composable
 fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) {
     val existing = remember(designId) { Catalog.custom.firstOrNull { it.id == designId } as? BlouseModel }
-    var name by rememberSaveable { mutableStateOf(existing?.name ?: "") }
-    var description by rememberSaveable { mutableStateOf(existing?.description ?: "") }
+    var name by rememberSaveable { mutableStateOf(existing?.baseName ?: "") }
+    var description by rememberSaveable { mutableStateOf(existing?.baseDescription ?: "") }
     var frontShape by rememberSaveable { mutableStateOf(existing?.front?.shape ?: NeckShape.ROUND) }
     var frontDepth by rememberSaveable { mutableFloatStateOf(existing?.front?.depthFactor?.toFloat() ?: 1f) }
     var backShape by rememberSaveable { mutableStateOf(existing?.back?.shape ?: NeckShape.ROUND) }
@@ -297,17 +299,17 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
 
     val model = BlouseModel(
         id = existing?.id ?: "preview",
-        name = name.ifBlank { "New design" },
-        description = description,
+        baseName = name.ifBlank { tr("admin.new_design") },
+        baseDescription = description,
         front = NeckSpec(frontShape, widen.toDouble(), frontDepth.toDouble()),
         back = NeckSpec(backShape, widen.toDouble(), backDepth.toDouble()),
         sleeve = sleeve,
         opening = opening,
         princess = princess,
     )
-    val warnings = remember(model) { runCatching { model.draft(Measurements.defaults()).warnings }.getOrElse { listOf(it.message ?: "Cannot draft") } }
+    val warnings = remember(model) { runCatching { model.draft(Measurements.defaults()).warnings }.getOrElse { listOf(it.message ?: tr("admin.cannot_draft")) } }
 
-    Scaffold(topBar = { AppBar(if (existing == null) "New design" else "Edit design", onDone) }) { padding ->
+    Scaffold(topBar = { AppBar(if (existing == null) tr("admin.new_design") else tr("admin.edit_design"), onDone) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -315,34 +317,34 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
             Surface(color = Brand.Parchment, shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().height(170.dp)) {
                 ModelThumbnail(model, Modifier.fillMaxSize().padding(16.dp), fill = MaterialTheme.colorScheme.secondaryContainer, line = Brand.Aubergine)
             }
-            Text("Preview drafted at size 36. Front on the left, back on the right.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedTextField(name, { name = it }, label = { Text("Design name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(description, { description = it }, label = { Text("Description for tailors") }, modifier = Modifier.fillMaxWidth())
+            Text(tr("admin.preview_note"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedTextField(name, { name = it }, label = { Text(tr("admin.design_name")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(description, { description = it }, label = { Text(tr("admin.design_desc")) }, modifier = Modifier.fillMaxWidth())
 
-            Section("Front neck")
+            Section(tr("admin.front_neck"))
             Chips(NeckShape.entries, frontShape, { it.label }) { frontShape = it }
-            LabeledSlider("Depth", frontDepth, 0.4f..1.8f) { frontDepth = it }
-            Section("Back neck")
+            LabeledSlider(tr("admin.depth"), frontDepth, 0.4f..1.8f) { frontDepth = it }
+            Section(tr("admin.back_neck"))
             Chips(NeckShape.entries, backShape, { it.label }) { backShape = it }
-            LabeledSlider("Depth", backDepth, 0.4f..1.8f) { backDepth = it }
-            Section("Neck width")
-            LabeledSlider("Wider by", widen, 0f..5f, suffix = " cm") { widen = it }
-            Section("Sleeves")
+            LabeledSlider(tr("admin.depth"), backDepth, 0.4f..1.8f) { backDepth = it }
+            Section(tr("admin.neck_width"))
+            LabeledSlider(tr("admin.wider_by"), widen, 0f..5f, suffix = " cm") { widen = it }
+            Section(tr("admin.sleeves"))
             Chips(SleeveStyle.entries, sleeve, { it.label }) { sleeve = it }
-            Section("Opening")
+            Section(tr("admin.opening"))
             Chips(Opening.entries, opening, { it.label }) { opening = it }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Princess cut front", style = MaterialTheme.typography.titleMedium)
-                    Text("Two front panels, no darts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(tr("admin.princess"), style = MaterialTheme.typography.titleMedium)
+                    Text(tr("admin.princess.text"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(checked = princess, onCheckedChange = { princess = it })
             }
             if (warnings.isNotEmpty()) {
                 Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp)) {
                     Column(Modifier.padding(12.dp)) {
-                        Text("Check at size 36:", style = MaterialTheme.typography.titleSmall)
-                        warnings.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                        Text(tr("admin.check36"), style = MaterialTheme.typography.titleSmall)
+                        warnings.forEach { Text(tr("app.bullet", it), style = MaterialTheme.typography.bodySmall) }
                     }
                 }
             }
@@ -350,13 +352,13 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = {
                     if (name.isBlank()) {
-                        error = "Give the design a name"
+                        error = tr("admin.need_name")
                     } else {
-                        vm.saveDesign(model.copy(id = existing?.id ?: "custom_" + UUID.randomUUID().toString().take(8), name = name.trim()))
+                        vm.saveDesign(model.copy(id = existing?.id ?: "custom_" + UUID.randomUUID().toString().take(8), baseName = name.trim()))
                         onDone()
                     }
-                }) { Text(if (existing == null) "Add design" else "Save changes") }
-                if (existing != null) OutlinedButton(onClick = { confirmDelete = true }) { Text("Delete") }
+                }) { Text(if (existing == null) tr("admin.add") else tr("admin.save")) }
+                if (existing != null) OutlinedButton(onClick = { confirmDelete = true }) { Text(tr("app.delete")) }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -364,10 +366,10 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
     if (confirmDelete && existing != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${existing.name}?") },
-            text = { Text("Tailors will no longer see this design.") },
-            confirmButton = { TextButton(onClick = { vm.deleteDesign(existing.id); onDone() }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            title = { Text(tr("customers.delete", existing.name)) },
+            text = { Text(tr("admin.delete_design.text")) },
+            confirmButton = { TextButton(onClick = { vm.deleteDesign(existing.id); onDone() }) { Text(tr("app.delete")) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("app.cancel")) } },
         )
     }
 }

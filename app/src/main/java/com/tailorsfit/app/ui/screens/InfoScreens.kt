@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,7 +32,7 @@ import com.tailorsfit.pattern.model.MeasurementField
 
 @Composable
 fun MeasurementGuideScreen(onBack: () -> Unit) {
-    Scaffold(topBar = { AppBar("How to measure", onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(tr("guide.title"), onBack) }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(20.dp),
@@ -39,8 +40,7 @@ fun MeasurementGuideScreen(onBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    "Measure over a well-fitting blouse or thin garment. Keep the tape snug, not tight. " +
-                        "\"Shoulder next to neck\" is the point where the shoulder seam meets the neck.",
+                    tr("guide.text"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -69,27 +69,26 @@ fun MeasurementGuideScreen(onBack: () -> Unit) {
 
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
-    Scaffold(topBar = { AppBar("About", onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(tr("about.title"), onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Tailors Fit", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Text(tr("app.name"), style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
             OrnamentDivider()
             Text(
-                "Tailors Fit drafts sewing patterns from each customer's measurements, so pieces can be printed " +
-                    "at true size or projected straight onto the cloth — no separate cutting master needed.",
+                tr("about.text"),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                "Always check the first garment of a new design before cutting expensive cloth.",
+                tr("about.check"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
-            Text("Credits", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+            Text(tr("about.credits"), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             Text(
-                "Fonts: DM Serif Display and Poppins, used under the SIL Open Font License 1.1.",
+                tr("about.fonts"),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

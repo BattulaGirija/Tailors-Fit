@@ -1,5 +1,6 @@
 package com.tailorsfit.app.export
 
+import com.tailorsfit.pattern.i18n.tr
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -20,12 +21,15 @@ import java.io.File
 import kotlin.math.ceil
 import kotlin.math.min
 
-enum class PaperSize(val label: String, val widthCm: Double, val heightCm: Double) {
-    A4("A4", 21.0, 29.7),
-    LETTER("Letter", 21.59, 27.94),
-    A3("A3", 29.7, 42.0),
+enum class PaperSize(private val key: String?, val widthCm: Double, val heightCm: Double) {
+    A4(null, 21.0, 29.7),
+    LETTER("paper.letter", 21.59, 27.94),
+    A3(null, 29.7, 42.0),
     /** One page as big as the whole layout, for plotters / print shops. */
-    FULL("Single large sheet", 0.0, 0.0),
+    FULL("paper.full", 0.0, 0.0),
+    ;
+
+    val label: String get() = key?.let { tr(it) } ?: name
 }
 
 /**
@@ -83,7 +87,7 @@ object PdfExporter {
             PatternPainter.paintTileHelpers(plan, tile, sink)
             c.restore()
             c.drawText(
-                "Page ${tile.label} (${i + 2}/$total) · row ${'A' + tile.row}, column ${tile.col + 1} · ${pattern.title} · print at 100%",
+                tr("pdf.footer", tile.label, i + 2, total, ('A' + tile.row).toString(), tile.col + 1, pattern.title),
                 m, pageH - m / 2.5f, footer,
             )
             doc.finishPage(page)
@@ -99,13 +103,16 @@ object PdfExporter {
         c.drawText(pattern.title, m, y, title)
         y += 20f
         val lines = mutableListOf(
-            "${plan.tiles.size} pages on ${paper.label} (${plan.rows} rows × ${plan.cols} columns). Pages overlap by ${OVERLAP_CM.toInt()} cm.",
-            "1. Print with scale 100% / \"Actual size\" (turn off \"Fit to page\").",
-            "2. Measure the square below: it must be exactly ${TEST_SQUARE_CM.toInt()} cm × ${TEST_SQUARE_CM.toInt()} cm.",
-            "3. Lay pages out as in the map, overlap them so the ⊕ marks sit on top of each other, and tape.",
-            "4. Cut the paper on the solid outer line (seam allowance included). Dashed line = stitching line.",
-            "Cloth: ${"%.2f".format(layout.length / 100)} m of ${"%.0f".format(if (layout.folded) layout.width * 2 else layout.width)} cm wide" +
-                if (layout.folded) " cloth, folded lengthwise." else " cloth, single layer.",
+            tr("pdf.pages", plan.tiles.size, paper.label, plan.rows, plan.cols, OVERLAP_CM.toInt()),
+            tr("pdf.step1"),
+            tr("pdf.step2", TEST_SQUARE_CM.toInt()),
+            tr("pdf.step3"),
+            tr("pdf.step4"),
+            tr(
+                if (layout.folded) "pdf.cloth_folded" else "pdf.cloth_single",
+                "%.2f".format(layout.length / 100),
+                "%.0f".format(if (layout.folded) layout.width * 2 else layout.width),
+            ),
         )
         for (l in lines) {
             c.drawText(l, m, y, body)

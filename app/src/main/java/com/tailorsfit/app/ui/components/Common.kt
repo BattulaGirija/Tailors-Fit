@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.components
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
@@ -26,7 +27,7 @@ fun AppBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable Row
             navigationIcon = {
                 if (onBack != null) {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("app.back"))
                     }
                 }
             },

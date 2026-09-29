@@ -1,5 +1,8 @@
 package com.tailorsfit.app
 
+import com.tailorsfit.pattern.i18n.Language
+import com.tailorsfit.pattern.i18n.I18n
+import com.tailorsfit.pattern.i18n.tr
 import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -42,6 +45,18 @@ sealed interface DraftResult {
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val settings = Settings(app)
+
+    /** Current language; changing it re-creates the screens (see TailorsFitApp). */
+    var language by mutableStateOf(settings.language.also { I18n.language = it })
+        private set
+
+    fun changeLanguage(l: Language) {
+        I18n.language = l
+        settings.language = l
+        language = l
+        lastDraft = null
+        lastDraftKey = null
+    }
     val accounts: AccountStore = LocalAccountStore(app)
     val designs = DesignStore(app).also { it.apply() }
 
@@ -229,7 +244,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Saves the current measurements under the current customer name. Returns an error or null. */
     fun saveCustomer(): String? {
-        if (customerName.isBlank()) return "Enter the customer's name first"
+        if (customerName.isBlank()) return tr("err.customer_name")
         val existing = customers.firstOrNull { it.id == customerId }
         val c = (existing ?: Customer(name = customerName, measurements = Measurements(emptyMap()))).copy(
             name = customerName.trim(),
@@ -275,7 +290,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      * the projector show exactly the same layout without computing it twice.
      */
     suspend fun draftAsync(model: GarmentModel): DraftResult {
-        val key = listOf(model.id, currentMeasurements(), fabricWidthCm, foldedCloth, showAllowance, allowTurning, customerName.trim())
+        val key = listOf(model.id, currentMeasurements(), fabricWidthCm, foldedCloth, showAllowance, allowTurning, language, customerName.trim())
         lastDraft?.let { if (key == lastDraftKey) return it }
         val result = withContext(Dispatchers.Default) { draft(model) }
         // Always hand the result back on the main thread: it ends up in views and Compose state.

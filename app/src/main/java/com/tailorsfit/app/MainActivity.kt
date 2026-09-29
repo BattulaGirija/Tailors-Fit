@@ -10,6 +10,10 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.tailorsfit.app.ui.components.LanguageDialog
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.tailorsfit.app.ui.components.AppDrawerSheet
@@ -76,8 +80,15 @@ object Routes {
 
 @Composable
 fun TailorsFitApp(startRoute: String? = null, customer: String? = null) {
-    val nav = rememberNavController()
     val vm: AppViewModel = viewModel()
+    // Changing the language rebuilds every screen so all texts are looked up again.
+    key(vm.language) { AppContent(vm, startRoute, customer) }
+}
+
+@Composable
+private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?) {
+    val nav = rememberNavController()
+    var showLanguage by remember { mutableStateOf(false) }
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
@@ -104,7 +115,16 @@ fun TailorsFitApp(startRoute: String? = null, customer: String? = null) {
             DrawerDestination.CUSTOMERS -> nav.navigate(Routes.CUSTOMERS)
             DrawerDestination.GUIDE -> nav.navigate(Routes.GUIDE)
             DrawerDestination.ABOUT -> nav.navigate(Routes.ABOUT)
+            DrawerDestination.LANGUAGE -> showLanguage = true
         }
+    }
+
+    if (showLanguage) {
+        LanguageDialog(
+            current = vm.language,
+            onPick = { showLanguage = false; vm.changeLanguage(it) },
+            onDismiss = { showLanguage = false },
+        )
     }
 
     ModalNavigationDrawer(
@@ -122,7 +142,7 @@ fun TailorsFitApp(startRoute: String? = null, customer: String? = null) {
         val start = remember { if (vm.currentUser != null) Routes.HOME else Routes.AUTH }
         NavHost(navController = nav, startDestination = start) {
             composable(Routes.AUTH) {
-                AuthScreen(vm, onLoggedIn = ::toHome, onAdmin = { nav.navigate(Routes.ADMIN_LOGIN) })
+                AuthScreen(vm, onLoggedIn = ::toHome, onAdmin = { nav.navigate(Routes.ADMIN_LOGIN) }, onLanguage = vm::changeLanguage)
             }
             composable(Routes.ADMIN_LOGIN) {
                 AdminLoginScreen(vm, onLoggedIn = ::toAdmin, onBack = back)

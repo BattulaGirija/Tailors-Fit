@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +53,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tailorsfit.app.AppViewModel
+import com.tailorsfit.app.ui.components.LanguageChips
 import com.tailorsfit.app.ui.components.OrnamentDivider
+import com.tailorsfit.pattern.i18n.Language
 import com.tailorsfit.app.ui.components.TapeMeasure
 import com.tailorsfit.app.ui.theme.Brand
 import com.tailorsfit.pattern.geom.Pt
@@ -110,7 +113,13 @@ fun PatternBackdrop(content: @Composable BoxScope.() -> Unit) {
 }
 
 @Composable
-private fun AuthCard(title: String, subtitle: String, body: @Composable () -> Unit, footer: @Composable () -> Unit) {
+private fun AuthCard(
+    title: String,
+    subtitle: String,
+    body: @Composable () -> Unit,
+    footer: @Composable () -> Unit,
+    header: @Composable () -> Unit = {},
+) {
     PatternBackdrop {
         Column(
             Modifier
@@ -122,7 +131,8 @@ private fun AuthCard(title: String, subtitle: String, body: @Composable () -> Un
                 .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("TAILORS FIT", style = MaterialTheme.typography.labelSmall, color = Brand.GoldLight)
+            header()
+            Text(tr("app.brand"), style = MaterialTheme.typography.labelSmall, color = Brand.GoldLight)
             Spacer(Modifier.height(10.dp))
             Text(title, style = MaterialTheme.typography.displaySmall, color = Brand.Ivory, textAlign = TextAlign.Center)
             Spacer(Modifier.height(10.dp))
@@ -161,7 +171,7 @@ private fun PasswordField(value: String, onChange: (String) -> Unit, label: Stri
         label = { Text(label) },
         singleLine = true,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = { TextButton(onClick = { visible = !visible }) { Text(if (visible) "Hide" else "Show") } },
+        trailingIcon = { TextButton(onClick = { visible = !visible }) { Text(if (visible) tr("auth.hide") else tr("auth.show")) } },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = if (last) ImeAction.Done else ImeAction.Next),
         modifier = Modifier.fillMaxWidth(),
     )
@@ -184,7 +194,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit) {
 /** Log in / sign up for tailors. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AuthScreen(vm: AppViewModel, onLoggedIn: () -> Unit, onAdmin: () -> Unit) {
+fun AuthScreen(vm: AppViewModel, onLoggedIn: () -> Unit, onAdmin: () -> Unit, onLanguage: (Language) -> Unit = {}) {
     var signUp by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
     var shop by rememberSaveable { mutableStateOf("") }
@@ -194,12 +204,11 @@ fun AuthScreen(vm: AppViewModel, onLoggedIn: () -> Unit, onAdmin: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
 
     AuthCard(
-        title = if (signUp) "Join Tailors Fit" else "Welcome back",
-        subtitle = if (signUp) "Create your account to draft, print and project patterns."
-        else "Log in to your cutting table.",
+        title = if (signUp) tr("auth.join") else tr("auth.welcome"),
+        subtitle = if (signUp) tr("auth.join.text") else tr("auth.welcome.text"),
         body = {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                listOf("Log in", "Sign up").forEachIndexed { i, label ->
+                listOf(tr("auth.login"), tr("auth.signup")).forEachIndexed { i, label ->
                     SegmentedButton(
                         selected = signUp == (i == 1),
                         onClick = { signUp = i == 1; error = null },
@@ -210,36 +219,40 @@ fun AuthScreen(vm: AppViewModel, onLoggedIn: () -> Unit, onAdmin: () -> Unit) {
             }
             if (signUp) {
                 OutlinedTextField(
-                    value = name, onValueChange = { name = it }, label = { Text("Your name") }, singleLine = true,
+                    value = name, onValueChange = { name = it }, label = { Text(tr("auth.name")) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
-                    value = shop, onValueChange = { shop = it }, label = { Text("Shop name (optional)") }, singleLine = true,
+                    value = shop, onValueChange = { shop = it }, label = { Text(tr("auth.shop")) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), modifier = Modifier.fillMaxWidth(),
                 )
             }
             OutlinedTextField(
-                value = login, onValueChange = { login = it }, label = { Text("Phone number or e-mail") }, singleLine = true,
+                value = login, onValueChange = { login = it }, label = { Text(tr("auth.id")) }, singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
-            PasswordField(password, { password = it }, "Password", last = !signUp)
-            if (signUp) PasswordField(confirm, { confirm = it }, "Confirm password")
+            PasswordField(password, { password = it }, tr("auth.password"), last = !signUp)
+            if (signUp) PasswordField(confirm, { confirm = it }, tr("auth.confirm"))
             ErrorText(error)
-            PrimaryButton(if (signUp) "Create account" else "Log in") {
+            PrimaryButton(if (signUp) tr("auth.create") else tr("auth.login")) {
                 error = when {
-                    signUp && password != confirm -> "Passwords do not match"
+                    signUp && password != confirm -> tr("auth.mismatch")
                     signUp -> vm.signUp(name, shop, login, password)
                     else -> vm.logIn(login, password)
                 }
                 if (error == null) onLoggedIn()
             }
             TextButton(onClick = { signUp = !signUp; error = null }, modifier = Modifier.fillMaxWidth()) {
-                Text(if (signUp) "Already have an account? Log in" else "New here? Create an account", color = Brand.Plum)
+                Text(if (signUp) tr("auth.have_account") else tr("auth.new_here"), color = Brand.Plum)
             }
         },
         footer = {
-            TextButton(onClick = onAdmin) { Text("Admin login", color = Brand.GoldLight) }
+            TextButton(onClick = onAdmin) { Text(tr("auth.admin_login"), color = Brand.GoldLight) }
+        },
+        header = {
+            LanguageChips(vm.language, onLanguage)
+            Spacer(Modifier.height(20.dp))
         },
     )
 }
@@ -252,20 +265,19 @@ fun AdminLoginScreen(vm: AppViewModel, onLoggedIn: () -> Unit, onBack: () -> Uni
     var confirm by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     AuthCard(
-        title = "Admin",
-        subtitle = if (setUp) "First time here: choose the admin password. Keep it safe — it cannot be recovered."
-        else "Manage designs and view tailor accounts.",
+        title = tr("auth.admin"),
+        subtitle = if (setUp) tr("auth.admin.setup") else tr("auth.admin.text"),
         body = {
-            PasswordField(password, { password = it }, if (setUp) "New admin password" else "Admin password", last = !setUp)
-            if (setUp) PasswordField(confirm, { confirm = it }, "Confirm password")
+            PasswordField(password, { password = it }, if (setUp) tr("auth.admin.new_password") else tr("auth.admin.password"), last = !setUp)
+            if (setUp) PasswordField(confirm, { confirm = it }, tr("auth.confirm"))
             ErrorText(error)
-            PrimaryButton(if (setUp) "Set password and continue" else "Log in as admin") {
-                error = if (setUp && password != confirm) "Passwords do not match" else vm.adminLogIn(password)
+            PrimaryButton(if (setUp) tr("auth.admin.set") else tr("auth.admin.login")) {
+                error = if (setUp && password != confirm) tr("auth.mismatch") else vm.adminLogIn(password)
                 if (error == null) onLoggedIn()
             }
         },
         footer = {
-            Row { TextButton(onClick = onBack) { Text("← Back to tailor login", color = Brand.GoldLight) } }
+            Row { TextButton(onClick = onBack) { Text(tr("auth.back_to_login"), color = Brand.GoldLight) } }
         },
     )
 }

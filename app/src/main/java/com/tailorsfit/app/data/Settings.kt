@@ -1,5 +1,7 @@
 package com.tailorsfit.app.data
 
+import java.util.Locale
+import com.tailorsfit.pattern.i18n.Language
 import android.content.Context
 import com.tailorsfit.pattern.model.LengthUnit
 
@@ -28,6 +30,13 @@ class Settings(context: Context) {
     var allowTurning: Boolean
         get() = prefs.getBoolean("allow_turning", true)
         set(v) = prefs.edit().putBoolean("allow_turning", v).apply()
+
+    /** App language: the saved choice, else the phone's language if we have it, else English. */
+    var language: Language
+        get() = Language.fromCode(prefs.getString("language", null))
+            ?: Language.fromCode(Locale.getDefault().language)
+            ?: Language.EN
+        set(v) = prefs.edit().putString("language", v.code).apply()
 
     /** Id of the tailor who stays logged in, or null. */
     var sessionUserId: String?

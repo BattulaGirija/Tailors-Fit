@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,7 @@ import com.tailorsfit.pattern.model.Catalog
 fun CatalogScreen(categoryId: String, onBack: () -> Unit, onModel: (String) -> Unit) {
     val category = Catalog.category(categoryId)
     val models = Catalog.modelsIn(categoryId)
-    Scaffold(topBar = { AppBar(category?.name ?: "Designs", onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(category?.name ?: tr("catalog.title"), onBack) }) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 160.dp),
             modifier = Modifier.fillMaxSize().padding(padding),

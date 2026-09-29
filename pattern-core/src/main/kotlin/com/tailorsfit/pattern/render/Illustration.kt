@@ -1,5 +1,7 @@
 package com.tailorsfit.pattern.render
 
+import com.tailorsfit.pattern.i18n.tr
+
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.model.EdgeKind
 import com.tailorsfit.pattern.model.Pattern
@@ -27,8 +29,8 @@ object Illustration {
         val back = pattern.pieces.firstOrNull { it.id == "back" }
         val sleeve = pattern.pieces.firstOrNull { it.id == "sleeve" }
         return listOfNotNull(
-            if (fronts.isNotEmpty()) view("Front", fronts, sleeve) else null,
-            back?.let { view("Back", listOf(it), sleeve) },
+            if (fronts.isNotEmpty()) view(tr("view.front"), fronts, sleeve) else null,
+            back?.let { view(tr("view.back"), listOf(it), sleeve) },
         )
     }
 

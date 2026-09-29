@@ -1,5 +1,7 @@
 package com.tailorsfit.pattern.render
 
+import com.tailorsfit.pattern.i18n.tr
+
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.geom.Rect
 import com.tailorsfit.pattern.layout.Layout
@@ -59,8 +61,8 @@ object PatternPainter {
         sink.polyline(listOf(Pt(0.0, 0.0), Pt(w, 0.0), Pt(w, l), Pt(0.0, l)), true, Ink.HELPER)
         if (layout.folded) {
             sink.polyline(listOf(Pt(0.0, 0.0), Pt(0.0, l)), false, Ink.FOLD)
-            sink.text("CLOTH FOLD", Pt(-0.8, l / 2), 0.8, Ink.HELPER, rotationDeg = -90.0, bold = true)
-            sink.text("SELVEDGES", Pt(w + 0.8, l / 2), 0.8, Ink.HELPER, rotationDeg = 90.0, bold = true)
+            sink.text(tr("paint.cloth_fold"), Pt(-0.8, l / 2), 0.8, Ink.HELPER, rotationDeg = -90.0, bold = true)
+            sink.text(tr("paint.selvedges"), Pt(w + 0.8, l / 2), 0.8, Ink.HELPER, rotationDeg = 90.0, bold = true)
         }
     }
 
@@ -92,7 +94,7 @@ object PatternPainter {
             sink.polyline(listOf(Pt(top.x + 0.3, y1), Pt(bx, y1), Pt(bx, y2), Pt(top.x + 0.3, y2)), false, Ink.GRAIN)
             arrowHead(sink, Pt(top.x + 0.3, y1), Pt(-1.0, 0.0), Ink.GRAIN)
             arrowHead(sink, Pt(top.x + 0.3, y2), Pt(-1.0, 0.0), Ink.GRAIN)
-            sink.text("PLACE ON FOLD", Pt(bx + 1.0, (y1 + y2) / 2), 0.7 * textScale, Ink.TEXT, rotationDeg = -90.0, bold = true)
+            sink.text(tr("paint.place_on_fold"), Pt(bx + 1.0, (y1 + y2) / 2), 0.7 * textScale, Ink.TEXT, rotationDeg = -90.0, bold = true)
         }
 
         if (options.showMarkings) {

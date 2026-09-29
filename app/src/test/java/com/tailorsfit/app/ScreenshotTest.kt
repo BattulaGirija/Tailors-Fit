@@ -150,6 +150,61 @@ class ScreenshotTest {
         save("14-admin-new-design")
     }
 
+    @org.junit.After
+    fun resetLanguage() {
+        com.tailorsfit.pattern.i18n.I18n.language = com.tailorsfit.pattern.i18n.Language.EN
+    }
+
+    @Test
+    fun telugu() {
+        val vm = vm()
+        vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.TE)
+        show { AuthScreen(vm, onLoggedIn = {}, onAdmin = {}) }
+        save("20-te-login")
+    }
+
+    @Test
+    fun teluguHome() {
+        val vm = vm()
+        vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.TE)
+        show(homeContent(vm))
+        save("21-te-home")
+    }
+
+    @Test
+    fun teluguMeasurements() {
+        val vm = vm()
+        vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.TE)
+        show { MeasurementScreen(vm, model, onBack = {}, onGenerate = {}) }
+        compose.onNodeWithText("ఛాతీ (బస్ట్)").performScrollTo()
+        save("22-te-measurements")
+    }
+
+    @Test
+    fun teluguPattern() {
+        val vm = vm()
+        vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.TE)
+        show { PatternScreen(vm, model, onBack = {}, onProject = {}) }
+        awaitText("జూమ్")
+        save("23-te-pattern")
+    }
+
+    @Test
+    fun hindiHome() {
+        val vm = vm()
+        vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.HI)
+        show(homeContent(vm))
+        save("24-hi-home")
+    }
+
+    @Test
+    fun hindiMeasurements() {
+        val vm = vm()
+        vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.HI)
+        show { MeasurementScreen(vm, model, onBack = {}, onGenerate = {}) }
+        save("25-hi-measurements")
+    }
+
     @Test
     fun guide() {
         show { MeasurementGuideScreen(onBack = {}) }

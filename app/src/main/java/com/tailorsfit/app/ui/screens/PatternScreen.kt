@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
@@ -79,14 +80,14 @@ fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProje
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(12.dp))
-                    Text("Arranging pieces on the cloth…", style = MaterialTheme.typography.bodyMedium)
+                    Text(tr("pattern.arranging"), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             is DraftResult.Invalid -> Column(Modifier.padding(padding).padding(16.dp)) {
-                Text("Some measurements need checking:", style = MaterialTheme.typography.titleMedium)
-                result.errors.values.forEach { Text("• $it") }
+                Text(tr("pattern.check"), style = MaterialTheme.typography.titleMedium)
+                result.errors.values.forEach { Text(tr("app.bullet", it)) }
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = onBack) { Text("Back to measurements") }
+                Button(onClick = onBack) { Text(tr("pattern.back")) }
             }
             is DraftResult.Ok -> {
                 val pattern = result.pattern
@@ -104,7 +105,7 @@ fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProje
                     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                     PatternCanvas(layout, paintOptions, Modifier.fillMaxWidth().height(440.dp))
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Pinch to zoom, drag to move.", style = MaterialTheme.typography.bodySmall)
+                        Text(tr("pattern.zoom"), style = MaterialTheme.typography.bodySmall)
                         ClothOptions(vm, layout)
                         Actions(
                             busy = busy,
@@ -137,29 +138,29 @@ fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProje
 private fun ClothOptions(vm: AppViewModel, layout: Layout) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Cloth", style = MaterialTheme.typography.titleMedium)
+            Text(tr("pattern.cloth"), style = MaterialTheme.typography.titleMedium)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FABRIC_WIDTHS.forEach { w ->
                     FilterChip(
                         selected = vm.fabricWidthCm == w,
                         onClick = { vm.setFabricWidth(w) },
-                        label = { Text("${w.toInt()} cm (${vm.format(w / 2.54).substringBefore('.')}\") wide") },
+                        label = { Text(tr("pattern.width", w.toInt(), vm.format(w / 2.54).substringBefore('.'))) },
                     )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Cloth folded lengthwise (cut 2 layers)", Modifier.weight(1f))
+                Text(tr("pattern.folded"), Modifier.weight(1f))
                 Switch(checked = vm.foldedCloth, onCheckedChange = vm::setFolded)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Include seam allowance", Modifier.weight(1f))
+                Text(tr("pattern.allowance"), Modifier.weight(1f))
                 Switch(checked = vm.showAllowance, onCheckedChange = vm::setAllowance)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("One-way print or velvet")
+                    Text(tr("pattern.oneway"))
                     Text(
-                        "Keep every piece pointing the same way",
+                        tr("pattern.oneway.text"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -167,13 +168,12 @@ private fun ClothOptions(vm: AppViewModel, layout: Layout) {
                 Switch(checked = !vm.allowTurning, onCheckedChange = { vm.changeAllowTurning(!it) })
             }
             Text(
-                "Cloth needed: about ${"%.2f".format(layout.length / 100)} m (${vm.format(layout.length / 2.54 / 36)} yd)",
+                tr("pattern.needed", "%.2f".format(layout.length / 100), vm.format(layout.length / 2.54 / 36)),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                "Pieces are nested to save cloth: ${"%.0f".format(layout.efficiency * 100)}% of the cloth is used, " +
-                    "${"%.0f".format((1 - layout.efficiency) * 100)}% is left over.",
+                tr("pattern.efficiency", "%.0f".format(layout.efficiency * 100), "%.0f".format((1 - layout.efficiency) * 100)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -194,21 +194,21 @@ private fun Actions(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = onProject, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
-            Text("  Project onto cloth")
+            Text("  " + tr("pattern.project"))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f)) {
-                OutlinedButton(onClick = { printMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Print…") }
+                OutlinedButton(onClick = { printMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(tr("pattern.print")) }
                 PaperMenu(printMenu, { printMenu = false }, includeFull = false) { onPrint(it) }
             }
             Box(Modifier.weight(1f)) {
                 OutlinedButton(onClick = { pdfMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Share, contentDescription = null)
-                    Text(" PDF")
+                    Text(" " + tr("pattern.pdf"))
                 }
                 PaperMenu(pdfMenu, { pdfMenu = false }, includeFull = true) { onSharePdf(it) }
             }
-            OutlinedButton(onClick = onShareSvg, enabled = !busy, modifier = Modifier.weight(1f)) { Text("SVG") }
+            OutlinedButton(onClick = onShareSvg, enabled = !busy, modifier = Modifier.weight(1f)) { Text(tr("pattern.svg")) }
         }
     }
 }
@@ -218,7 +218,7 @@ private fun PaperMenu(expanded: Boolean, onDismiss: () -> Unit, includeFull: Boo
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         PaperSize.entries.filter { includeFull || it != PaperSize.FULL }.forEach { p ->
             DropdownMenuItem(
-                text = { Text(if (p == PaperSize.FULL) p.label + " (plotter)" else "${p.label} pages, true size") },
+                text = { Text(if (p == PaperSize.FULL) tr("pattern.plotter", p.label) else tr("pattern.pages", p.label)) },
                 onClick = { onDismiss(); onPick(p) },
             )
         }
@@ -232,20 +232,20 @@ private fun SummaryCard(vm: AppViewModel, pattern: Pattern, layout: Layout) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Warning, contentDescription = null)
-                    Text("  Check before cutting", style = MaterialTheme.typography.titleSmall)
+                    Text("  " + tr("pattern.warnings"), style = MaterialTheme.typography.titleSmall)
                 }
-                pattern.warnings.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                pattern.warnings.forEach { Text(tr("app.bullet", it), style = MaterialTheme.typography.bodySmall) }
             }
         }
     }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Pieces", style = MaterialTheme.typography.titleMedium)
+            Text(tr("pattern.pieces"), style = MaterialTheme.typography.titleMedium)
             layout.placed.map { it.piece }.distinctBy { it.name + it.cut.text }.forEach { p ->
                 Text("${p.name}: ${p.cut.text}", style = MaterialTheme.typography.bodyMedium)
             }
             Spacer(Modifier.height(8.dp))
-            Text("Details", style = MaterialTheme.typography.titleMedium)
+            Text(tr("pattern.details"), style = MaterialTheme.typography.titleMedium)
             pattern.summary.forEach { (k, v) ->
                 val cm = v.substringBefore(" cm").toDoubleOrNull()
                 Text("$k: ${if (cm != null) vm.formatCm(cm) else v}", style = MaterialTheme.typography.bodyMedium)
@@ -268,7 +268,7 @@ private fun runExport(
             val file = withContext(Dispatchers.IO) { produce() }
             then(file)
         } catch (e: Exception) {
-            Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, tr("pattern.export_failed", e.message), Toast.LENGTH_LONG).show()
         } finally {
             setBusy(false)
         }

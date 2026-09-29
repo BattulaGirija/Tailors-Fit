@@ -1,5 +1,6 @@
 package com.tailorsfit.app.ui.screens
 
+import com.tailorsfit.pattern.i18n.tr
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -89,8 +90,8 @@ fun ProjectorScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit) {
         return
     }
     if (result !is DraftResult.Ok) {
-        Scaffold(topBar = { AppBar("Projector", onBack) }) { p ->
-            Text("Fix the measurements first.", Modifier.padding(p).padding(16.dp))
+        Scaffold(topBar = { AppBar(tr("projector.title"), onBack) }) { p ->
+            Text(tr("projector.fix"), Modifier.padding(p).padding(16.dp))
         }
         return
     }
@@ -153,7 +154,7 @@ private fun ExternalProjector(
         display.getRealMetrics(dm)
         dm.widthPixels.coerceAtLeast(1) to dm.heightPixels.coerceAtLeast(1)
     }
-    Scaffold(topBar = { AppBar("Projecting on ${display.name}", onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(tr("projector.on", display.name), onBack) }) { padding ->
         Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
             // Same picture as the projector, scaled down to the phone width.
             var previewWidthPx by remember { mutableStateOf(1) }
@@ -223,8 +224,8 @@ private fun PhoneProjector(
             ) {
                 Column(Modifier.navigationBarsPadding()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
-                        Text("Tap the pattern to hide controls · drag to move", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White) }
+                        Text(tr("projector.hint"), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.Close, contentDescription = tr("app.close"), tint = Color.White) }
                     }
                     MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFFFFB0C8), secondaryContainer = Color(0xFF5A4300))) {
                         Controls(vm, frame, layout, calibSize, onCalibrated, dark = true)
@@ -247,21 +248,21 @@ private fun Controls(
     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             FilledTonalIconButton(onClick = { vm.projectorPan = vm.projectorPan + Pt(-STEP_CM, 0.0) }) {
-                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = "Move left")
+                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = tr("projector.left"))
             }
             FilledTonalIconButton(onClick = { vm.projectorPan = vm.projectorPan + Pt(0.0, -STEP_CM) }) {
-                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
+                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = tr("projector.up"))
             }
             FilledTonalIconButton(onClick = { vm.projectorPan = vm.projectorPan + Pt(0.0, STEP_CM) }) {
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = tr("projector.down"))
             }
             FilledTonalIconButton(onClick = { vm.projectorPan = vm.projectorPan + Pt(STEP_CM, 0.0) }) {
-                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Move right")
+                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = tr("projector.right"))
             }
-            FilterChip(selected = vm.projectorGrid, onClick = { vm.projectorGrid = !vm.projectorGrid }, label = { Text("10 cm grid") })
+            FilterChip(selected = vm.projectorGrid, onClick = { vm.projectorGrid = !vm.projectorGrid }, label = { Text(tr("projector.grid")) })
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AssistChip(onClick = { vm.projectorPan = Pt(-2.0, -2.0) }, label = { Text("Start") })
+            AssistChip(onClick = { vm.projectorPan = Pt(-2.0, -2.0) }, label = { Text(tr("projector.start")) })
             layout.placed.forEach { p ->
                 AssistChip(
                     onClick = {
@@ -273,13 +274,13 @@ private fun Controls(
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Line width", Modifier.width(88.dp))
+            Text(tr("projector.line"), Modifier.width(88.dp))
             Slider(value = vm.projectorLineWidth, onValueChange = vm::setLineWidth, valueRange = 1f..10f, modifier = Modifier.weight(1f))
         }
         FilterChip(
             selected = vm.projectorCalibrating,
             onClick = { vm.projectorCalibrating = !vm.projectorCalibrating },
-            label = { Text(if (vm.projectorCalibrating) "Calibrating… (tap to finish)" else "Calibrate size") },
+            label = { Text(if (vm.projectorCalibrating) tr("projector.calibrating") else tr("projector.calibrate")) },
         )
         if (vm.projectorCalibrating) CalibrationPanel(vm, frame, calibSize, onCalibrated, dark)
     }
@@ -298,17 +299,17 @@ private fun CalibrationPanel(
     val textColor = if (dark) Color.White else MaterialTheme.colorScheme.onSurface
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            "A square of ${vm.formatCm(calibSize)} is shown. Measure its width and height on the table with a tape and enter them:",
+            tr("projector.calib.text", vm.formatCm(calibSize)),
             color = textColor,
             style = MaterialTheme.typography.bodySmall,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
-                value = measuredW, onValueChange = { measuredW = it }, label = { Text("Width (${vm.unit.label})") },
+                value = measuredW, onValueChange = { measuredW = it }, label = { Text(tr("projector.calib.width", vm.unit.label)) },
                 singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
             )
             OutlinedTextField(
-                value = measuredH, onValueChange = { measuredH = it }, label = { Text("Height (${vm.unit.label})") },
+                value = measuredH, onValueChange = { measuredH = it }, label = { Text(tr("projector.calib.height", vm.unit.label)) },
                 singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
             )
         }
@@ -326,8 +327,8 @@ private fun CalibrationPanel(
                     measuredW = ""
                     measuredH = ""
                 }
-            }) { Text("Apply") }
-            Text("Fine tune:", color = textColor)
+            }) { Text(tr("projector.calib.apply")) }
+            Text(tr("projector.calib.fine"), color = textColor)
             TextButton(onClick = { onCalibrated(Calibration(frame.pxPerCmX * 0.99f, frame.pxPerCmY * 0.99f)) }) { Text("−1%") }
             TextButton(onClick = { onCalibrated(Calibration(frame.pxPerCmX * 1.01f, frame.pxPerCmY * 1.01f)) }) { Text("+1%") }
         }

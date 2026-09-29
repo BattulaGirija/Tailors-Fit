@@ -1,5 +1,6 @@
 package com.tailorsfit.app.data
 
+import com.tailorsfit.pattern.i18n.tr
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -72,8 +73,8 @@ object Passwords {
     }
 
     fun problem(password: String): String? = when {
-        password.length < 6 -> "Password must be at least 6 characters"
-        password.isBlank() -> "Password cannot be blank"
+        password.length < 6 -> tr("err.password_short")
+        password.isBlank() -> tr("err.password_short")
         else -> null
     }
 
@@ -112,11 +113,11 @@ class LocalAccountStore(context: Context) : AccountStore {
     @Synchronized
     override fun signUp(name: String, shopName: String, login: String, password: String): AuthResult {
         val id = normalise(login)
-        if (name.isBlank()) return AuthResult.Failure("Please enter your name")
-        if (!isValidLogin(id)) return AuthResult.Failure("Enter a valid phone number or e-mail")
+        if (name.isBlank()) return AuthResult.Failure(tr("err.name"))
+        if (!isValidLogin(id)) return AuthResult.Failure(tr("err.login_invalid"))
         Passwords.problem(password)?.let { return AuthResult.Failure(it) }
         val all = load()
-        if (all.any { it.login == id }) return AuthResult.Failure("An account with this phone/e-mail already exists")
+        if (all.any { it.login == id }) return AuthResult.Failure(tr("err.login_taken"))
         val salt = Passwords.newSalt()
         val now = System.currentTimeMillis()
         val account = Account(
@@ -139,7 +140,7 @@ class LocalAccountStore(context: Context) : AccountStore {
         val all = load()
         val acc = all.firstOrNull { it.login == id && it.role == Role.TAILOR }
         if (acc == null || !Passwords.matches(password, acc.salt, acc.hash)) {
-            return AuthResult.Failure("Phone/e-mail or password is incorrect")
+            return AuthResult.Failure(tr("err.login_wrong"))
         }
         val updated = acc.copy(lastActiveAt = System.currentTimeMillis())
         save(all.map { if (it.id == acc.id) updated else it })
@@ -151,7 +152,7 @@ class LocalAccountStore(context: Context) : AccountStore {
     @Synchronized
     override fun createAdmin(password: String): AuthResult {
         val all = load()
-        if (all.any { it.role == Role.ADMIN }) return AuthResult.Failure("Admin is already set up")
+        if (all.any { it.role == Role.ADMIN }) return AuthResult.Failure(tr("err.admin_exists"))
         Passwords.problem(password)?.let { return AuthResult.Failure(it) }
         val salt = Passwords.newSalt()
         val admin = Account(
@@ -163,9 +164,9 @@ class LocalAccountStore(context: Context) : AccountStore {
     }
 
     override fun adminLogIn(password: String): AuthResult {
-        val admin = load().firstOrNull { it.role == Role.ADMIN } ?: return AuthResult.Failure("Admin is not set up yet")
+        val admin = load().firstOrNull { it.role == Role.ADMIN } ?: return AuthResult.Failure(tr("err.admin_missing"))
         return if (Passwords.matches(password, admin.salt, admin.hash)) AuthResult.Success(admin)
-        else AuthResult.Failure("Admin password is incorrect")
+        else AuthResult.Failure(tr("err.admin_wrong"))
     }
 
     override fun tailors() = load().filter { it.role == Role.TAILOR }.sortedByDescending { it.lastActiveAt }

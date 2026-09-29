@@ -1,5 +1,7 @@
 package com.tailorsfit.pattern.model
 
+import com.tailorsfit.pattern.i18n.tr
+
 import com.tailorsfit.pattern.geom.PathD
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.geom.Rect
@@ -77,9 +79,9 @@ data class Marking(val from: Pt, val to: Pt, val kind: Kind) {
 data class CutInstruction(val count: Int, val onFold: Boolean) {
     val text: String
         get() = when {
-            onFold -> "Cut $count on fold"
-            count == 2 -> "Cut 2 (a pair)"
-            else -> "Cut $count"
+            onFold -> tr("cut.fold", count)
+            count == 2 -> tr("cut.pair")
+            else -> tr("cut.n", count)
         }
 }
 

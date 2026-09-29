@@ -1,5 +1,7 @@
 package com.tailorsfit.pattern.model
 
+import com.tailorsfit.pattern.i18n.tr
+
 /** Length units shown to the tailor. Everything is stored and drafted in centimetres. */
 enum class LengthUnit(val label: String, val cmPerUnit: Double) {
     CM("cm", 1.0),
@@ -15,30 +17,34 @@ enum class LengthUnit(val label: String, val cmPerUnit: Double) {
  */
 enum class MeasurementField(
     val key: String,
-    val label: String,
-    val help: String,
     val defaultCm: Double,
     val minCm: Double,
     val maxCm: Double,
 ) {
-    BUST("bust", "Bust (chest round)", "Full round over the fullest part of the bust.", 91.5, 60.0, 160.0),
-    WAIST("waist", "Waist round", "Round at the blouse bottom, just under the bust.", 76.0, 50.0, 150.0),
-    SHOULDER("shoulder", "Shoulder width", "Across the back, shoulder tip to shoulder tip.", 36.0, 28.0, 50.0),
-    FRONT_LENGTH("front_length", "Front length", "Shoulder (next to neck) over the bust point down to the blouse bottom.", 38.0, 28.0, 60.0),
-    BACK_LENGTH("back_length", "Back length", "Shoulder (next to neck) straight down the back to the blouse bottom.", 35.5, 25.0, 55.0),
-    ARMHOLE("armhole", "Armhole round", "Round the arm joint, over the shoulder tip and under the arm.", 40.5, 30.0, 60.0),
-    APEX_LENGTH("apex_length", "Apex (bust point) length", "Shoulder (next to neck) to the bust point.", 25.5, 18.0, 40.0),
-    APEX_TO_APEX("apex_to_apex", "Apex to apex", "Distance between the two bust points.", 18.0, 12.0, 28.0),
-    FRONT_NECK_DEPTH("front_neck_depth", "Front neck depth", "Shoulder (next to neck) down to the desired front neck line.", 16.5, 5.0, 35.0),
-    BACK_NECK_DEPTH("back_neck_depth", "Back neck depth", "Shoulder (next to neck) down to the desired back neck line.", 15.0, 3.0, 40.0),
-    SLEEVE_LENGTH("sleeve_length", "Sleeve length", "Shoulder tip down the arm to where the sleeve should end.", 15.0, 5.0, 65.0),
-    SLEEVE_ROUND("sleeve_round", "Arm round (biceps)", "Round the fullest part of the upper arm.", 30.5, 20.0, 55.0),
-    SLEEVE_OPENING("sleeve_opening", "Sleeve opening round", "Round the arm where the sleeve ends.", 28.0, 15.0, 50.0);
+    BUST("bust", 91.5, 60.0, 160.0),
+    WAIST("waist", 76.0, 50.0, 150.0),
+    SHOULDER("shoulder", 36.0, 28.0, 50.0),
+    FRONT_LENGTH("front_length", 38.0, 28.0, 60.0),
+    BACK_LENGTH("back_length", 35.5, 25.0, 55.0),
+    ARMHOLE("armhole", 40.5, 30.0, 60.0),
+    APEX_LENGTH("apex_length", 25.5, 18.0, 40.0),
+    APEX_TO_APEX("apex_to_apex", 18.0, 12.0, 28.0),
+    FRONT_NECK_DEPTH("front_neck_depth", 16.5, 5.0, 35.0),
+    BACK_NECK_DEPTH("back_neck_depth", 15.0, 3.0, 40.0),
+    SLEEVE_LENGTH("sleeve_length", 15.0, 5.0, 65.0),
+    SLEEVE_ROUND("sleeve_round", 30.5, 20.0, 55.0),
+    SLEEVE_OPENING("sleeve_opening", 28.0, 15.0, 50.0);
+
+    /** Name shown to the tailor, in the current language. */
+    val label: String get() = tr("field.$key")
+
+    /** How to take this measurement, in the current language. */
+    val help: String get() = tr("field.$key.help")
 
     fun validate(cm: Double): String? = when {
-        cm.isNaN() -> "$label is required"
-        cm < minCm -> "$label looks too small (min ${fmt(minCm)} cm)"
-        cm > maxCm -> "$label looks too large (max ${fmt(maxCm)} cm)"
+        cm.isNaN() -> tr("validate.required", label)
+        cm < minCm -> tr("validate.small", label, fmt(minCm))
+        cm > maxCm -> tr("validate.large", label, fmt(maxCm))
         else -> null
     }
 

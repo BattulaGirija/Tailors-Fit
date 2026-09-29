@@ -48,15 +48,15 @@ class DesignStore(context: Context) {
     private fun neck(o: JSONObject) = NeckSpec(NeckShape.valueOf(o.getString("shape")), o.optDouble("widen", 0.0), o.optDouble("depth", 1.0))
 
     private fun toJson(m: BlouseModel) = JSONObject().apply {
-        put("id", m.id); put("name", m.name); put("description", m.description)
+        put("id", m.id); put("name", m.baseName); put("description", m.baseDescription)
         put("front", neckJson(m.front)); put("back", neckJson(m.back))
         put("sleeve", m.sleeve.name); put("opening", m.opening.name); put("princess", m.princess)
     }
 
     private fun fromJson(o: JSONObject) = BlouseModel(
         id = o.getString("id"),
-        name = o.getString("name"),
-        description = o.optString("description"),
+        baseName = o.getString("name"),
+        baseDescription = o.optString("description"),
         front = neck(o.getJSONObject("front")),
         back = neck(o.getJSONObject("back")),
         sleeve = SleeveStyle.valueOf(o.getString("sleeve")),
