@@ -164,7 +164,7 @@ private fun ClothOptions(vm: AppViewModel, layout: Layout) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Switch(checked = !vm.allowTurning, onCheckedChange = { vm.setAllowTurning(!it) })
+                Switch(checked = !vm.allowTurning, onCheckedChange = { vm.changeAllowTurning(!it) })
             }
             Text(
                 "Cloth needed: about ${"%.2f".format(layout.length / 100)} m (${vm.format(layout.length / 2.54 / 36)} yd)",

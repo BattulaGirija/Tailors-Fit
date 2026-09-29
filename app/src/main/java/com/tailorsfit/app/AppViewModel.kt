@@ -159,7 +159,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         settings.showAllowance = v
     }
 
-    fun setAllowTurning(v: Boolean) {
+    fun changeAllowTurning(v: Boolean) {
         allowTurning = v
         settings.allowTurning = v
     }

@@ -37,8 +37,10 @@ jobs:
         if: always()
         run: |
           mkdir -p screenshots
-          rm -f screenshots/*.png
-          cp app/build/screenshots/*.png screenshots/ 2>/dev/null || true
+          if ls app/build/screenshots/*.png >/dev/null 2>&1; then
+            rm -f screenshots/*.png
+            cp app/build/screenshots/*.png screenshots/
+          fi
           {
             echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             grep -E "^e: |error:|FAILED|Exception|BUILD" gradle.log | head -80 || true
