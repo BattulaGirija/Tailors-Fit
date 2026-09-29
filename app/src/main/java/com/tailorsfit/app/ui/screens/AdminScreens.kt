@@ -74,6 +74,8 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.UUID
 
+private fun count(n: Int, word: String) = "$n $word" + if (n == 1) "" else "s"
+
 private fun date(ms: Long) = if (ms <= 0) "—" else DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(ms))
 
 @Composable
@@ -181,7 +183,7 @@ private fun TailorRow(t: Account, customers: Int, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "$customers customers · ${t.patternsGenerated} patterns · active ${date(t.lastActiveAt)}",
+                    "${count(customers, "customer")} · ${count(t.patternsGenerated, "pattern")} · active ${date(t.lastActiveAt)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Brand.Plum,
                 )
@@ -237,7 +239,7 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
                         if (tailor.shopName.isNotBlank()) Text(tailor.shopName, color = Brand.GoldLight)
                         Text("Login: ${tailor.login}", color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
                         Text("Joined ${date(tailor.createdAt)} · last active ${date(tailor.lastActiveAt)}", color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
-                        Text("${customers.size} customers · ${tailor.patternsGenerated} patterns generated", color = Brand.GoldLight, style = MaterialTheme.typography.bodySmall)
+                        Text("${count(customers.size, "customer")} · ${count(tailor.patternsGenerated, "pattern")} generated", color = Brand.GoldLight, style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -249,7 +251,7 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
                     Column(Modifier.padding(12.dp)) {
                         Text(c.name, style = MaterialTheme.typography.titleSmall)
                         Text(
-                            listOfNotNull(c.phone.takeIf { it.isNotBlank() }, "${c.measurements.asMap().size} measurements", "updated ${date(c.updatedAt)}").joinToString(" · "),
+                            listOfNotNull(c.phone.takeIf { it.isNotBlank() }, count(c.measurements.asMap().size, "measurement"), "updated ${date(c.updatedAt)}").joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
