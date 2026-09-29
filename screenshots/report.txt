@@ -1,3 +1,2 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36533078352
-e: The daemon has terminated unexpectedly on startup attempt #1 with error code: 0. The daemon process output:
-BUILD SUCCESSFUL in 1m 29s
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36572322603
+BUILD SUCCESSFUL in 1m 16s
