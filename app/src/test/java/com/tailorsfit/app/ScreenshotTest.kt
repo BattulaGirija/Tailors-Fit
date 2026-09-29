@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performScrollTo
@@ -76,9 +77,9 @@ class ScreenshotTest {
         vm.saveCustomer()
         show(homeContent(vm))
         save("01-home")
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Featured designs"))
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Featured designs"))
         save("01b-home-collections")
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Measure twice, cut once."))
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Measure twice, cut once."))
         save("01c-home-bottom")
     }
 

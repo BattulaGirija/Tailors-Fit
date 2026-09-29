@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -171,11 +172,13 @@ private fun Hero(onMenu: () -> Unit, onStart: () -> Unit, onCustomers: () -> Uni
             ModelThumbnail(
                 heroModel,
                 Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 4.dp, bottom = 40.dp)
-                    .width(220.dp)
-                    .height(150.dp)
-                    .alpha(0.28f),
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 52.dp)
+                    .offset(x = 56.dp)
+                    .width(210.dp)
+                    .height(130.dp)
+                    .alpha(0.22f),
                 fill = Color.Transparent,
                 line = Brand.GoldLight,
             )
