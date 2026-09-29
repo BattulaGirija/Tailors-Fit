@@ -100,7 +100,7 @@ fun PatternBackdrop(content: @Composable BoxScope.() -> Unit) {
                 }
                 translate(size.width * fx, size.height * fy) {
                     rotate(angle, pivot = Offset((b.width * cmToPx / 2).toFloat(), (b.height * cmToPx / 2).toFloat())) {
-                        drawPath(path, Brand.GoldLight.copy(alpha = 0.16f), style = Stroke(width = 1.6f))
+                        drawPath(path, Brand.GoldLight.copy(alpha = 0.26f), style = Stroke(width = 2f))
                     }
                 }
             }

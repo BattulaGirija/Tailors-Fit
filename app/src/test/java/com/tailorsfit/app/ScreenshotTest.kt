@@ -130,6 +130,9 @@ class ScreenshotTest {
     fun adminHome() {
         val vm = vm()
         vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1")
+        vm.customerName = "Lakshmi"
+        vm.saveCustomer()
+        vm.customerName = "Padma"
         vm.saveCustomer()
         vm.signUp("Meena", "Meena Boutique", "meena@boutique.in", "secret1")
         vm.adminLogIn("admin-pass")
