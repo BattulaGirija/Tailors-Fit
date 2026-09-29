@@ -178,6 +178,8 @@ class ScreenshotTest {
         val vm = vm()
         val id = runBlocking {
             vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "ravi@tailors.in", "1234")
+            // Logging in starts a new, empty customer.
+            vm.customerName = "Lakshmi"
             vm.saveCustomer()
             vm.adminLogIn("", "admin-pass")
             vm.tailors().first().id
