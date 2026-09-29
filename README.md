@@ -28,6 +28,23 @@ fronts (two panels joined by a curved seam through the bust point instead of dar
      **Calibrate** once per projector: measure the projected square with a tape and enter the
      numbers. The scale is saved.
 
+## Accounts and admin
+
+- **Tailors** sign up with a name, an optional shop name, a phone number or e-mail, and a
+  password, then log in. Each tailor has their own customer book. The app stays logged in
+  until they choose **Log out** in the side menu.
+- **Admin**: tap **Admin login** on the login screen. The first time, you choose the admin
+  password. The admin can:
+  - see tailor accounts: customers, patterns generated, last active; and delete accounts;
+  - add **new designs** by combining the drafting options (front/back neck shape and depth,
+    neck width, sleeves, opening, princess cut), with a live preview;
+  - hide any design from tailors.
+- Passwords are salted and hashed (PBKDF2); they are never stored as plain text.
+- **Today everything is stored on the phone**, so the admin only sees tailors who signed up
+  on the same device. Accounts go through the `AccountStore` interface, so an online backend
+  (e.g. Firebase Auth + Firestore) can replace `LocalAccountStore` to see tailors on every
+  phone.
+
 ## Drafting method (blouse)
 
 The draft is on the stitching line, in centimetres, with half pieces placed on the fold. It

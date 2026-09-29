@@ -19,8 +19,9 @@ data class Customer(
 )
 
 /** Keeps customers and their measurements in a small JSON file in app storage. */
-class CustomerRepository(context: Context) {
-    private val file = File(context.filesDir, "customers.json")
+class CustomerRepository(context: Context, ownerId: String? = null) {
+    // Each tailor has their own customer book.
+    private val file = File(context.filesDir, if (ownerId == null) "customers.json" else "customers_$ownerId.json")
 
     @Synchronized
     fun loadAll(): List<Customer> {

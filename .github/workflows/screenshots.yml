@@ -31,7 +31,7 @@ jobs:
       - name: Render screens (Robolectric)
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*' 2>&1 | tee gradle.log
+          ./gradlew :app:testDebugUnitTest 2>&1 | tee gradle.log
 
       - name: Collect screenshots and report
         if: always()

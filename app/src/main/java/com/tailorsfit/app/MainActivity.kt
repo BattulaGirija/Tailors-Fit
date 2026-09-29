@@ -14,7 +14,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.tailorsfit.app.ui.components.AppDrawerSheet
 import com.tailorsfit.app.ui.components.DrawerDestination
+import androidx.compose.runtime.remember
 import com.tailorsfit.app.ui.screens.AboutScreen
+import com.tailorsfit.app.ui.screens.AdminHomeScreen
+import com.tailorsfit.app.ui.screens.AdminLoginScreen
+import com.tailorsfit.app.ui.screens.AdminTailorScreen
+import com.tailorsfit.app.ui.screens.AuthScreen
+import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,6 +62,12 @@ object Routes {
     const val CUSTOMERS = "customers"
     const val GUIDE = "guide"
     const val ABOUT = "about"
+    const val AUTH = "auth"
+    const val ADMIN_LOGIN = "admin_login"
+    const val ADMIN = "admin"
+    const val ADMIN_NEW_DESIGN = "admin/design/new"
+    fun adminDesign(id: String) = "admin/design/$id"
+    fun adminTailor(id: String) = "admin/tailor/$id"
     fun catalog(categoryId: String) = "catalog/$categoryId"
     fun measure(modelId: String) = "measure/$modelId"
     fun pattern(modelId: String) = "pattern/$modelId"
@@ -76,9 +88,17 @@ fun TailorsFitApp(startRoute: String? = null, customer: String? = null) {
     val modelArg = listOf(navArgument("modelId") { type = NavType.StringType })
     val route = nav.currentBackStackEntryAsState().value?.destination?.route
 
+    fun toAuth() = nav.navigate(Routes.AUTH) { popUpTo(nav.graph.id) { inclusive = true } }
+    fun toHome() = nav.navigate(Routes.HOME) { popUpTo(nav.graph.id) { inclusive = true } }
+    fun toAdmin() = nav.navigate(Routes.ADMIN) { popUpTo(nav.graph.id) { inclusive = true } }
+
     fun go(d: DrawerDestination) {
         scope.launch { drawer.close() }
         when (d) {
+            DrawerDestination.LOG_OUT -> {
+                vm.logOut()
+                toAuth()
+            }
             DrawerDestination.HOME -> nav.popBackStack(Routes.HOME, inclusive = false)
             DrawerDestination.DESIGNS -> nav.navigate(Routes.catalog("blouse"))
             DrawerDestination.CUSTOMERS -> nav.navigate(Routes.CUSTOMERS)
@@ -90,9 +110,46 @@ fun TailorsFitApp(startRoute: String? = null, customer: String? = null) {
     ModalNavigationDrawer(
         drawerState = drawer,
         gesturesEnabled = route == Routes.HOME || drawer.isOpen,
-        drawerContent = { AppDrawerSheet(selected = DrawerDestination.HOME.takeIf { route == Routes.HOME }, onSelect = ::go) },
+        drawerContent = {
+            AppDrawerSheet(
+                selected = DrawerDestination.HOME.takeIf { route == Routes.HOME },
+                onSelect = ::go,
+                userName = vm.currentUser?.name,
+                shopName = vm.currentUser?.shopName,
+            )
+        },
     ) {
-        NavHost(navController = nav, startDestination = Routes.HOME) {
+        val start = remember { if (vm.currentUser != null) Routes.HOME else Routes.AUTH }
+        NavHost(navController = nav, startDestination = start) {
+            composable(Routes.AUTH) {
+                AuthScreen(vm, onLoggedIn = ::toHome, onAdmin = { nav.navigate(Routes.ADMIN_LOGIN) })
+            }
+            composable(Routes.ADMIN_LOGIN) {
+                AdminLoginScreen(vm, onLoggedIn = ::toAdmin, onBack = back)
+            }
+            composable(Routes.ADMIN) {
+                if (!vm.isAdmin) {
+                    LaunchedEffect(Unit) { toAuth() }
+                } else {
+                    AdminHomeScreen(
+                        vm,
+                        onTailor = { nav.navigate(Routes.adminTailor(it)) },
+                        onNewDesign = { nav.navigate(Routes.ADMIN_NEW_DESIGN) },
+                        onEditDesign = { nav.navigate(Routes.adminDesign(it)) },
+                        onLogOut = ::toAuth,
+                    )
+                }
+            }
+            composable(Routes.ADMIN_NEW_DESIGN) {
+                if (vm.isAdmin) DesignEditorScreen(vm, designId = null, onDone = back)
+            }
+            composable("admin/design/{id}", listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+                if (vm.isAdmin) DesignEditorScreen(vm, designId = entry.arguments?.getString("id"), onDone = back)
+            }
+            composable("admin/tailor/{id}", listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+                val id = entry.arguments?.getString("id") ?: return@composable
+                if (vm.isAdmin) AdminTailorScreen(vm, id, onBack = back)
+            }
             composable(Routes.HOME) {
                 HomeScreen(
                     vm = vm,

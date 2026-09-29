@@ -37,9 +37,33 @@ object Catalog {
         GarmentCategory("petticoat", "Petticoats", "Coming soon", available = false),
     )
 
-    val models: List<GarmentModel> by lazy { com.tailorsfit.pattern.blouse.BlouseCatalog.models }
+    /** Designs that ship with the app. */
+    val builtIn: List<GarmentModel> by lazy { com.tailorsfit.pattern.blouse.BlouseCatalog.models }
+
+    /** Designs added by an admin (kept by the app and handed in with [configure]). */
+    @Volatile
+    var custom: List<GarmentModel> = emptyList()
+        private set
+
+    /** Ids of designs an admin has hidden from tailors. */
+    @Volatile
+    var hidden: Set<String> = emptySet()
+        private set
+
+    fun configure(custom: List<GarmentModel>, hidden: Set<String>) {
+        this.custom = custom
+        this.hidden = hidden
+    }
+
+    /** Every design, including hidden ones (for the admin). */
+    val allModels: List<GarmentModel> get() = builtIn + custom
+
+    /** Designs tailors can pick. */
+    val models: List<GarmentModel> get() = allModels.filter { it.id !in hidden }
 
     fun modelsIn(categoryId: String) = models.filter { it.categoryId == categoryId }
-    fun model(id: String) = models.firstOrNull { it.id == id }
+
+    /** Looks a design up even if hidden, so saved work keeps opening. */
+    fun model(id: String) = allModels.firstOrNull { it.id == id }
     fun category(id: String) = categories.firstOrNull { it.id == id }
 }

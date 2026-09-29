@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
@@ -33,10 +34,16 @@ enum class DrawerDestination(val label: String, val icon: ImageVector) {
     CUSTOMERS("Customers", Icons.Filled.Person),
     GUIDE("How to measure", Icons.Filled.Edit),
     ABOUT("About", Icons.Filled.Info),
+    LOG_OUT("Log out", Icons.AutoMirrored.Filled.ExitToApp),
 }
 
 @Composable
-fun AppDrawerSheet(selected: DrawerDestination?, onSelect: (DrawerDestination) -> Unit) {
+fun AppDrawerSheet(
+    selected: DrawerDestination?,
+    onSelect: (DrawerDestination) -> Unit,
+    userName: String? = null,
+    shopName: String? = null,
+) {
     ModalDrawerSheet(drawerContainerColor = Brand.Ivory) {
         Column(
             Modifier
@@ -47,7 +54,8 @@ fun AppDrawerSheet(selected: DrawerDestination?, onSelect: (DrawerDestination) -
         ) {
             Text("TAILORS FIT", style = MaterialTheme.typography.labelSmall, color = Brand.GoldLight)
             Spacer(Modifier.height(8.dp))
-            Text("Cut to measure", style = MaterialTheme.typography.headlineMedium, color = Brand.Ivory)
+            Text(userName ?: "Cut to measure", style = MaterialTheme.typography.headlineMedium, color = Brand.Ivory)
+            if (!shopName.isNullOrBlank()) Text(shopName, style = MaterialTheme.typography.bodyMedium, color = Brand.GoldLight)
             Spacer(Modifier.height(10.dp))
             OrnamentDivider(color = Brand.Gold, width = 88)
         }

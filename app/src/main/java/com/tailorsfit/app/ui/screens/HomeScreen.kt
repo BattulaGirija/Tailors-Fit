@@ -94,7 +94,7 @@ fun HomeScreen(
         item { SectionHeader("Featured designs", action = "See all", onAction = { onCategory("blouse") }) }
         item {
             LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                items(FEATURED.mapNotNull { Catalog.model(it) }, key = { it.id }) { model ->
+                items(FEATURED.mapNotNull { id -> Catalog.models.firstOrNull { it.id == id } }, key = { it.id }) { model ->
                     Card(
                         onClick = { onModel(model.id) },
                         modifier = Modifier.width(168.dp),

@@ -17,6 +17,11 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import com.tailorsfit.app.ui.components.AppDrawerSheet
 import com.tailorsfit.app.ui.components.DrawerDestination
+import androidx.compose.ui.test.performClick
+import com.tailorsfit.app.ui.screens.AdminHomeScreen
+import com.tailorsfit.app.ui.screens.AdminLoginScreen
+import com.tailorsfit.app.ui.screens.AuthScreen
+import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.CatalogScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import com.tailorsfit.app.ui.screens.CustomersScreen
@@ -100,6 +105,45 @@ class ScreenshotTest {
             ) { homeContent(vm)() }
         }
         save("01d-side-menu")
+    }
+
+    @Test
+    fun login() {
+        val vm = vm()
+        show { AuthScreen(vm, onLoggedIn = {}, onAdmin = {}) }
+        save("00-login")
+        compose.onNodeWithText("Sign up").performClick()
+        save("00b-signup")
+    }
+
+    @Test
+    fun admin() {
+        val vm = vm()
+        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1")
+        vm.saveCustomer()
+        show { AdminLoginScreen(vm, onLoggedIn = {}, onBack = {}) }
+        save("11-admin-login")
+    }
+
+    @Test
+    fun adminHome() {
+        val vm = vm()
+        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1")
+        vm.saveCustomer()
+        vm.signUp("Meena", "Meena Boutique", "meena@boutique.in", "secret1")
+        vm.adminLogIn("admin-pass")
+        show { AdminHomeScreen(vm, onTailor = {}, onNewDesign = {}, onEditDesign = {}, onLogOut = {}) }
+        save("12-admin-tailors")
+        compose.onNodeWithText("Designs").performClick()
+        save("13-admin-designs")
+    }
+
+    @Test
+    fun designEditor() {
+        val vm = vm()
+        vm.adminLogIn("admin-pass")
+        show { DesignEditorScreen(vm, designId = null, onDone = {}) }
+        save("14-admin-new-design")
     }
 
     @Test

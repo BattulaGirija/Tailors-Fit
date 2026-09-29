@@ -181,4 +181,28 @@ class BlouseDrafterTest {
         val b = princess.pieces.filter { it.id.startsWith("front") }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
         assertEquals(a, b, 0.05)
     }
+
+    @Test
+    fun everyDesignTheAdminEditorAllowsCanBeDrafted() {
+        // The admin design editor combines these options; each combination must draft cleanly.
+        val depths = listOf(0.4, 1.0, 1.8)
+        for (front in com.tailorsfit.pattern.blouse.NeckShape.entries) for (back in com.tailorsfit.pattern.blouse.NeckShape.entries)
+            for (princess in listOf(false, true)) for (d in depths) for (widen in listOf(0.0, 5.0)) {
+                val model = com.tailorsfit.pattern.blouse.BlouseModel(
+                    "t", "t", "",
+                    com.tailorsfit.pattern.blouse.NeckSpec(front, widen, d),
+                    com.tailorsfit.pattern.blouse.NeckSpec(back, widen, d),
+                    SleeveStyle.entries[(front.ordinal + back.ordinal) % SleeveStyle.entries.size],
+                    Opening.entries[(front.ordinal + (if (princess) 1 else 0)) % 2],
+                    princess,
+                )
+                for (m in listOf(SizePreset.S.measurements(), SizePreset.XXL.measurements())) {
+                    val p = model.draft(m)
+                    for (piece in p.pieces) {
+                        assertTrue(piece.area() > 50, "$front/$back/$princess/$d/$widen ${piece.id}")
+                        assertTrue(piece.seamOutline().none { it.x.isNaN() || it.y.isNaN() })
+                    }
+                }
+            }
+    }
 }

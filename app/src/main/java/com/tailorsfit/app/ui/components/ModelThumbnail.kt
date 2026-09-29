@@ -21,7 +21,7 @@ import kotlin.math.min
 @Composable
 fun ModelThumbnail(model: GarmentModel, modifier: Modifier = Modifier, fill: Color, line: Color) {
     // Each group is one garment view (front, back) made of one or more panels in a shared frame.
-    val groups: List<List<List<Pt>>> = remember(model.id) {
+    val groups: List<List<List<Pt>>> = remember(model) {
         runCatching {
             val pieces = model.draft(Measurements.defaults()).pieces
             val front = pieces.filter { it.id.startsWith("front") }.flatMap { p ->

@@ -8,7 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import com.tailorsfit.app.data.Calibration
 import com.tailorsfit.app.data.Customer
+import com.tailorsfit.app.data.Account
+import com.tailorsfit.app.data.AccountStore
+import com.tailorsfit.app.data.AuthResult
 import com.tailorsfit.app.data.CustomerRepository
+import com.tailorsfit.app.data.DesignStore
+import com.tailorsfit.app.data.LocalAccountStore
+import com.tailorsfit.app.data.Role
+import com.tailorsfit.pattern.blouse.BlouseModel
 import com.tailorsfit.app.data.Settings
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.layout.Layout
@@ -34,11 +41,93 @@ sealed interface DraftResult {
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
-    private val repo = CustomerRepository(app)
     val settings = Settings(app)
+    val accounts: AccountStore = LocalAccountStore(app)
+    val designs = DesignStore(app).also { it.apply() }
+
+    /** Logged-in tailor (kept across app restarts), or null when logged out. */
+    var currentUser by mutableStateOf(settings.sessionUserId?.let { accounts.find(it) }?.takeIf { it.role == Role.TAILOR })
+        private set
+
+    /** True only while the admin is logged in (never remembered across restarts). */
+    var isAdmin by mutableStateOf(false)
+        private set
+
+    /** Bumped whenever admin data changes so admin screens re-read it. */
+    var adminVersion by mutableStateOf(0)
+        private set
+
+    private var repo = CustomerRepository(app, currentUser?.id)
 
     var customers by mutableStateOf(repo.loadAll())
         private set
+
+    fun signUp(name: String, shop: String, login: String, password: String): String? =
+        handleAuth(accounts.signUp(name, shop, login, password))
+
+    fun logIn(login: String, password: String): String? = handleAuth(accounts.logIn(login, password))
+
+    private fun handleAuth(result: AuthResult): String? = when (result) {
+        is AuthResult.Failure -> result.message
+        is AuthResult.Success -> {
+            startSession(result.account)
+            null
+        }
+    }
+
+    private fun startSession(account: Account?) {
+        currentUser = account
+        settings.sessionUserId = account?.id
+        repo = CustomerRepository(getApplication(), account?.id)
+        customers = repo.loadAll()
+        startNewCustomer()
+        lastDraft = null
+        lastDraftKey = null
+    }
+
+    fun logOut() = startSession(null)
+
+    fun adminLogIn(password: String): String? {
+        val result = if (accounts.adminExists()) accounts.adminLogIn(password) else accounts.createAdmin(password)
+        return when (result) {
+            is AuthResult.Failure -> result.message
+            is AuthResult.Success -> {
+                isAdmin = true
+                null
+            }
+        }
+    }
+
+    fun adminLogOut() {
+        isAdmin = false
+    }
+
+    fun tailors(): List<Account> = accounts.tailors()
+
+    fun tailorCustomers(id: String): List<Customer> = CustomerRepository(getApplication(), id).loadAll()
+
+    fun deleteTailor(id: String) {
+        accounts.deleteTailor(id)
+        adminVersion++
+    }
+
+    fun saveDesign(model: BlouseModel) {
+        val state = designs.load()
+        designs.save(state.copy(custom = state.custom.filter { it.id != model.id } + model))
+        adminVersion++
+    }
+
+    fun deleteDesign(id: String) {
+        val state = designs.load()
+        designs.save(state.copy(custom = state.custom.filter { it.id != id }, hidden = state.hidden - id))
+        adminVersion++
+    }
+
+    fun setDesignHidden(id: String, hidden: Boolean) {
+        val state = designs.load()
+        designs.save(state.copy(hidden = if (hidden) state.hidden + id else state.hidden - id))
+        adminVersion++
+    }
 
     /** Customer currently being measured (null = new, unsaved). */
     var customerId by mutableStateOf<String?>(null)
@@ -166,6 +255,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private var lastDraftKey: Any? = null
     private var lastDraft: DraftResult? = null
+    private var lastCountedKey: Any? = null
 
     /**
      * Drafts and nests off the main thread. The result is cached, so the pattern screen and
@@ -179,6 +269,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return withContext(Dispatchers.Main.immediate) {
             lastDraftKey = key
             lastDraft = result
+            val user = currentUser
+            // Count a pattern once per design + measurements, not for every cloth option change.
+            val countKey = listOf(model.id, key[1], key.last())
+            if (result is DraftResult.Ok && user != null && countKey != lastCountedKey) {
+                lastCountedKey = countKey
+                withContext(Dispatchers.IO) { accounts.recordPattern(user.id) }
+            }
             result
         }
     }
