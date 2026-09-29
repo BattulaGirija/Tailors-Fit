@@ -8,6 +8,16 @@ The first category is **saree blouses**, with 16 designs: round, boat, V, sweeth
 deep U back, sleeveless, cap / elbow / ¾ sleeves, front or back opening, and **princess cut**
 fronts (two panels joined by a curved seam through the bust point instead of darts).
 
+## Download (test version)
+
+**https://github.com/BattulaGirija/Tailors-Fit/releases/latest/download/TailorsFit.apk**
+
+<img src="screenshots/download-qr.png" width="180" alt="QR code for the download link">
+
+Open the link (or scan the QR code) on an Android phone (Android 7 or newer), tap the
+downloaded file, and allow installing from your browser if asked. Every new build is
+published to the same link and installs over the previous version.
+
 ## How it works
 
 1. **Pick a design.** Home → *Saree Blouses*, then tap a design. Each thumbnail is drawn from
