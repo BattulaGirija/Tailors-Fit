@@ -1,18 +1,2 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36597478205
-ScreenshotTest > adminTailor FAILED
-    androidx.compose.ui.test.ComposeTimeoutException at ScreenshotTest.kt:70
-> Task :app:testDebugUnitTest FAILED
-BUILD FAILED in 1m 59s
-    <failure message="androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 20000 ms" type="androidx.compose.ui.test.ComposeTimeoutException">androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 20000 ms
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:441)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.waitUntil(AndroidComposeTestRule.android.kt:306)
-	at com.tailorsfit.app.ScreenshotTest.awaitText(ScreenshotTest.kt:70)
-	at com.tailorsfit.app.ScreenshotTest.adminTailor(ScreenshotTest.kt:186)
-	at java.base@17.0.20.1/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base@17.0.20.1/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base@17.0.20.1/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base@17.0.20.1/java.lang.reflect.Method.invoke(Method.java:569)
-	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at app//org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36597928789
+BUILD SUCCESSFUL in 1m 4s
