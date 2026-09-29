@@ -50,7 +50,7 @@ class ScreenshotTest {
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
 
-    private val model = "blouse_round_classic"
+    private val model = "blouse_deep_back_u"
 
     private fun vm() = AppViewModel(ApplicationProvider.getApplicationContext()).apply { customerName = "Lakshmi" }
 
@@ -167,6 +167,9 @@ class ScreenshotTest {
         val vm = vm()
         show { MeasurementScreen(vm, model, onBack = {}, onGenerate = {}) }
         save("03-measurements")
+        compose.onNodeWithText("Gold buttis").performClick()
+        compose.onNodeWithText("L (38)").performScrollTo().performClick()
+        save("03b-measurements-size-38")
         compose.onNodeWithText("Generate pattern").performScrollTo()
         save("04-measurements-bottom")
     }

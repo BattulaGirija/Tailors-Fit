@@ -16,6 +16,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import com.tailorsfit.app.ui.components.GarmentPreviewCard
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -70,6 +75,8 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
         ) {
             Text(model.description, style = MaterialTheme.typography.bodyMedium)
 
+            GarmentPreviewCard(model, vm.currentMeasurements())
+
             CustomerCard(vm)
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -81,7 +88,35 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
 
             Text("Start from a standard size", style = MaterialTheme.typography.titleSmall)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SizePreset.entries.forEach { p -> AssistChip(onClick = { vm.applyPreset(p) }, label = { Text(p.label) }) }
+                SizePreset.entries.forEach { p ->
+                    val selected = vm.selectedPreset == p
+                    FilterChip(
+                        selected = selected,
+                        onClick = { vm.applyPreset(p) },
+                        label = { Text(p.label) },
+                        leadingIcon = if (selected) {
+                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else {
+                            null
+                        },
+                    )
+                }
+            }
+            val preset = vm.selectedPreset
+            Surface(
+                color = if (preset != null) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    when {
+                        preset != null -> "Size ${preset.label} selected — change any measurement below to fit your customer."
+                        vm.customerId != null -> "Using ${vm.customerName}'s saved measurements."
+                        else -> "Custom measurements."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
             }
 
             Text("Measurements (${vm.unit.label})", style = MaterialTheme.typography.titleMedium)
@@ -89,7 +124,7 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
                 OutlinedTextField(
                     value = vm.inputs[f] ?: "",
                     onValueChange = { text ->
-                        vm.inputs[f] = text.filter { it.isDigit() || it == '.' || it == ',' }
+                        vm.editMeasurement(f, text.filter { it.isDigit() || it == '.' || it == ',' })
                         if (errors.containsKey(f)) errors = errors - f
                     },
                     label = { Text(f.label) },

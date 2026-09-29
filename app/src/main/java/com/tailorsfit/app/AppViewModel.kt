@@ -183,6 +183,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Standard size the measurements came from; null once the tailor edits a value (custom). */
+    var selectedPreset by mutableStateOf<SizePreset?>(SizePreset.M)
+        private set
+
+    /** Called when the tailor types in a measurement box. */
+    fun editMeasurement(f: MeasurementField, text: String) {
+        inputs[f] = text
+        selectedPreset = null
+    }
+
     fun applyPreset(p: SizePreset) {
         val keepNeck = currentMeasurements()
         var m = p.measurements()
@@ -191,6 +201,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (keepNeck.has(f)) m = m.with(f, keepNeck[f])
         }
         fillFrom(m)
+        selectedPreset = p
     }
 
     /** Measurements in cm parsed from the text boxes; unparseable boxes become NaN. */
@@ -205,6 +216,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         customerName = ""
         customerPhone = ""
         fillFrom(SizePreset.M.measurements())
+        selectedPreset = SizePreset.M
     }
 
     fun selectCustomer(c: Customer) {
@@ -212,6 +224,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         customerName = c.name
         customerPhone = c.phone
         fillFrom(Measurements.defaults().let { d -> Measurements(d.asMap() + c.measurements.asMap()) })
+        selectedPreset = null // the customer's own measurements
     }
 
     /** Saves the current measurements under the current customer name. Returns an error or null. */
