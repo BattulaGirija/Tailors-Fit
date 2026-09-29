@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onFirst
@@ -134,7 +135,7 @@ class ScreenshotTest {
         vm.adminLogIn("admin-pass")
         show { AdminHomeScreen(vm, onTailor = {}, onNewDesign = {}, onEditDesign = {}, onLogOut = {}) }
         save("12-admin-tailors")
-        compose.onNodeWithText("Designs").performClick()
+        compose.onNode(hasText("Designs") and hasClickAction()).performClick()
         save("13-admin-designs")
     }
 
