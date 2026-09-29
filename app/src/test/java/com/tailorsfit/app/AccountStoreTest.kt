@@ -71,6 +71,45 @@ class AccountStoreTest {
     }
 
     @Test
+    fun forgottenPasswordIsResetWithTheSecurityAnswer() {
+        store.signUp("Ravi", "", "ravi@shop.in", "old-secret", "sq.city", "Hyderabad")
+        assertEquals("sq.city", store.securityQuestion(" Ravi@Shop.in"))
+        assertTrue(store.resetPassword("ravi@shop.in", "Vizag", "new-secret") is AuthResult.Failure)
+        assertTrue(store.logIn("ravi@shop.in", "old-secret") is AuthResult.Success)
+        // Case and extra spaces in the answer do not matter.
+        assertTrue(store.resetPassword("ravi@shop.in", "  hyderabad ", "new-secret") is AuthResult.Success)
+        assertTrue(store.logIn("ravi@shop.in", "old-secret") is AuthResult.Failure)
+        assertTrue(store.logIn("ravi@shop.in", "new-secret") is AuthResult.Success)
+        // The answer is hashed, never stored as typed.
+        assertFalse(File(context.filesDir, "accounts.json").readText().lowercase().contains("hyderabad"))
+    }
+
+    @Test
+    fun wrongAnswersAreLimited() {
+        store.signUp("Ravi", "", "ravi@shop.in", "old-secret", "sq.pet", "Moti")
+        repeat(5) { assertTrue(store.resetPassword("ravi@shop.in", "guess$it", "new-secret") is AuthResult.Failure) }
+        assertTrue(store.resetPassword("ravi@shop.in", "Moti", "new-secret") is AuthResult.Failure)
+        assertTrue(store.logIn("ravi@shop.in", "old-secret") is AuthResult.Success)
+    }
+
+    @Test
+    fun accountsWithoutAQuestionAreResetByTheAdmin() {
+        val a = (store.signUp("A", "", "a@shop.in", "secret1") as AuthResult.Success).account
+        assertEquals(null, store.securityQuestion("a@shop.in"))
+        assertEquals(null, store.securityQuestion("nobody@shop.in"))
+        assertTrue(store.resetPassword("a@shop.in", "anything", "secret2") is AuthResult.Failure)
+        assertTrue(store.adminResetPassword(a.id, "123") is AuthResult.Failure)
+        assertTrue(store.adminResetPassword(a.id, "secret2") is AuthResult.Success)
+        assertTrue(store.logIn("a@shop.in", "secret2") is AuthResult.Success)
+    }
+
+    @Test
+    fun signUpNeedsAnAnswerWhenAQuestionIsChosen() {
+        assertTrue(store.signUp("A", "", "a@shop.in", "secret1", "sq.pet", " ") is AuthResult.Failure)
+        assertTrue(store.signUp("A", "", "a@shop.in", "secret1", "sq.unknown", "Moti") is AuthResult.Failure)
+    }
+
+    @Test
     fun patternsAreCounted() {
         val a = (store.signUp("A", "", "a@shop.in", "secret1") as AuthResult.Success).account
         store.recordPattern(a.id)

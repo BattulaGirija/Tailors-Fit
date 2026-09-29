@@ -24,6 +24,7 @@ import com.tailorsfit.app.ui.screens.AdminHomeScreen
 import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AdminTailorScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
+import com.tailorsfit.app.ui.screens.ForgotPasswordScreen
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import kotlinx.coroutines.launch
@@ -68,6 +69,8 @@ object Routes {
     const val ABOUT = "about"
     const val AUTH = "auth"
     const val ADMIN_LOGIN = "admin_login"
+    const val FORGOT = "forgot?login={login}"
+    fun forgot(login: String) = "forgot?login=${android.net.Uri.encode(login)}"
     const val ADMIN = "admin"
     const val ADMIN_NEW_DESIGN = "admin/design/new"
     fun adminDesign(id: String) = "admin/design/$id"
@@ -142,7 +145,16 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
         val start = remember { if (vm.currentUser != null) Routes.HOME else Routes.AUTH }
         NavHost(navController = nav, startDestination = start) {
             composable(Routes.AUTH) {
-                AuthScreen(vm, onLoggedIn = ::toHome, onAdmin = { nav.navigate(Routes.ADMIN_LOGIN) }, onLanguage = vm::changeLanguage)
+                AuthScreen(
+                    vm,
+                    onLoggedIn = ::toHome,
+                    onAdmin = { nav.navigate(Routes.ADMIN_LOGIN) },
+                    onForgot = { nav.navigate(Routes.forgot(it)) },
+                    onLanguage = vm::changeLanguage,
+                )
+            }
+            composable(Routes.FORGOT, listOf(navArgument("login") { type = NavType.StringType; defaultValue = "" })) {
+                ForgotPasswordScreen(vm, it.arguments?.getString("login") ?: "", onDone = ::toAuth, onBack = back)
             }
             composable(Routes.ADMIN_LOGIN) {
                 AdminLoginScreen(vm, onLoggedIn = ::toAdmin, onBack = back)

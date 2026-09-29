@@ -229,6 +229,8 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
     val tailor = remember(vm.adminVersion) { vm.accounts.find(tailorId) }
     val customers = remember(tailorId) { vm.tailorCustomers(tailorId) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var resetOpen by remember { mutableStateOf(false) }
+    var resetDone by remember { mutableStateOf(false) }
     Scaffold(topBar = { AppBar(tailor?.name ?: tr("admin.tailor"), onBack) }) { padding ->
         if (tailor == null) {
             Text(tr("admin.gone"), Modifier.padding(padding).padding(24.dp))
@@ -243,8 +245,16 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
                         Text(tr("admin.login_id", tailor.login), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
                         Text(tr("admin.joined", date(tailor.createdAt), date(tailor.lastActiveAt)), color = Brand.Ivory.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
                         Text("${count(customers.size, "customer")} · ${count(tailor.patternsGenerated, "pattern")} ${tr("admin.generated")}", color = Brand.GoldLight, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            if (tailor.securityQuestion.isNotEmpty()) tr("admin.question_set") else tr("admin.question_missing"),
+                            color = Brand.Ivory.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = { resetOpen = true; resetDone = false }) { Text(tr("admin.reset_password")) }
+                if (resetDone) Text(tr("admin.reset_done"), color = Brand.Emerald, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 Text(tr("admin.customers"), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             }
@@ -277,6 +287,28 @@ fun AdminTailorScreen(vm: AppViewModel, tailorId: String, onBack: () -> Unit) {
             text = { Text(tr("admin.delete_tailor.text")) },
             confirmButton = { TextButton(onClick = { vm.deleteTailor(tailorId); confirmDelete = false; onBack() }) { Text(tr("app.delete")) } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("app.cancel")) } },
+        )
+    }
+    if (resetOpen) {
+        var password by remember { mutableStateOf("") }
+        var error by remember { mutableStateOf<String?>(null) }
+        AlertDialog(
+            onDismissRequest = { resetOpen = false },
+            title = { Text(tr("admin.reset_password")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("admin.reset_password.text", tailor?.name))
+                    OutlinedTextField(value = password, onValueChange = { password = it; error = null }, label = { Text(tr("forgot.new_password")) }, singleLine = true)
+                    if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    error = vm.adminResetPassword(tailorId, password)
+                    if (error == null) { resetOpen = false; resetDone = true }
+                }) { Text(tr("forgot.reset")) }
+            },
+            dismissButton = { TextButton(onClick = { resetOpen = false }) { Text(tr("app.cancel")) } },
         )
     }
 }

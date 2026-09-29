@@ -43,6 +43,11 @@ class Settings(context: Context) {
         get() = prefs.getString("session_user", null)
         set(v) = prefs.edit().putString("session_user", v).apply()
 
+    /** Phone or e-mail last used to sign up or log in, filled in on the login screen. */
+    var lastLogin: String
+        get() = prefs.getString("last_login", null) ?: ""
+        set(v) = prefs.edit().putString("last_login", v).apply()
+
     var projectorLineWidthPx: Float
         get() = prefs.getFloat("projector_line", 3f)
         set(v) = prefs.edit().putFloat("projector_line", v).apply()

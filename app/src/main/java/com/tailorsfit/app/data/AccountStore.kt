@@ -24,7 +24,21 @@ data class Account(
     val lastActiveAt: Long = createdAt,
     internal val salt: String = "",
     internal val hash: String = "",
+    /** Key of the security question chosen at sign-up (see [SecurityQuestions]), or "" if none. */
+    val securityQuestion: String = "",
+    internal val answerSalt: String = "",
+    internal val answerHash: String = "",
 )
+
+/** Questions a tailor can pick at sign-up, used to reset a forgotten password on the phone. */
+object SecurityQuestions {
+    val keys = listOf("sq.pet", "sq.mother", "sq.school", "sq.city", "sq.first_shop")
+
+    private val SPACES = Regex("\\s+")
+
+    /** Answers are compared ignoring case and extra spaces ("  Hyderabad " == "hyderabad"). */
+    fun normalise(answer: String) = answer.trim().lowercase().split(SPACES).joinToString(" ")
+}
 
 sealed interface AuthResult {
     data class Success(val account: Account) : AuthResult
@@ -37,7 +51,7 @@ sealed interface AuthResult {
  * sees tailors from every phone.
  */
 interface AccountStore {
-    fun signUp(name: String, shopName: String, login: String, password: String): AuthResult
+    fun signUp(name: String, shopName: String, login: String, password: String, question: String = "", answer: String = ""): AuthResult
     fun logIn(login: String, password: String): AuthResult
     fun adminExists(): Boolean
     fun createAdmin(password: String): AuthResult
@@ -46,6 +60,15 @@ interface AccountStore {
     fun find(id: String): Account?
     fun recordPattern(accountId: String)
     fun deleteTailor(id: String)
+
+    /** Key of the tailor's security question, or null if the login is unknown or has none. */
+    fun securityQuestion(login: String): String?
+
+    /** Sets a new password after checking the answer to the security question. */
+    fun resetPassword(login: String, answer: String, newPassword: String): AuthResult
+
+    /** Admin sets a new password for a tailor (e.g. one without a security question). */
+    fun adminResetPassword(id: String, newPassword: String): AuthResult
 }
 
 object Passwords {
@@ -111,16 +134,17 @@ class LocalAccountStore(context: Context) : AccountStore {
     private fun normalise(login: String) = login.trim().lowercase().replace(" ", "")
 
     @Synchronized
-    override fun signUp(name: String, shopName: String, login: String, password: String): AuthResult {
+    override fun signUp(name: String, shopName: String, login: String, password: String, question: String, answer: String): AuthResult {
         val id = normalise(login)
         if (name.isBlank()) return AuthResult.Failure(tr("err.name"))
         if (!isValidLogin(id)) return AuthResult.Failure(tr("err.login_invalid"))
         Passwords.problem(password)?.let { return AuthResult.Failure(it) }
+        answerProblem(question, answer)?.let { return AuthResult.Failure(it) }
         val all = load()
         if (all.any { it.login == id }) return AuthResult.Failure(tr("err.login_taken"))
         val salt = Passwords.newSalt()
         val now = System.currentTimeMillis()
-        val account = Account(
+        val account = withAnswer(Account(
             id = UUID.randomUUID().toString(),
             name = name.trim(),
             shopName = shopName.trim(),
@@ -129,7 +153,7 @@ class LocalAccountStore(context: Context) : AccountStore {
             createdAt = now,
             salt = salt,
             hash = Passwords.hash(password, salt),
-        )
+        ), question, answer)
         save(all + account)
         return AuthResult.Success(account)
     }
@@ -184,10 +208,68 @@ class LocalAccountStore(context: Context) : AccountStore {
         save(load().filter { it.id != id || it.role == Role.ADMIN })
     }
 
+    override fun securityQuestion(login: String): String? =
+        load().firstOrNull { it.login == normalise(login) && it.role == Role.TAILOR }
+            ?.securityQuestion?.takeIf { it in SecurityQuestions.keys }
+
+    /** Times of recent wrong answers per login, so an answer cannot be found by guessing. */
+    private val wrongAnswers = HashMap<String, MutableList<Long>>()
+
+    @Synchronized
+    override fun resetPassword(login: String, answer: String, newPassword: String): AuthResult {
+        val id = normalise(login)
+        val now = System.currentTimeMillis()
+        val recent = wrongAnswers.getOrPut(id) { mutableListOf() }.apply { removeAll { now - it > LOCK_MS } }
+        if (recent.size >= MAX_WRONG_ANSWERS) return AuthResult.Failure(tr("err.too_many_tries"))
+        val all = load()
+        val acc = all.firstOrNull { it.login == id && it.role == Role.TAILOR }
+        if (acc == null || acc.answerHash.isEmpty()) return AuthResult.Failure(tr("err.no_question"))
+        if (!Passwords.matches(SecurityQuestions.normalise(answer), acc.answerSalt, acc.answerHash)) {
+            recent += now
+            return AuthResult.Failure(tr("err.answer_wrong"))
+        }
+        Passwords.problem(newPassword)?.let { return AuthResult.Failure(it) }
+        wrongAnswers.remove(id)
+        val updated = withPassword(acc, newPassword)
+        save(all.map { if (it.id == acc.id) updated else it })
+        return AuthResult.Success(updated)
+    }
+
+    @Synchronized
+    override fun adminResetPassword(id: String, newPassword: String): AuthResult {
+        Passwords.problem(newPassword)?.let { return AuthResult.Failure(it) }
+        val all = load()
+        val acc = all.firstOrNull { it.id == id && it.role == Role.TAILOR } ?: return AuthResult.Failure(tr("admin.gone"))
+        val updated = withPassword(acc, newPassword)
+        wrongAnswers.remove(acc.login)
+        save(all.map { if (it.id == id) updated else it })
+        return AuthResult.Success(updated)
+    }
+
+    private fun answerProblem(question: String, answer: String): String? = when {
+        question.isEmpty() -> null
+        question !in SecurityQuestions.keys -> tr("err.question")
+        SecurityQuestions.normalise(answer).length < 2 -> tr("err.answer_short")
+        else -> null
+    }
+
+    /** The answer is salted and hashed like a password, never stored as typed. */
+    private fun withAnswer(a: Account, question: String, answer: String): Account {
+        if (question.isEmpty()) return a
+        val salt = Passwords.newSalt()
+        return a.copy(securityQuestion = question, answerSalt = salt, answerHash = Passwords.hash(SecurityQuestions.normalise(answer), salt))
+    }
+
+    private fun withPassword(a: Account, password: String): Account {
+        val salt = Passwords.newSalt()
+        return a.copy(salt = salt, hash = Passwords.hash(password, salt))
+    }
+
     private fun toJson(a: Account) = JSONObject().apply {
         put("id", a.id); put("name", a.name); put("shop", a.shopName); put("login", a.login)
         put("role", a.role.name); put("createdAt", a.createdAt); put("patterns", a.patternsGenerated)
         put("lastActiveAt", a.lastActiveAt); put("salt", a.salt); put("hash", a.hash)
+        put("question", a.securityQuestion); put("answerSalt", a.answerSalt); put("answerHash", a.answerHash)
     }
 
     private fun fromJson(o: JSONObject) = Account(
@@ -201,9 +283,14 @@ class LocalAccountStore(context: Context) : AccountStore {
         lastActiveAt = o.optLong("lastActiveAt"),
         salt = o.optString("salt"),
         hash = o.optString("hash"),
+        securityQuestion = o.optString("question"),
+        answerSalt = o.optString("answerSalt"),
+        answerHash = o.optString("answerHash"),
     )
 
     companion object {
+        private const val MAX_WRONG_ANSWERS = 5
+        private const val LOCK_MS = 15 * 60 * 1000L
         private val EMAIL = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
         fun isValidLogin(login: String): Boolean {
             val digits = login.removePrefix("+").filter { it.isDigit() }

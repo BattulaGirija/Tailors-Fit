@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performClick
 import com.tailorsfit.app.ui.screens.AdminHomeScreen
 import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
+import com.tailorsfit.app.ui.screens.ForgotPasswordScreen
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.CatalogScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
@@ -115,6 +116,30 @@ class ScreenshotTest {
         save("00-login")
         compose.onNodeWithText("Sign up").performClick()
         save("00b-signup")
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Security question"))
+        save("00c-signup-question")
+    }
+
+    @Test
+    fun forgotPassword() {
+        val vm = vm()
+        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1", "sq.city", "Hyderabad")
+        vm.logOut()
+        show { ForgotPasswordScreen(vm, vm.lastLogin, onDone = {}, onBack = {}) }
+        compose.onNodeWithText("Next").performClick()
+        awaitText("In which town")
+        save("00d-forgot-password")
+    }
+
+    @Test
+    fun loginRemembersId() {
+        val vm = vm()
+        vm.signUp("Ravi Kumar", "Ravi Tailors", "9876543210", "secret1", "sq.city", "Hyderabad")
+        vm.logOut()
+        assert(vm.resetPassword(vm.lastLogin, "hyderabad", "secret2") == null)
+        show { AuthScreen(vm, onLoggedIn = {}, onAdmin = {}) }
+        awaitText("9876543210")
+        save("00e-login-after-reset")
     }
 
     @Test

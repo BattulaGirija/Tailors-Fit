@@ -77,10 +77,38 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var customers by mutableStateOf(repo.loadAll())
         private set
 
-    fun signUp(name: String, shop: String, login: String, password: String): String? =
-        handleAuth(accounts.signUp(name, shop, login, password))
+    fun signUp(name: String, shop: String, login: String, password: String, question: String = "", answer: String = ""): String? =
+        handleAuth(accounts.signUp(name, shop, login, password, question, answer))
 
     fun logIn(login: String, password: String): String? = handleAuth(accounts.logIn(login, password))
+
+    /** Phone or e-mail last used on this phone, so the login form comes filled in. */
+    var lastLogin by mutableStateOf(settings.lastLogin)
+        private set
+
+    /** One-off message for the login screen (e.g. after a password reset). */
+    var authNotice by mutableStateOf<String?>(null)
+
+    fun securityQuestion(login: String): String? = accounts.securityQuestion(login)
+
+    /** Returns an error, or null after the password was changed. */
+    fun resetPassword(login: String, answer: String, newPassword: String): String? =
+        when (val r = accounts.resetPassword(login, answer, newPassword)) {
+            is AuthResult.Failure -> r.message
+            is AuthResult.Success -> {
+                rememberLogin(r.account)
+                authNotice = tr("forgot.done")
+                null
+            }
+        }
+
+    fun adminResetPassword(id: String, newPassword: String): String? =
+        (accounts.adminResetPassword(id, newPassword) as? AuthResult.Failure)?.message
+
+    private fun rememberLogin(account: Account) {
+        lastLogin = account.login
+        settings.lastLogin = account.login
+    }
 
     private fun handleAuth(result: AuthResult): String? = when (result) {
         is AuthResult.Failure -> result.message
@@ -93,6 +121,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun startSession(account: Account?) {
         currentUser = account
         settings.sessionUserId = account?.id
+        account?.let(::rememberLogin)
         repo = CustomerRepository(getApplication(), account?.id)
         customers = repo.loadAll()
         startNewCustomer()

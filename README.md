@@ -58,15 +58,21 @@ help, design names, warnings, and the labels printed on patterns and shown on th
 ## Accounts and admin
 
 - **Tailors** sign up with a name, an optional shop name, a phone number or e-mail, and a
-  password, then log in. Each tailor has their own customer book. The app stays logged in
-  until they choose **Log out** in the side menu.
+  password, and pick a **security question** with an answer. Each tailor has their own
+  customer book. The app stays logged in until they choose **Log out** in the side menu, and
+  the login screen comes filled in with the phone / e-mail used last time.
+- **Forgot password?** on the login screen: enter the phone / e-mail, answer the security
+  question, and choose a new password. Answers ignore case and extra spaces; after 5 wrong
+  answers the reset is locked for 15 minutes. Tailors who signed up before security questions
+  existed can ask the admin, who can set a new password from the tailor's page.
 - **Admin**: tap **Admin login** on the login screen. The first time, you choose the admin
   password. The admin can:
   - see tailor accounts: customers, patterns generated, last active; and delete accounts;
   - add **new designs** by combining the drafting options (front/back neck shape and depth,
     neck width, sleeves, opening, princess cut), with a live preview;
   - hide any design from tailors.
-- Passwords are salted and hashed (PBKDF2); they are never stored as plain text.
+- Passwords and security answers are salted and hashed (PBKDF2); they are never stored as
+  plain text.
 - **Today everything is stored on the phone**, so the admin only sees tailors who signed up
   on the same device. Accounts go through the `AccountStore` interface, so an online backend
   (e.g. Firebase Auth + Firestore) can replace `LocalAccountStore` to see tailors on every

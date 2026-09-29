@@ -24,6 +24,7 @@ object Brand {
     val Ink = Color(0xFF2A2027)
     val Muted = Color(0xFF75676F)
     val Line = Color(0xFFE2D6C6)
+    val Emerald = Color(0xFF1E7A55)
 }
 
 val SerifDisplay = FontFamily(Font(R.font.dm_serif_display, FontWeight.Normal))
