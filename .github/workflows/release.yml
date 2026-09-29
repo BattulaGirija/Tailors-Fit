@@ -1,0 +1,66 @@
+name: Test release
+
+# Publishes the latest test APK to a fixed download link:
+#   https://github.com/<owner>/<repo>/releases/latest/download/TailorsFit.apk
+# (anyone can download it once the repository is public).
+on:
+  push:
+    branches:
+      - main
+      - claude/wizardly-franklin-ooznvg
+    paths-ignore:
+      - "screenshots/**"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          ./gradlew :pattern-core:test :app:assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk TailorsFit.apk
+
+      - name: Move the "tester" tag to this commit
+        run: |
+          git tag -f tester
+          git push -f origin tester
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tester
+          name: "Tailors Fit — test build ${{ github.run_number }}"
+          make_latest: true
+          prerelease: false
+          files: TailorsFit.apk
+          body: |
+            **Test build ${{ github.run_number }}** (version 0.1.${{ github.run_number }}) from commit ${{ github.sha }}.
+
+            ### Install on an Android phone (Android 7 or newer)
+            1. Open this link on the phone: https://github.com/${{ github.repository }}/releases/latest/download/TailorsFit.apk
+            2. Tap the downloaded file. If asked, allow "Install unknown apps" for your browser / Files app.
+            3. If Play Protect warns about an unknown app, tap **More details → Install anyway** (normal for test apps outside the Play Store).
+
+            New builds install over the old one — saved customers are kept.
+
+            This is a test version: check patterns on cheap cloth before cutting expensive fabric, and please send feedback.

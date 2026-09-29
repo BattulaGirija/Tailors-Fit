@@ -12,11 +12,27 @@ android {
         applicationId = "com.tailorsfit.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI sets BUILD_NUMBER so every published test build installs over the previous one.
+        val build = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "0.1.$build"
+    }
+
+    signingConfigs {
+        // Shared key for test builds so testers can update without uninstalling.
+        // NOT for the Play Store: use a private upload key kept outside the repository.
+        create("tester") {
+            storeFile = file("tester.keystore")
+            storePassword = "tailorsfit"
+            keyAlias = "tester"
+            keyPassword = "tailorsfit"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("tester")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
