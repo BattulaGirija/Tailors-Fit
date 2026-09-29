@@ -1,17 +1,2 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36514102615
-ScreenshotTest > home FAILED
-> Task :app:testDebugUnitTest FAILED
-BUILD FAILED in 1m 14s
-    <failure message="java.lang.AssertionError: Failed: performScrollToNode(Text + EditableText contains 'Featured designs' (ignoreCase: false))&#10;Reason: Expected exactly '1' node but found '2' nodes that satisfy: (ScrollBy is defined)&#10;Nodes found:&#10;1) Node #563 at (l=0.0, t=0.0, r=1233.0, b=2673.0)px&#10;IsTraversalGroup = 'true'&#10;VerticalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=100.0, reverseScrolling=false)'&#10;CollectionInfo = 'androidx.compose.ui.semantics.CollectionInfo@4e3c7e10'&#10;Actions = [ScrollBy, ScrollByOffset, IndexForKey, ScrollToIndex, GetScrollViewportLength]&#10;Has 14 children&#10;2) Node #633 at (l=0.0, t=2400.0, r=1233.0, b=2945.0)px&#10;IsTraversalGroup = 'true'&#10;HorizontalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=100.0, reverseScrolling=false)'&#10;CollectionInfo = 'androidx.compose.ui.semantics.CollectionInfo@705887c8'&#10;Actions = [ScrollBy, ScrollByOffset, IndexForKey, ScrollToIndex, GetScrollViewportLength]&#10;Has 2 children, 13 siblings&#10;" type="java.lang.AssertionError">java.lang.AssertionError: Failed: performScrollToNode(Text + EditableText contains 'Featured designs' (ignoreCase: false))
-Reason: Expected exactly '1' node but found '2' nodes that satisfy: (ScrollBy is defined)
-Nodes found:
-1) Node #563 at (l=0.0, t=0.0, r=1233.0, b=2673.0)px
-IsTraversalGroup = 'true'
-VerticalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=100.0, reverseScrolling=false)'
-CollectionInfo = 'androidx.compose.ui.semantics.CollectionInfo@4e3c7e10'
-Actions = [ScrollBy, ScrollByOffset, IndexForKey, ScrollToIndex, GetScrollViewportLength]
-Has 14 children
-2) Node #633 at (l=0.0, t=2400.0, r=1233.0, b=2945.0)px
-IsTraversalGroup = 'true'
-HorizontalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=100.0, reverseScrolling=false)'
-CollectionInfo = 'androidx.compose.ui.semantics.CollectionInfo@705887c8'
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/36514326687
+BUILD SUCCESSFUL in 1m 7s
