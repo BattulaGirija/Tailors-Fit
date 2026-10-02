@@ -26,15 +26,22 @@ enum class NeckShape {
  */
 data class NeckSpec(val shape: NeckShape, val widen: Double = 0.0, val depthFactor: Double = 1.0)
 
-enum class SleeveStyle {
-    SLEEVELESS, CAP, SHORT, ELBOW, THREE_QUARTER,
+/** [typicalLengthInch]: usual sleeve length for pictures of the style (0 = no length to measure). */
+enum class SleeveStyle(val typicalLengthInch: Double) {
+    SLEEVELESS(0.0), CAP(0.0), SHORT(6.0), ELBOW(11.0), THREE_QUARTER(15.0),
     /** Gathered at the cap and the hem, finished with a band. */
-    PUFF,
+    PUFF(6.0),
     /** Flares out to a wide hem. */
-    BELL,
+    BELL(9.0),
     /** Short sleeve with a gathered frill at the hem. */
-    FRILL,
+    FRILL(6.0),
     ;
+
+    /** Standard measurements with this style's usual sleeve length (for sketches). */
+    fun sketchMeasurements(base: Measurements = Measurements.defaults()): Measurements =
+        if (typicalLengthInch > 0) base.with(MeasurementField.SLEEVE_LENGTH, typicalLengthInch * 2.54)
+            .with(MeasurementField.SLEEVE_OPENING, base[MeasurementField.SLEEVE_OPENING] - (typicalLengthInch - 6.0).coerceAtLeast(0.0) * 0.35)
+        else base
 
     val label: String get() = tr("sleeve.${name.lowercase()}")
 }

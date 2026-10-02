@@ -156,7 +156,8 @@ fun GarmentPreviewCard(model: GarmentModel, measurements: Measurements, modifier
 @Composable
 fun BlouseSketch(model: GarmentModel, back: Boolean, modifier: Modifier = Modifier, cloth: Color = Color(0xFF7B1E2B)) {
     val view = remember(model.id, back) {
-        runCatching { Illustration.blouse(model.draft(Measurements.defaults())) }.getOrNull()
+        val m = (model as? com.tailorsfit.pattern.blouse.BlouseModel)?.sleeve?.sketchMeasurements() ?: Measurements.defaults()
+        runCatching { Illustration.blouse(model.draft(m)) }.getOrNull()
             ?.let { views -> views.getOrNull(if (back) 1 else 0) }
     }
     Canvas(modifier) {
