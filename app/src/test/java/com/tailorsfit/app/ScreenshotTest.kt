@@ -201,6 +201,16 @@ class ScreenshotTest {
     }
 
     @Test
+    fun mixFrontPrincess() {
+        val vm = vm()
+        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(front = com.tailorsfit.pattern.blouse.FrontNeck.SWEETHEART, princess = true)
+        show { MixFrontScreen(vm, onBack = {}, onNext = {}) }
+        save("40b-mix-front-princess")
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Depth"))
+        save("40c-mix-front-depth")
+    }
+
+    @Test
     fun mixBack() {
         val vm = vm()
         vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(back = com.tailorsfit.pattern.blouse.BackNeck.POT, backDepth = com.tailorsfit.pattern.blouse.NeckDepth.DEEP)

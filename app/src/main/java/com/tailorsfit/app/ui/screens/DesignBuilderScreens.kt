@@ -65,6 +65,20 @@ private const val STEPS = 3
 fun MixFrontScreen(vm: AppViewModel, onBack: () -> Unit, onNext: () -> Unit) {
     val mix = vm.mix
     MixPage(1, tr("mix.front.title"), tr("mix.front.text"), onBack, tr("mix.next"), onNext) {
+        // First the kind of front: normal (shaped with darts) or princess cut (curved seams).
+        controls {
+            SectionTitle(tr("mix.cut.title"))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                for ((princess, label) in listOf(false to tr("mix.cut.normal"), true to tr("mix.cut.princess"))) {
+                    Box(Modifier.weight(1f)) {
+                        OptionCard(label, mix.princess == princess, onClick = { vm.mix = mix.copy(princess = princess) }) {
+                            Sketch(mix.copy(princess = princess), back = false)
+                        }
+                    }
+                }
+            }
+            SectionTitle(tr("mix.neck_shape"))
+        }
         options(FrontNeck.entries) { option ->
             OptionCard(option.label, option == mix.front, onClick = { vm.mix = mix.copy(front = option) }) {
                 Sketch(mix.copy(front = option), back = false)
@@ -72,9 +86,6 @@ fun MixFrontScreen(vm: AppViewModel, onBack: () -> Unit, onNext: () -> Unit) {
         }
         controls {
             DepthChips(mix.frontDepth) { vm.mix = mix.copy(frontDepth = it) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = mix.princess, onClick = { vm.mix = mix.copy(princess = !mix.princess) }, label = { Text(tr("tag.princess")) })
-            }
         }
     }
 }
@@ -238,6 +249,11 @@ private fun OptionCard(label: String, selected: Boolean, onClick: () -> Unit, sk
 private fun Sketch(mix: BlouseMix, back: Boolean) {
     val model = remember(mix) { mix.toModel() }
     BlouseSketch(model, back, Modifier.fillMaxSize())
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
 }
 
 @Composable
