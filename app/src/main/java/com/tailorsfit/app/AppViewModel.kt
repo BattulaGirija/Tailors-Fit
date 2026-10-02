@@ -21,6 +21,7 @@ import com.tailorsfit.app.data.Logins
 import com.tailorsfit.app.data.CustomerRepository
 import com.tailorsfit.app.data.DesignStore
 import com.tailorsfit.pattern.blouse.BlouseModel
+import com.tailorsfit.pattern.blouse.BlouseMix
 import com.tailorsfit.app.data.Settings
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.layout.Layout
@@ -206,6 +207,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val state = designs.load()
         saveDesigns(state.copy(hidden = if (hidden) state.hidden + id else state.hidden - id))
     }
+
+    /** Choices on the "Design your own" pages (front neck, back neck, sleeves). */
+    var mix by mutableStateOf(BlouseMix())
 
     /** Customer currently being measured (null = new, unsaved). */
     var customerId by mutableStateOf<String?>(null)

@@ -300,4 +300,28 @@ class BlouseDrafterTest {
             assertTrue(b.edgesOf(EdgeKind.NECK).single().path.end.x < 1e-9, id)
         }
     }
+
+    @Test
+    fun everyMixOfFrontBackAndSleeveDrafts() {
+        val m = Measurements.defaults()
+        var n = 0
+        for (front in com.tailorsfit.pattern.blouse.FrontNeck.entries) for (back in com.tailorsfit.pattern.blouse.BackNeck.entries)
+            for (princess in listOf(false, true)) for (depth in listOf(com.tailorsfit.pattern.blouse.NeckDepth.SHALLOW, com.tailorsfit.pattern.blouse.NeckDepth.DEEP)) {
+                val sleeve = com.tailorsfit.pattern.blouse.SleeveStyle.entries[n++ % com.tailorsfit.pattern.blouse.SleeveStyle.entries.size]
+                val mix = com.tailorsfit.pattern.blouse.BlouseMix(front, depth, princess, back, depth, sleeve, com.tailorsfit.pattern.blouse.Opening.BACK)
+                // The id brings back the same design, through the catalog like any saved design.
+                assertEquals(mix.copy(opening = mix.effectiveOpening), com.tailorsfit.pattern.blouse.BlouseMix.parse(mix.id))
+                val model = com.tailorsfit.pattern.model.Catalog.model(mix.id) as com.tailorsfit.pattern.blouse.BlouseModel
+                val p = model.draft(m)
+                assertEquals(back.detail, model.backDetail)
+                if (back.needsFrontOpening) assertTrue(p.pieces.first { it.id == "back" }.cut.onFold, mix.id)
+                for (piece in p.pieces) {
+                    assertTrue(piece.area() > 20, "${mix.id}/${piece.id}")
+                    assertTrue(piece.seamOutline().none { it.x.isNaN() || it.y.isNaN() }, mix.id)
+                    for (d in piece.darts) assertTrue(pointInPolygon(d.tip, piece.seamOutline()), "${mix.id}/${piece.id} dart tip outside")
+                }
+            }
+        assertEquals(null, com.tailorsfit.pattern.blouse.BlouseMix.parse("blouse_round_classic"))
+        assertEquals(null, com.tailorsfit.pattern.model.Catalog.model("mix-NOPE-REGULAR-D-ROUND-REGULAR-SHORT-BACK"))
+    }
 }

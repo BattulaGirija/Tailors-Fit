@@ -149,11 +149,26 @@ fun GarmentPreviewCard(model: GarmentModel, measurements: Measurements, modifier
     }
 }
 
-private fun DrawScope.drawViews(views: List<GarmentView>, cloth: Color, finish: ClothFinish, border: Boolean) {
+/**
+ * One view of the finished blouse (front or back) in a cloth colour, drawn from the design's
+ * real pattern at a standard size. Used to show design choices.
+ */
+@Composable
+fun BlouseSketch(model: GarmentModel, back: Boolean, modifier: Modifier = Modifier, cloth: Color = Color(0xFF7B1E2B)) {
+    val view = remember(model.id, back) {
+        runCatching { Illustration.blouse(model.draft(Measurements.defaults())) }.getOrNull()
+            ?.let { views -> views.getOrNull(if (back) 1 else 0) }
+    }
+    Canvas(modifier) {
+        if (view != null) drawViews(listOf(view), cloth, ClothFinish.SILK, border = true, labelRoom = false)
+    }
+}
+
+private fun DrawScope.drawViews(views: List<GarmentView>, cloth: Color, finish: ClothFinish, border: Boolean, labelRoom: Boolean = true) {
     if (views.isEmpty()) return
     val gap = size.width * 0.08f
     val cellW = (size.width - gap * (views.size - 1)) / views.size
-    val cellH = size.height - 16.dp.toPx() // room for the labels
+    val cellH = size.height - if (labelRoom) 16.dp.toPx() else 0f // room for the labels
     val boxes = views.map { v -> Rect.of((v.panels + v.trims + v.ties).flatten()) }
     // One scale for both views so front and back match.
     val scale = boxes.minOf { b -> min(cellW / b.width, cellH / b.height) }.toFloat() * 0.94f

@@ -25,6 +25,9 @@ import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AdminTailorScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
 import com.tailorsfit.app.ui.screens.ForgotPinScreen
+import com.tailorsfit.app.ui.screens.MixBackScreen
+import com.tailorsfit.app.ui.screens.MixFrontScreen
+import com.tailorsfit.app.ui.screens.MixSleeveScreen
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import kotlinx.coroutines.launch
@@ -69,6 +72,9 @@ object Routes {
     const val ABOUT = "about"
     const val AUTH = "auth"
     const val ADMIN_LOGIN = "admin_login"
+    const val MIX_FRONT = "mix/front"
+    const val MIX_BACK = "mix/back"
+    const val MIX_SLEEVE = "mix/sleeve"
     const val FORGOT = "forgot?login={login}"
     fun forgot(login: String) = "forgot?login=${android.net.Uri.encode(login)}"
     const val ADMIN = "admin"
@@ -212,8 +218,12 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
                     categoryId = entry.arguments?.getString("categoryId") ?: "blouse",
                     onBack = back,
                     onModel = { nav.navigate(Routes.measure(it)) },
+                    onDesignOwn = { nav.navigate(Routes.MIX_FRONT) },
                 )
             }
+            composable(Routes.MIX_FRONT) { MixFrontScreen(vm, onBack = back, onNext = { nav.navigate(Routes.MIX_BACK) }) }
+            composable(Routes.MIX_BACK) { MixBackScreen(vm, onBack = back, onNext = { nav.navigate(Routes.MIX_SLEEVE) }) }
+            composable(Routes.MIX_SLEEVE) { MixSleeveScreen(vm, onBack = back, onDone = { nav.navigate(Routes.measure(it)) }) }
             composable("measure/{modelId}", modelArg) { entry ->
                 val modelId = entry.arguments?.getString("modelId") ?: return@composable
                 MeasurementScreen(vm = vm, modelId = modelId, onBack = back, onGenerate = { nav.navigate(Routes.pattern(modelId)) })

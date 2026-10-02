@@ -22,8 +22,10 @@ published to the same link and installs over the previous version.
 
 ## How it works
 
-1. **Pick a design.** Home → *Saree Blouses*, then tap a design. Each thumbnail is drawn from
-   that design's real draft.
+1. **Pick a design.** Home → *Saree Blouses*, then tap a ready design, or **Design your own**:
+   choose the **front neck** (shape, depth, princess cut), then the **back neck** (including pot,
+   paan, keyhole and dori backs, and where the hooks go), then the **sleeves**, each on its own
+   page with sketches. Every picture is drawn from the design's real draft.
 2. **Enter measurements** in inches or cm. You can start from a standard size (S–XXL) and
    adjust. Customers can be saved and reloaded later.
 3. **Generate the pattern.** The app drafts the front, back and sleeve with darts, notches,

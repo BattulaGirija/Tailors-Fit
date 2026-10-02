@@ -23,6 +23,9 @@ import com.tailorsfit.app.ui.screens.AdminHomeScreen
 import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
 import com.tailorsfit.app.ui.screens.ForgotPinScreen
+import com.tailorsfit.app.ui.screens.MixBackScreen
+import com.tailorsfit.app.ui.screens.MixFrontScreen
+import com.tailorsfit.app.ui.screens.MixSleeveScreen
 import com.tailorsfit.app.ui.screens.AdminTailorScreen
 import kotlinx.coroutines.runBlocking
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
@@ -187,6 +190,53 @@ class ScreenshotTest {
         show { AdminTailorScreen(vm, id, onBack = {}) }
         awaitText("Lakshmi")
         save("15-admin-tailor")
+    }
+
+    @Test
+    fun mixFront() {
+        val vm = vm()
+        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(front = com.tailorsfit.pattern.blouse.FrontNeck.SWEETHEART)
+        show { MixFrontScreen(vm, onBack = {}, onNext = {}) }
+        save("40-mix-front-neck")
+    }
+
+    @Test
+    fun mixBack() {
+        val vm = vm()
+        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(back = com.tailorsfit.pattern.blouse.BackNeck.POT, backDepth = com.tailorsfit.pattern.blouse.NeckDepth.DEEP)
+        show { MixBackScreen(vm, onBack = {}, onNext = {}) }
+        save("41-mix-back-neck")
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Hooks at"))
+        save("41b-mix-back-hooks")
+    }
+
+    @Test
+    fun mixSleeve() {
+        val vm = vm()
+        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(
+            front = com.tailorsfit.pattern.blouse.FrontNeck.SWEETHEART,
+            back = com.tailorsfit.pattern.blouse.BackNeck.DORI,
+            sleeve = com.tailorsfit.pattern.blouse.SleeveStyle.PUFF,
+        )
+        show { MixSleeveScreen(vm, onBack = {}, onDone = {}) }
+        save("42-mix-sleeves")
+        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Your design"))
+        save("42b-mix-summary")
+    }
+
+    @Test
+    fun mixPattern() {
+        val vm = vm()
+        val id = com.tailorsfit.pattern.blouse.BlouseMix(back = com.tailorsfit.pattern.blouse.BackNeck.POT, sleeve = com.tailorsfit.pattern.blouse.SleeveStyle.ELBOW).id
+        show { PatternScreen(vm, id, onBack = {}, onProject = {}) }
+        awaitText("Pinch to zoom")
+        save("43-mix-pattern")
+    }
+
+    @Test
+    fun catalogDesignOwn() {
+        show { CatalogScreen("blouse", onBack = {}, onModel = {}) }
+        save("44-catalog-design-own")
     }
 
     @Test

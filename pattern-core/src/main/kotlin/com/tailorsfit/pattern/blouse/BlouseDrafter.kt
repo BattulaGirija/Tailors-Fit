@@ -301,10 +301,13 @@ object BlouseDrafter {
 
         if (dartIntake > 0.3) {
             val half = dartIntake / 2
-            val tipY = if (isFront) f.apexY + 2.5 else f.armDepth + 3.0
+            var tipY = if (isFront) f.apexY + 2.5 else f.armDepth + 3.0
+            // A deep neck (e.g. a pot back) may come down over the dart: stop the dart 1" below it.
+            val neckAbove = neckPath.points().filter { kotlin.math.abs(it.x - f.apexX) <= half + 1.0 }.maxOfOrNull { it.y }
+            if (neckAbove != null) tipY = max(tipY, neckAbove + 1.0 * INCH)
             val a = Pt(f.apexX - half, hemY(f.apexX - half))
             val b = Pt(f.apexX + half, hemY(f.apexX + half))
-            darts += Dart(a, Pt(f.apexX, tipY), b)
+            if (min(a.y, b.y) - tipY >= 1.5 * INCH) darts += Dart(a, Pt(f.apexX, tipY), b)
         }
 
         if (isFront) {
