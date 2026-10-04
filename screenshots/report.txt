@@ -1,2 +1,17 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/37186089502
-BUILD SUCCESSFUL in 55s
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/37201392677
+ScreenshotTest > teluguMeasurements FAILED
+> Task :app:testDebugUnitTest FAILED
+BUILD FAILED in 55s
+    <failure message="java.lang.AssertionError: Action performScrollTo() failed.&#10;Reason: Expected exactly '1' node but could not find any node that satisfies: (Text + EditableText contains 'ఛాతీ (బస్ట్)' (ignoreCase: false))&#10;" type="java.lang.AssertionError">java.lang.AssertionError: Action performScrollTo() failed.
+Reason: Expected exactly '1' node but could not find any node that satisfies: (Text + EditableText contains 'ఛాతీ (బస్ట్)' (ignoreCase: false))
+
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow(SemanticsNodeInteraction.kt:178)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow$default(SemanticsNodeInteraction.kt:150)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+	at androidx.compose.ui.test.ActionsKt.performScrollTo(Actions.kt:76)
+	at com.tailorsfit.app.ScreenshotTest.teluguMeasurements(ScreenshotTest.kt:317)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
