@@ -314,7 +314,7 @@ class ScreenshotTest {
         val vm = vm()
         vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.TE)
         show { MeasurementScreen(vm, model, onBack = {}, onGenerate = {}) }
-        compose.onNodeWithText("ఛాతీ (బస్ట్)").performScrollTo()
+        compose.onNodeWithText("మధ్య ఛాతీ").performScrollTo()
         save("22-te-measurements")
     }
 
