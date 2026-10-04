@@ -24,6 +24,8 @@ enum class EdgeKind(val label: String) {
     PRINCESS("Princess seam"),
     /** Straight edges of bands, collars, frills and tie strings. */
     BAND("Band"),
+    /** Seam joining katori / sabyasachi cups to the belt below. */
+    BELT("Belt seam"),
 }
 
 /** Seam allowances in cm per edge kind. A fold never gets an allowance. */
@@ -53,7 +55,7 @@ data class SeamAllowances(
         EdgeKind.SLEEVE_CAP -> sleeveCap
         EdgeKind.UNDERARM -> underarm
         EdgeKind.SLEEVE_HEM -> sleeveHem
-        EdgeKind.PRINCESS -> princess
+        EdgeKind.PRINCESS, EdgeKind.BELT -> princess
         EdgeKind.BAND -> band
     }
 

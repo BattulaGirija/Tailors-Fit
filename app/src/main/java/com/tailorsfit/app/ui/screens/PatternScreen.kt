@@ -50,7 +50,18 @@ import com.tailorsfit.app.export.PaperSize
 import com.tailorsfit.app.export.PdfExporter
 import com.tailorsfit.app.export.Sharing
 import com.tailorsfit.app.ui.components.AppBar
-import com.tailorsfit.app.ui.components.PatternCanvas
+import com.tailorsfit.app.ui.components.CutGraph
+import com.tailorsfit.app.ui.components.PieceGraph
+import com.tailorsfit.app.ui.theme.Brand
+import com.tailorsfit.pattern.geom.Rect
+import com.tailorsfit.pattern.model.GarmentModel
+import com.tailorsfit.pattern.model.Lengths
+import com.tailorsfit.pattern.model.Piece
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.tailorsfit.pattern.layout.Layout
 import com.tailorsfit.pattern.model.Pattern
 import com.tailorsfit.pattern.render.PaintOptions
@@ -63,18 +74,13 @@ import java.io.File
 
 private val FABRIC_WIDTHS = listOf(90.0, 110.0, 140.0)
 
+/** Shared by both screens: drafts (off the main thread), then shows [content] or the problems. */
 @Composable
-fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProject: () -> Unit) {
-    val model = vm.model(modelId) ?: return
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
-
+private fun WithDraft(vm: AppViewModel, model: GarmentModel, title: String, onBack: () -> Unit, content: @Composable (Pattern, Layout, PaintOptions, PaddingValues) -> Unit) {
     val draft by produceState<DraftResult?>(
-        null, model, vm.fabricWidthCm, vm.foldedCloth, vm.showAllowance, vm.allowTurning, vm.customerName,
+        null, model, vm.fabricWidthCm, vm.foldedCloth, vm.showAllowance, vm.allowTurning, vm.customerName, vm.unit,
     ) { value = vm.draftAsync(model) }
-
-    Scaffold(topBar = { AppBar(model.name, onBack) }) { padding ->
+    Scaffold(topBar = { AppBar(title, onBack) }) { padding ->
         when (val result = draft) {
             null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -89,44 +95,127 @@ fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProje
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = onBack) { Text(tr("pattern.back")) }
             }
-            is DraftResult.Ok -> {
-                val pattern = result.pattern
-                val layout = result.layout
-                val paintOptions = PaintOptions(
+            is DraftResult.Ok -> content(
+                result.pattern,
+                result.layout,
+                PaintOptions(
                     showAllowance = vm.showAllowance,
                     caption = listOfNotNull(vm.customerName.trim().takeIf { it.isNotEmpty() }, model.name),
-                )
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState()),
+                ),
+                padding,
+            )
+        }
+    }
+}
+
+/**
+ * Generated pattern: every piece on its own on graph paper in the tailor's unit, with its cut
+ * instructions; "Cut patterns" then lays them all on the cloth.
+ */
+@Composable
+fun PatternScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onCut: () -> Unit) {
+    val model = vm.model(modelId) ?: return
+    var selected by rememberSaveable(modelId) { mutableStateOf(0) }
+    WithDraft(vm, model, tr("pattern.title"), onBack) { pattern, layout, paintOptions, padding ->
+        val pieces = pattern.pieces
+        val index = selected.coerceIn(0, pieces.lastIndex)
+        val piece = pieces[index]
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+            Text(
+                model.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+            )
+            Text(
+                model.tags.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = Brand.Plum,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            ScrollableTabRow(selectedTabIndex = index, edgePadding = 12.dp, containerColor = MaterialTheme.colorScheme.background) {
+                pieces.forEachIndexed { i, p -> Tab(selected = i == index, onClick = { selected = i }, text = { Text(p.name) }) }
+            }
+            PieceGraph(piece, layout.allowances, paintOptions, Modifier.fillMaxWidth().height(440.dp))
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(tr("pattern.zoom_piece", Lengths.format(if (Lengths.unit == com.tailorsfit.pattern.model.LengthUnit.INCH) Lengths.INCH else 1.0)), style = MaterialTheme.typography.bodySmall)
+                PieceInfo(piece, layout)
+                Button(
+                    onClick = onCut,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Brand.Aubergine, contentColor = Brand.Ivory),
                 ) {
-                    if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                    PatternCanvas(layout, paintOptions, Modifier.fillMaxWidth().height(440.dp))
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(tr("pattern.zoom"), style = MaterialTheme.typography.bodySmall)
-                        ClothOptions(vm, layout)
-                        Actions(
-                            busy = busy,
-                            onPrint = { paper ->
-                                runExport(scope, context, { busy = it }, { exportPdf(context, pattern, layout, paper, paintOptions) }) {
-                                    Sharing.print(context, it, pattern.title, paper)
-                                }
-                            },
-                            onSharePdf = { paper ->
-                                runExport(scope, context, { busy = it }, { exportPdf(context, pattern, layout, paper, paintOptions) }) {
-                                    Sharing.share(context, it, "application/pdf")
-                                }
-                            },
-                            onShareSvg = {
-                                runExport(scope, context, { busy = it }, { exportSvg(context, pattern, layout, paintOptions) }) {
-                                    Sharing.share(context, it, "image/svg+xml")
-                                }
-                            },
-                            onProject = onProject,
-                        )
-                        SummaryCard(vm, pattern, layout)
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                    Text("  " + tr("pattern.cut"), style = MaterialTheme.typography.labelLarge)
+                }
+                SummaryCard(pattern, layout)
+            }
+        }
+    }
+}
+
+/** Name, how many to cut, size and notes of one piece. */
+@Composable
+private fun PieceInfo(piece: Piece, layout: Layout) {
+    val box = Rect.of(piece.cutOutline(layout.allowances))
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(piece.name, style = MaterialTheme.typography.titleMedium)
+            Text(piece.cut.text, style = MaterialTheme.typography.bodyMedium, color = Brand.Plum)
+            Text(tr("pattern.piece_size", Lengths.format(box.width), Lengths.format(box.height)), style = MaterialTheme.typography.bodySmall)
+            piece.notes.forEach { Text(tr("app.bullet", it), style = MaterialTheme.typography.bodySmall) }
+        }
+    }
+}
+
+/**
+ * Cut patterns: all pieces laid on the cloth on a dark cutting table with an inch grid, the
+ * cloth options, and projecting / printing / sharing.
+ */
+@Composable
+fun CutPatternsScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onProject: () -> Unit) {
+    val model = vm.model(modelId) ?: return
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf<Int?>(null) }
+    WithDraft(vm, model, tr("pattern.cut"), onBack) { pattern, layout, paintOptions, padding ->
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+            if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            CutGraph(layout, paintOptions, selected?.takeIf { it < layout.placed.size }, { selected = it }, Modifier.fillMaxWidth().height(480.dp))
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                val chosen = selected?.let { layout.placed.getOrNull(it)?.piece }
+                Text(
+                    if (chosen != null) "${chosen.name}: ${chosen.cut.text}" else tr("pattern.tap_piece"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (chosen != null) Brand.Plum else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                ClothOptions(vm, layout)
+                Actions(
+                    busy = busy,
+                    onPrint = { paper ->
+                        runExport(scope, context, { busy = it }, { exportPdf(context, pattern, layout, paper, paintOptions) }) {
+                            Sharing.print(context, it, pattern.title, paper)
+                        }
+                    },
+                    onSharePdf = { paper ->
+                        runExport(scope, context, { busy = it }, { exportPdf(context, pattern, layout, paper, paintOptions) }) {
+                            Sharing.share(context, it, "application/pdf")
+                        }
+                    },
+                    onShareSvg = {
+                        runExport(scope, context, { busy = it }, { exportSvg(context, pattern, layout, paintOptions) }) {
+                            Sharing.share(context, it, "image/svg+xml")
+                        }
+                    },
+                    onProject = onProject,
+                )
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(tr("pattern.pieces"), style = MaterialTheme.typography.titleMedium)
+                        layout.placed.map { it.piece }.distinctBy { it.name + it.cut.text }.forEach { p ->
+                            Text("${p.name}: ${p.cut.text}", style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
@@ -226,7 +315,7 @@ private fun PaperMenu(expanded: Boolean, onDismiss: () -> Unit, includeFull: Boo
 }
 
 @Composable
-private fun SummaryCard(vm: AppViewModel, pattern: Pattern, layout: Layout) {
+private fun SummaryCard(pattern: Pattern, layout: Layout) {
     val tooWide = layout.placed.filter { it.piece.id in layout.tooWide }.map { it.piece.name }.distinct()
     val warnings = (if (tooWide.isEmpty()) emptyList() else listOf(tr("pattern.too_wide", tooWide.joinToString(", ")))) + pattern.warnings
     if (warnings.isNotEmpty()) {
@@ -242,11 +331,6 @@ private fun SummaryCard(vm: AppViewModel, pattern: Pattern, layout: Layout) {
     }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(tr("pattern.pieces"), style = MaterialTheme.typography.titleMedium)
-            layout.placed.map { it.piece }.distinctBy { it.name + it.cut.text }.forEach { p ->
-                Text("${p.name}: ${p.cut.text}", style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(Modifier.height(8.dp))
             Text(tr("pattern.details"), style = MaterialTheme.typography.titleMedium)
             pattern.summary.forEach { (k, v) -> Text("$k: $v", style = MaterialTheme.typography.bodyMedium) }
         }

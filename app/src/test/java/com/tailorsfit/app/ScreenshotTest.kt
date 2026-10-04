@@ -23,9 +23,12 @@ import com.tailorsfit.app.ui.screens.AdminHomeScreen
 import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
 import com.tailorsfit.app.ui.screens.ForgotPinScreen
-import com.tailorsfit.app.ui.screens.MixBackScreen
-import com.tailorsfit.app.ui.screens.MixFrontScreen
-import com.tailorsfit.app.ui.screens.MixSleeveScreen
+import com.tailorsfit.app.ui.screens.CustomizeScreen
+import com.tailorsfit.app.ui.screens.CutPatternsScreen
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performTextInput
 import com.tailorsfit.app.ui.screens.AdminTailorScreen
 import kotlinx.coroutines.runBlocking
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
@@ -193,60 +196,66 @@ class ScreenshotTest {
     }
 
     @Test
-    fun mixFront() {
+    fun customizeBlouse() {
         val vm = vm()
-        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(front = com.tailorsfit.pattern.blouse.FrontNeck.SWEETHEART)
-        show { MixFrontScreen(vm, onBack = {}, onNext = {}) }
-        save("40-mix-front-neck")
+        show { CustomizeScreen(vm, "blouse_round_classic", onBack = {}, onNext = {}) }
+        awaitText("Katori")
+        save("40-customize-blouse")
+        compose.onNodeWithText("Katori").performClick()
+        compose.onNodeWithText("Sleeve").performClick()
+        save("41-customize-sleeve")
     }
 
     @Test
-    fun mixFrontPrincess() {
+    fun customizeNeck() {
         val vm = vm()
-        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(front = com.tailorsfit.pattern.blouse.FrontNeck.SWEETHEART, princess = true)
-        show { MixFrontScreen(vm, onBack = {}, onNext = {}) }
-        save("40b-mix-front-princess")
-        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Depth"))
-        save("40c-mix-front-depth")
+        show { CustomizeScreen(vm, "blouse_sabyasachi_square", onBack = {}, onNext = {}) }
+        compose.onNodeWithText("Neck").performClick()
+        save("42-customize-front-neck")
+        compose.onNode(hasText("Back") and hasClickAction()).performClick()
+        compose.onNodeWithText("Pot (matka)").performClick()
+        save("43-customize-back-neck")
+        // The chosen design opens like any other.
+        val model = vm.model(vm.spec.toModel().id)!!
+        assert(model.name.contains("Pot"))
     }
 
     @Test
-    fun mixBack() {
-        val vm = vm()
-        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(back = com.tailorsfit.pattern.blouse.BackNeck.POT, backDepth = com.tailorsfit.pattern.blouse.NeckDepth.DEEP)
-        show { MixBackScreen(vm, onBack = {}, onNext = {}) }
-        save("41-mix-back-neck")
-        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Hooks at"))
-        save("41b-mix-back-hooks")
-    }
-
-    @Test
-    fun mixSleeve() {
-        val vm = vm()
-        vm.mix = com.tailorsfit.pattern.blouse.BlouseMix(
-            front = com.tailorsfit.pattern.blouse.FrontNeck.SWEETHEART,
-            back = com.tailorsfit.pattern.blouse.BackNeck.DORI,
-            sleeve = com.tailorsfit.pattern.blouse.SleeveStyle.PUFF,
-        )
-        show { MixSleeveScreen(vm, onBack = {}, onDone = {}) }
-        save("42-mix-sleeves")
-        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Your design"))
-        save("42b-mix-summary")
-    }
-
-    @Test
-    fun mixPattern() {
-        val vm = vm()
-        val id = com.tailorsfit.pattern.blouse.BlouseMix(back = com.tailorsfit.pattern.blouse.BackNeck.POT, sleeve = com.tailorsfit.pattern.blouse.SleeveStyle.ELBOW).id
-        show { PatternScreen(vm, id, onBack = {}, onProject = {}) }
-        awaitText("Pinch to zoom")
-        save("43-mix-pattern")
-    }
-
-    @Test
-    fun catalogDesignOwn() {
+    fun catalogTabs() {
         show { CatalogScreen("blouse", onBack = {}, onModel = {}) }
-        save("44-catalog-design-own")
+        save("44-catalog-all")
+        compose.onNodeWithText("Katori").performClick()
+        save("44b-catalog-katori")
+        compose.onNodeWithText("All").performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("boat")
+        save("44c-catalog-search")
+    }
+
+    @Test
+    fun cutPatterns() {
+        val vm = vm()
+        show { CutPatternsScreen(vm, "blouse_katori_sweetheart", onBack = {}, onProject = {}) }
+        awaitText("Tap a piece")
+        save("45-cut-patterns")
+        compose.onNodeWithText("Cloth needed", substring = true).performScrollTo()
+        save("45b-cut-cloth")
+    }
+
+    @Test
+    fun measurementHelp() {
+        val vm = vm()
+        show { MeasurementScreen(vm, model, onBack = {}, onGenerate = {}) }
+        compose.onAllNodes(hasContentDescription("How to measure")).onFirst().performScrollTo().performClick()
+        save("46-measure-help")
+    }
+
+    @Test
+    fun measurementAdjustments() {
+        val vm = vm()
+        show { MeasurementScreen(vm, model, onBack = {}, onGenerate = {}) }
+        compose.onNodeWithText("Customization details").performScrollTo().performClick()
+        compose.onNodeWithText("Hook dart distance").performScrollTo()
+        save("47-measure-customization")
     }
 
     @Test
@@ -279,7 +288,7 @@ class ScreenshotTest {
     @Test
     fun trendyCatalog() {
         show { CatalogScreen("blouse", onBack = {}, onModel = {}) }
-        compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText("Paan (Leaf) Back"))
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Paan (Leaf) Back"))
         save("34-catalog-trendy")
     }
 
@@ -312,7 +321,7 @@ class ScreenshotTest {
     fun teluguPattern() {
         val vm = vm()
         vm.changeLanguage(com.tailorsfit.pattern.i18n.Language.TE)
-        show { PatternScreen(vm, model, onBack = {}, onProject = {}) }
+        show { PatternScreen(vm, model, onBack = {}, onCut = {}) }
         awaitText("జూమ్")
         save("23-te-pattern")
     }
@@ -362,11 +371,11 @@ class ScreenshotTest {
     @Test
     fun pattern() {
         val vm = vm()
-        show { PatternScreen(vm, model, onBack = {}, onProject = {}) }
+        show { PatternScreen(vm, model, onBack = {}, onCut = {}) }
         awaitText("Pinch to zoom")
         save("05-pattern")
-        compose.onNodeWithText("Cloth needed", substring = true).performScrollTo()
-        save("06-pattern-cloth")
+        compose.onNodeWithText("Sleeve").performClick()
+        save("06-pattern-sleeve")
         compose.onNodeWithText("Details").performScrollTo()
         save("06b-pattern-details")
     }
@@ -374,7 +383,7 @@ class ScreenshotTest {
     @Test
     fun patternSweetheart() {
         val vm = vm()
-        show { PatternScreen(vm, "blouse_sweetheart", onBack = {}, onProject = {}) }
+        show { PatternScreen(vm, "blouse_sweetheart", onBack = {}, onCut = {}) }
         awaitText("Pinch to zoom")
         save("07-pattern-sweetheart")
     }
@@ -382,7 +391,7 @@ class ScreenshotTest {
     @Test
     fun patternPrincess() {
         val vm = vm()
-        show { PatternScreen(vm, "blouse_princess_round", onBack = {}, onProject = {}) }
+        show { PatternScreen(vm, "blouse_princess_round", onBack = {}, onCut = {}) }
         awaitText("Pinch to zoom")
         save("07b-pattern-princess")
     }
@@ -390,7 +399,7 @@ class ScreenshotTest {
     @Test
     fun catalogPrincess() {
         show { CatalogScreen("blouse", onBack = {}, onModel = {}) }
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Princess Cut, Round Neck"))
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Princess Cut, Round Neck"))
         save("02b-catalog-princess")
     }
 

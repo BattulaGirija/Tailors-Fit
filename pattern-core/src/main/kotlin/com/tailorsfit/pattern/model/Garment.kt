@@ -65,6 +65,6 @@ object Catalog {
 
     /** Looks a design up even if hidden, so saved work keeps opening. */
     fun model(id: String): GarmentModel? =
-        allModels.firstOrNull { it.id == id } ?: com.tailorsfit.pattern.blouse.BlouseMix.parse(id)?.toModel()
+        allModels.firstOrNull { it.id == id } ?: com.tailorsfit.pattern.blouse.BlouseSpec.parse(id)?.toModel()
     fun category(id: String) = categories.firstOrNull { it.id == id }
 }

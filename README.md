@@ -4,7 +4,7 @@ An Android app that drafts sewing patterns from a customer's measurements, so a 
 **print the pieces at true size** or **project them straight onto the cloth** and cut along
 the lines. There is no manual drafting with chalk and no separate cutting master.
 
-The first category is **saree blouses**, with 28 designs: round, boat, V, sweetheart, square,
+The first category is **saree blouses**, with 34 designs: round, boat, V, sweetheart, square,
 deep U back, sleeveless, cap / elbow / ¾ sleeves, front or back opening, and **princess cut**
 fronts (two panels joined by a curved seam through the bust point instead of darts), plus
 trending styles: puff, bell and frill sleeves, paan (leaf) and pot (matka) necks, keyhole and
@@ -22,25 +22,36 @@ published to the same link and installs over the previous version.
 
 ## How it works
 
-1. **Pick a design.** Home → *Saree Blouses*, then tap a ready design, or **Design your own**:
-   choose the **front neck** (shape, depth, princess cut), then the **back neck** (including pot,
-   paan, keyhole and dori backs, and where the hooks go), then the **sleeves**, each on its own
-   page with sketches. Every picture is drawn from the design's real draft.
-2. **Enter measurements** in inches or cm. You can start from a standard size (S–XXL) and
-   adjust. Customers can be saved and reloaded later.
-3. **Generate the pattern.** The app drafts the front, back and sleeve with darts, notches,
-   grain lines, fold marks and seam allowances. It lays them out on folded cloth and shows how
-   much cloth is needed.
-4. **Cut**, using one of these outputs:
-   - **Print…**: true-size PDF tiled on A4 / Letter / A3. It includes a cover page with a 10 cm
-     test square and a page map; pages overlap by 1 cm and have ⊕ marks for joining.
-   - **PDF → Single large sheet**: one page as big as the layout, for plotters and print shops.
-   - **SVG**: a true-scale vector file (1 unit = 1 cm).
-   - **Project onto cloth**: bright lines on black at real size. If a projector is connected
-     (HDMI / USB-C adapter / wireless display), the pattern goes to the projector and the phone
-     becomes the remote. You can pan in 5 cm steps, jump to a piece, or show a 10 cm grid.
-     **Calibrate** once per projector: measure the projected square with a tape and enter the
-     numbers. The scale is saved.
+1. **Pick a design.** Home → *Saree Blouses*. Designs are grouped in tabs (**All, 3 Dart,
+   4 Dart, Princess, Katori, Sabyasachi**) with a search box; every sketch is drawn from the
+   design's real draft. Or tap **Design your own** to start from a plain blouse.
+2. **Customise it.** A front / back sketch with three tabs: **Blouse** (type and where the hooks
+   go), **Sleeve**, and **Neck** with **Front** and **Back** (shape and depth, including pot,
+   paan, keyhole and dori backs).
+3. **Enter measurements** in inches or cm, grouped like an order sheet (Front, Back, Shoulder,
+   Sleeve). The ⓘ next to each field (and *How to measure*) shows where the tape goes on a
+   figure. Start from a standard size (S–XXL) and adjust; customers can be saved and reloaded.
+   **Customization details** (optional) change the draft itself: neck broad, front / side dart
+   width, hook dart distance, front and back arm curve, shoulder drop and armhole depth.
+4. **Generate the pattern.** Each piece is shown on its own on inch graph paper with how many to
+   cut, its size and notes, plus the drafted values (armhole depth, neck broad, …).
+5. **Cut patterns.** All pieces laid on the cloth to waste as little as possible, on a dark
+   cutting table with an inch grid and rulers (tap a piece to highlight it), with the cloth
+   width / folding options and how much cloth is needed. From here:
+   - **Print…**: true-size PDF tiled on A4 / Letter / A3 with a test square and page map;
+   - **PDF → Single large sheet** for plotters, and **SVG** (1 unit = 1 cm);
+   - **Project onto cloth**: bright lines on black at real size on a connected projector, with
+     calibration, panning and a 2" grid.
+
+### Blouse types
+
+| Type | Front |
+|---|---|
+| 3 Dart | side dart, dart under the bust and a small dart near the hooks |
+| 4 Dart | as 3 dart, with the side shaping split into two side darts |
+| Princess | two panels joined by a curved seam from the armhole through the bust point to the bottom |
+| Katori | cup panels joined from the armhole through the bust point, and a separate belt below |
+| Sabyasachi | cup panels joined from the middle of the shoulder through the bust point, and a belt |
 
 ## Languages
 

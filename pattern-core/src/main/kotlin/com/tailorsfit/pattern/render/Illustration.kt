@@ -68,6 +68,10 @@ object Illustration {
 
         var neckline: List<Pt> = emptyList()
         for (half in halves) {
+            for (b in half.edgesOf(EdgeKind.BELT)) {
+                seams += b.path.points()
+                seams += b.path.points().map(Pt::mirroredX)
+            }
             if (half.id == "front_side") {
                 // Side panel: this half and its mirror image on the other side.
                 panels += half.seamOutline()
@@ -80,7 +84,7 @@ object Illustration {
             val full = asFold(half).unfolded()
             panels += full.seamOutline()
             holes += full.cutouts
-            neckline = full.edgesOf(EdgeKind.NECK).flatMap { it.path.points() }.sortedBy { it.x }
+            full.edgesOf(EdgeKind.NECK).flatMap { it.path.points() }.sortedBy { it.x }.takeIf { it.isNotEmpty() }?.let { neckline = it }
             trims += full.edgesOf(EdgeKind.NECK).map { it.path.points() }
             trims += hems(full)
             for (d in full.darts) seams += listOf(d.legA, d.tip, d.legB)

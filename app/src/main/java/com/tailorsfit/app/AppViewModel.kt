@@ -21,7 +21,7 @@ import com.tailorsfit.app.data.Logins
 import com.tailorsfit.app.data.CustomerRepository
 import com.tailorsfit.app.data.DesignStore
 import com.tailorsfit.pattern.blouse.BlouseModel
-import com.tailorsfit.pattern.blouse.BlouseMix
+import com.tailorsfit.pattern.blouse.BlouseSpec
 import com.tailorsfit.app.data.Settings
 import com.tailorsfit.pattern.geom.Pt
 import com.tailorsfit.pattern.layout.Layout
@@ -208,8 +208,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         saveDesigns(state.copy(hidden = if (hidden) state.hidden + id else state.hidden - id))
     }
 
-    /** Choices on the "Design your own" pages (front neck, back neck, sleeves). */
-    var mix by mutableStateOf(BlouseMix())
+    /** The design being customised (blouse type, sleeves, necks). */
+    var spec by mutableStateOf(BlouseSpec.BASIC)
+
+    /** Id of the design [spec] was started from, so returning to it keeps the choices. */
+    var specStart by mutableStateOf<String?>(null)
 
     /** Customer currently being measured (null = new, unsaved). */
     var customerId by mutableStateOf<String?>(null)
@@ -274,14 +277,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Called when the tailor types in a measurement box. */
     fun editMeasurement(f: MeasurementField, text: String) {
         inputs[f] = text
-        selectedPreset = null
+        // Adjustments change the draft, not the body size, so the size stays selected.
+        if (!f.isAdjustment) selectedPreset = null
     }
 
     fun applyPreset(p: SizePreset) {
         val keepNeck = currentMeasurements()
         var m = p.measurements()
         // Neck depths and sleeve length are style choices, keep what the tailor typed.
-        for (f in listOf(MeasurementField.FRONT_NECK_DEPTH, MeasurementField.BACK_NECK_DEPTH, MeasurementField.SLEEVE_LENGTH)) {
+        for (f in listOf(MeasurementField.FRONT_NECK_DEPTH, MeasurementField.BACK_NECK_DEPTH, MeasurementField.SLEEVE_LENGTH) + MeasurementField.adjustments) {
             if (keepNeck.has(f)) m = m.with(f, keepNeck[f])
         }
         fillFrom(m)

@@ -67,7 +67,7 @@ class I18nTest {
             }
             for (f in MeasurementField.entries) {
                 assertTrue(f.label.isNotBlank() && f.help.isNotBlank())
-                assertTrue(f.validate(1.0)!!.contains(f.label))
+                assertTrue(f.validate(f.minCm - 1.0)!!.contains(f.label))
             }
         }
     }

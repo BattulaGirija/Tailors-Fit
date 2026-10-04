@@ -58,6 +58,26 @@ enum class BackDetail {
     val label: String get() = tr("back.${name.lowercase()}")
 }
 
+/**
+ * How the front is shaped, the way tailors name blouse types:
+ * - 3 dart: side dart, dart under the bust and a small dart near the hooks;
+ * - 4 dart: as 3 dart with the side shaping in two side darts;
+ * - princess: curved seams from the armhole through the bust point to the bottom;
+ * - katori: princess-style cup seams from the armhole to the bust and a separate belt below;
+ * - sabyasachi: cup seams from the shoulder through the bust and a separate belt below.
+ */
+enum class BodyStyle {
+    THREE_DART, FOUR_DART, PRINCESS, KATORI, SABYASACHI;
+
+    val label: String get() = tr("body.${name.lowercase()}")
+
+    /** Front cut in panels joined by curved seams (no darts on the front). */
+    val panelled: Boolean get() = this == PRINCESS || this == KATORI || this == SABYASACHI
+
+    /** Front has a separate belt (patti) below the bust. */
+    val belted: Boolean get() = this == KATORI || this == SABYASACHI
+}
+
 /** Where the blouse opens (hooks / zip). The other centre is cut on the fold. */
 enum class Opening {
     FRONT, BACK;
@@ -79,13 +99,15 @@ data class BlouseModel(
     val backDetail: BackDetail = BackDetail.NONE,
     /** Mandarin (band) collar around a high neckline. */
     val collar: Boolean = false,
+    /** How the front is shaped; [princess] designs default to [BodyStyle.PRINCESS]. */
+    val body: BodyStyle = if (princess) BodyStyle.PRINCESS else BodyStyle.THREE_DART,
 ) : GarmentModel {
     override val categoryId = "blouse"
     override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
     override val description: String get() = if (I18n.has("model.$id.desc")) tr("model.$id.desc") else baseDescription
     override val tags: List<String>
         get() = listOfNotNull(
-            tr("tag.princess").takeIf { princess },
+            body.label,
             tr("tag.front", front.shape.label),
             tr("tag.back", back.shape.label),
             sleeve.label,
@@ -95,7 +117,7 @@ data class BlouseModel(
         )
 
     override val requiredMeasurements: List<MeasurementField>
-        get() = MeasurementField.entries.filter { f ->
+        get() = MeasurementField.body.filter { f ->
             when (f) {
                 MeasurementField.SLEEVE_LENGTH, MeasurementField.SLEEVE_OPENING ->
                     sleeve != SleeveStyle.SLEEVELESS && sleeve != SleeveStyle.CAP
@@ -262,6 +284,43 @@ object BlouseCatalog {
             "Sleeveless blouse with a deep V back and tie-up strings.",
             NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
             backDetail = BackDetail.DORI,
+        ),
+        BlouseModel(
+            "blouse_4dart_round", "4 Dart Round Neck",
+            "Round neck with two side darts for a smooth fit over a fuller bust. Front hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART,
+        ),
+        BlouseModel(
+            "blouse_4dart_boat_elbow", "4 Dart Boat Neck, Elbow Sleeves",
+            "Boat neck front and back, two side darts, elbow sleeves. Back opening.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55),
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.ELBOW, Opening.BACK,
+            body = BodyStyle.FOUR_DART,
+        ),
+        BlouseModel(
+            "blouse_katori_sweetheart", "Katori Sweetheart",
+            "Katori cups from the armhole to the bust with a belt below, sweetheart neck, U back.",
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.KATORI,
+        ),
+        BlouseModel(
+            "blouse_katori_round", "Katori Round Neck, Front Hooks",
+            "Katori cups and belt, round neck, deep U back. Opens at the front.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.KATORI,
+        ),
+        BlouseModel(
+            "blouse_sabyasachi_square", "Sabyasachi Square Neck",
+            "Cup seams from the shoulder through the bust, a belt below, square neck, deep V back, elbow sleeves.",
+            NeckSpec(NeckShape.SQUARE, widen = 1.0), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.4), SleeveStyle.ELBOW, Opening.BACK,
+            body = BodyStyle.SABYASACHI,
+        ),
+        BlouseModel(
+            "blouse_sabyasachi_v", "Sabyasachi Deep V",
+            "Deep V front with shoulder-to-bust cup seams and a belt, U back, short sleeves.",
+            NeckSpec(NeckShape.V, depthFactor = 1.2), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.SABYASACHI,
         ),
     )
 }

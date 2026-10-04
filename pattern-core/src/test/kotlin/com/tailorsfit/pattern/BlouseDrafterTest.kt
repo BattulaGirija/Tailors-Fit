@@ -26,7 +26,7 @@ class BlouseDrafterTest {
         for (model in BlouseCatalog.models) for (m in sizes) {
             val pattern = model.draft(m)
             val expected = (if (model.sleeve == SleeveStyle.SLEEVELESS) 2 else 3) +
-                (if (model.princess) 1 else 0) +
+                (when { model.body.belted -> 2; model.body.panelled -> 1; else -> 0 }) +
                 (if (model.sleeve == SleeveStyle.PUFF || model.sleeve == SleeveStyle.FRILL) 1 else 0) +
                 (if (model.collar) 1 else 0) +
                 (if (model.backDetail == com.tailorsfit.pattern.blouse.BackDetail.DORI) 1 else 0)
@@ -46,9 +46,9 @@ class BlouseDrafterTest {
     fun shoulderSeamsMatch() {
         for (model in BlouseCatalog.models) {
             val p = model.draft(Measurements.defaults())
-            val front = p.pieces.first { it.id == "front" || it.id == "front_centre" }
+            val front = p.pieces.filter { it.id.startsWith("front") }.sumOf { it.lengthOf(EdgeKind.SHOULDER) }
             val back = p.pieces.first { it.id == "back" }
-            assertEquals(front.lengthOf(EdgeKind.SHOULDER), back.lengthOf(EdgeKind.SHOULDER), 0.01, model.id)
+            assertEquals(front, back.lengthOf(EdgeKind.SHOULDER), 0.01, model.id)
         }
     }
 
@@ -302,26 +302,77 @@ class BlouseDrafterTest {
     }
 
     @Test
-    fun everyMixOfFrontBackAndSleeveDrafts() {
+    fun everyCustomisedDesignDrafts() {
         val m = Measurements.defaults()
         var n = 0
-        for (front in com.tailorsfit.pattern.blouse.FrontNeck.entries) for (back in com.tailorsfit.pattern.blouse.BackNeck.entries)
-            for (princess in listOf(false, true)) for (depth in listOf(com.tailorsfit.pattern.blouse.NeckDepth.SHALLOW, com.tailorsfit.pattern.blouse.NeckDepth.DEEP)) {
-                val sleeve = com.tailorsfit.pattern.blouse.SleeveStyle.entries[n++ % com.tailorsfit.pattern.blouse.SleeveStyle.entries.size]
-                val mix = com.tailorsfit.pattern.blouse.BlouseMix(front, depth, princess, back, depth, sleeve, com.tailorsfit.pattern.blouse.Opening.BACK)
+        val base = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC
+        for (body in com.tailorsfit.pattern.blouse.BodyStyle.entries) for (front in com.tailorsfit.pattern.blouse.FrontNeck.entries)
+            for (back in com.tailorsfit.pattern.blouse.BackNeck.entries) {
+                val depth = com.tailorsfit.pattern.blouse.NeckDepth.entries[n % 3]
+                val sleeve = SleeveStyle.entries[n++ % SleeveStyle.entries.size]
+                val spec = base.copy(body = body, sleeve = sleeve, opening = Opening.BACK).withFront(front, depth).withBack(back, depth)
                 // The id brings back the same design, through the catalog like any saved design.
-                assertEquals(mix.copy(opening = mix.effectiveOpening), com.tailorsfit.pattern.blouse.BlouseMix.parse(mix.id))
-                val model = com.tailorsfit.pattern.model.Catalog.model(mix.id) as com.tailorsfit.pattern.blouse.BlouseModel
+                assertEquals(spec.copy(opening = spec.effectiveOpening), com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id))
+                val model = com.tailorsfit.pattern.model.Catalog.model(spec.id) as com.tailorsfit.pattern.blouse.BlouseModel
+                assertEquals(body, model.body)
                 val p = model.draft(m)
-                assertEquals(back.detail, model.backDetail)
-                if (back.needsFrontOpening) assertTrue(p.pieces.first { it.id == "back" }.cut.onFold, mix.id)
+                if (back.needsFrontOpening) assertTrue(p.pieces.first { it.id == "back" }.cut.onFold, spec.id)
                 for (piece in p.pieces) {
-                    assertTrue(piece.area() > 20, "${mix.id}/${piece.id}")
-                    assertTrue(piece.seamOutline().none { it.x.isNaN() || it.y.isNaN() }, mix.id)
-                    for (d in piece.darts) assertTrue(pointInPolygon(d.tip, piece.seamOutline()), "${mix.id}/${piece.id} dart tip outside")
+                    assertTrue(piece.area() > 20, "${spec.id}/${piece.id}")
+                    assertTrue(piece.seamOutline().none { it.x.isNaN() || it.y.isNaN() }, spec.id)
+                    for (d in piece.darts) assertTrue(pointInPolygon(d.tip, piece.seamOutline()), "${spec.id}/${piece.id} dart tip outside")
                 }
             }
-        assertEquals(null, com.tailorsfit.pattern.blouse.BlouseMix.parse("blouse_round_classic"))
-        assertEquals(null, com.tailorsfit.pattern.model.Catalog.model("mix-NOPE-REGULAR-D-ROUND-REGULAR-SHORT-BACK"))
+        // A ready design keeps its own id and name when nothing was changed.
+        val ready = BlouseCatalog.models.first { it.id == "blouse_pot_neck" }
+        assertEquals(ready.id, com.tailorsfit.pattern.blouse.BlouseSpec.of(ready).toModel().id)
+        assertEquals(null, com.tailorsfit.pattern.blouse.BlouseSpec.parse("blouse_round_classic"))
+    }
+
+    @Test
+    fun dartCountsFollowTheBlouseType() {
+        val m = Measurements.defaults()
+        fun front(id: String) = BlouseCatalog.models.first { it.id == id }.draft(m).pieces.first { it.id == "front" }
+        assertEquals(3, front("blouse_round_classic").darts.size)
+        assertEquals(4, front("blouse_4dart_round").darts.size)
+        // The 4-dart side darts together take what the single side dart takes.
+        val three = front("blouse_round_classic").darts.maxBy { it.legA.x }.intake
+        val four = front("blouse_4dart_round").darts.sortedByDescending { it.legA.x }.take(2).sumOf { it.intake }
+        assertEquals(three, four, 0.05)
+    }
+
+    @Test
+    fun beltedFrontsHaveCupsAndABeltThatFit() {
+        for (id in listOf("blouse_katori_sweetheart", "blouse_katori_round", "blouse_sabyasachi_square", "blouse_sabyasachi_v")) for (m in sizes) {
+            val p = BlouseCatalog.models.first { it.id == id }.draft(m)
+            val centre = p.pieces.first { it.id == "front_centre" }
+            val side = p.pieces.first { it.id == "front_side" }
+            val belt = p.pieces.first { it.id == "front_belt" }
+            val back = p.pieces.first { it.id == "back" }
+            assertTrue(centre.darts.isEmpty() && side.darts.isEmpty() && belt.darts.isEmpty(), id)
+            assertEquals(centre.lengthOf(EdgeKind.PRINCESS), side.lengthOf(EdgeKind.PRINCESS), 0.4, id)
+            // Belt top = both cup bottoms; side seams match the back.
+            assertEquals(centre.lengthOf(EdgeKind.BELT) + side.lengthOf(EdgeKind.BELT), belt.lengthOf(EdgeKind.BELT), 0.05, id)
+            assertEquals(back.lengthOf(EdgeKind.SIDE), side.lengthOf(EdgeKind.SIDE) + belt.lengthOf(EdgeKind.SIDE), 0.05, id)
+            assertTrue(belt.area() > 50 && centre.area() > 100 && side.area() > 100, id)
+        }
+    }
+
+    @Test
+    fun adjustmentsChangeTheDraft() {
+        val inch = BlouseDrafter.INCH
+        val m = Measurements.defaults()
+            .with(MeasurementField.NECK_BROAD, 3.0 * inch)
+            .with(MeasurementField.ARMHOLE_DEPTH, 6.5 * inch)
+            .with(MeasurementField.SHOULDER_DROP, 0.75 * inch)
+            .with(MeasurementField.FRONT_DART_WIDTH, 0.5 * inch)
+        val front = BlouseCatalog.models.first { it.id == "blouse_round_classic" }.draft(m).pieces.first { it.id == "front" }
+        assertEquals(3.0, front.points.getValue("neck").x / inch, 0.01)
+        assertEquals(6.5, front.points.getValue("underarm").y / inch, 0.01)
+        assertEquals(0.75, front.points.getValue("shoulder").y / inch, 0.01)
+        // A ½" front dart is too small to split: one dart under the bust plus the side dart.
+        assertEquals(2, front.darts.size)
+        // Body measurements alone are what the design asks for; adjustments are optional.
+        assertTrue(BlouseCatalog.models.all { model -> model.requiredMeasurements.none { it.isAdjustment } })
     }
 }

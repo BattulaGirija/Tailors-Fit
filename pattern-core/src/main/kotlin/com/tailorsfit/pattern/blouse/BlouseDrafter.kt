@@ -80,6 +80,14 @@ object BlouseDrafter {
     const val TIE_LENGTH = 18 * INCH
     /** Where the princess seam meets the armhole, as a fraction of armhole length from the underarm. */
     const val PRINCESS_ARMHOLE_FRACTION = 0.5
+    /** Usual scoop of the armhole in from the shoulder tip: front 1", back ½". */
+    const val FRONT_ARM_CURVE = 1.0 * INCH
+    const val BACK_ARM_CURVE = 0.5 * INCH
+    /** 3-dart blouses: the small dart near the hooks, its distance from the centre and height. */
+    const val HOOK_DART_DISTANCE = 2.25 * INCH
+    const val HOOK_DART_HEIGHT = 2.5 * INCH
+    /** Katori / Sabyasachi: height of the belt (patti) below the cups. */
+    const val BELT_HEIGHT = 2.5 * INCH
 
     fun draft(model: BlouseModel, m: Measurements, options: DraftOptions = DraftOptions()): Pattern {
         val errors = m.validate(model.requiredMeasurements)
@@ -99,6 +107,9 @@ object BlouseDrafter {
             tr("summary.waist") to cm((bodice.frontWaist + bodice.backWaist) * 2),
             tr("summary.armhole_drafted") to cm(frontArm + backArm),
             tr("summary.armhole_measured") to cm(m[F.ARMHOLE]),
+            tr("summary.armhole_depth") to cm(bodice.armDepth),
+            tr("summary.neck_broad") to cm(bodice.neckBase),
+            tr("summary.shoulder_drop") to cm(bodice.slope),
         )
 
         if (model.sleeve != SleeveStyle.SLEEVELESS) {
@@ -144,17 +155,24 @@ object BlouseDrafter {
         val apexY: Double,
         val frontLength: Double,
         val backLength: Double,
+        val slope: Double = SHOULDER_SLOPE,
+        val frontScoop: Double = FRONT_ARM_CURVE,
+        val backScoop: Double = BACK_ARM_CURVE,
     ) {
-        fun shoulderY(x: Double) = SHOULDER_SLOPE * (x - neckBase) / (shoulderX - neckBase)
+        fun shoulderY(x: Double) = slope * (x - neckBase) / (shoulderX - neckBase)
         val neckPoint get() = Pt(neckX, shoulderY(neckX))
-        val shoulderTip get() = Pt(shoulderX, SHOULDER_SLOPE)
+        val shoulderTip get() = Pt(shoulderX, slope)
 
         companion object {
             fun create(model: BlouseModel, m: Measurements, warnings: MutableList<String>): BodiceFrame {
                 var shoulderX = m[F.SHOULDER] / 2
                 if (model.sleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
-                // Neck width about 2½" for an average shoulder.
-                val neckBase = (m[F.SHOULDER] * 0.18).coerceIn(2.25 * INCH, 3.25 * INCH)
+                // Neck width about 2½" for an average shoulder (or as the tailor set it).
+                val neckBase = m.adjustment(F.NECK_BROAD)?.coerceAtMost(shoulderX - MIN_STRAP)
+                    ?: (m[F.SHOULDER] * 0.18).coerceIn(2.25 * INCH, 3.25 * INCH)
+                val slope = m.adjustment(F.SHOULDER_DROP) ?: SHOULDER_SLOPE
+                val frontScoop = m.adjustment(F.FRONT_ARM_CURVE) ?: FRONT_ARM_CURVE
+                val backScoop = m.adjustment(F.BACK_ARM_CURVE) ?: BACK_ARM_CURVE
                 val widen = max(model.front.widen, model.back.widen)
                 val neckX = min(neckBase + widen, shoulderX - MIN_STRAP)
                 if (neckBase + widen > shoulderX - MIN_STRAP) warnings += tr("warn.neck_wide", cm(MIN_STRAP))
@@ -165,23 +183,24 @@ object BlouseDrafter {
                 // Armhole depth: deep enough that the front and back armhole curves together are
                 // as long as the armhole round + 1" ease (like laying armhole / 2 as a slant from
                 // the shoulder tip to the chest line).
-                val shoulderTip = Pt(shoulderX, SHOULDER_SLOPE)
+                val shoulderTip = Pt(shoulderX, slope)
                 fun armholeFor(depth: Double) =
-                    armholePath(Pt(chest, depth), shoulderTip, isFront = true).length() + armholePath(Pt(chest, depth), shoulderTip, isFront = false).length()
+                    armholePath(Pt(chest, depth), shoulderTip, true, frontScoop).length() +
+                        armholePath(Pt(chest, depth), shoulderTip, false, backScoop).length()
                 val targetArm = m[F.ARMHOLE] + ARMHOLE_EASE
-                var lo = SHOULDER_SLOPE + 2.0
-                var hi = SHOULDER_SLOPE + 40.0
+                var lo = slope + 2.0
+                var hi = slope + 40.0
                 repeat(50) {
                     val mid = (lo + hi) / 2
                     if (armholeFor(mid) < targetArm) lo = mid else hi = mid
                 }
-                var armDepth = (lo + hi) / 2
+                var armDepth = m.adjustment(F.ARMHOLE_DEPTH) ?: ((lo + hi) / 2)
                 val maxArm = min(frontLength, backLength) - 6.0
                 if (armDepth > maxArm) {
                     warnings += tr("warn.armhole_deep", cm(maxArm))
                     armDepth = maxArm
                 }
-                if (armDepth < SHOULDER_SLOPE + 8) armDepth = SHOULDER_SLOPE + 8
+                if (armDepth < slope + 8) armDepth = slope + 8
 
                 val apexX = m[F.APEX_TO_APEX] / 2
                 val dx = apexX - neckBase
@@ -209,6 +228,9 @@ object BlouseDrafter {
                     apexY = apexY,
                     frontLength = frontLength,
                     backLength = backLength,
+                    slope = slope,
+                    frontScoop = frontScoop,
+                    backScoop = backScoop,
                 )
             }
         }
@@ -227,7 +249,8 @@ object BlouseDrafter {
         val centreLength = if (isFront) f.frontLength else f.backLength
         // The front side seam is as long as the back one plus the side dart; if the front is
         // longer still, its bottom rises towards the side (the curve of an Indian blouse front).
-        val sideDart = if (isFront) (f.frontLength - f.backLength).coerceIn(0.0, MAX_SIDE_DART) else 0.0
+        val maxSideDart = m.adjustment(F.SIDE_DART_WIDTH) ?: MAX_SIDE_DART
+        val sideDart = if (isFront) (f.frontLength - f.backLength).coerceIn(0.0, maxSideDart) else 0.0
         val sideBottomY = if (isFront) max(f.frontLength, f.backLength).let { min(it, f.backLength + sideDart) } else f.backLength
 
         // Width lost between bust and waist: some at the side seam, the rest in a waist dart.
@@ -244,6 +267,12 @@ object BlouseDrafter {
             if (dartIntake > maxDart) {
                 sideInset += dartIntake - maxDart
                 dartIntake = maxDart
+            }
+            // The tailor's own dart width under the bust; the side seam takes the rest.
+            val wanted = if (isFront) m.adjustment(F.FRONT_DART_WIDTH) else null
+            if (wanted != null) {
+                dartIntake = wanted.coerceAtMost(min(excess, (f.apexX - 1.0) * 2))
+                sideInset = excess - dartIntake
             }
         }
 
@@ -269,7 +298,7 @@ object BlouseDrafter {
         val centreTop = neckPath.end
         val isOpening = (model.opening == Opening.FRONT) == isFront
 
-        val armhole = armholePath(underarm, shoulder, isFront)
+        val armhole = armholePath(underarm, shoulder, isFront, if (isFront) f.frontScoop else f.backScoop)
 
         // Bottom: level from the centre to under the bust point, then straight to the side.
         val hemBend = Pt(min(f.apexX, sideBottom.x * 0.6), centreLength)
@@ -291,42 +320,73 @@ object BlouseDrafter {
             else -> centreLength + (sideBottom.y - centreLength) * ((x - hemBend.x) / (sideBottom.x - hemBend.x))
         }
 
-        if (isFront && model.princess) {
-            val sideExcess = sideBottom.dist(underarm) - sideSeamLength(f, isFront = false)
+        if (isFront && model.body.panelled) {
+            val sideExcess = sideBottom.dist(underarm) - sideSeamLength(f, isFront = false, m)
+            if (model.body.belted) {
+                return draftBeltedFront(
+                    f, model, spec, neckPath, centreTop, isOpening, armhole, underarm, shoulder, neck, hemCentre,
+                    sideBottom, dartIntake, sideExcess, neckDepth, warnings,
+                )
+            }
             return draftPrincessFront(
                 f, model, spec, neckPath, centreTop, isOpening, armhole, underarm, shoulder, neck, hemCentre,
                 sideBottom, dartIntake, sideExcess, neckDepth, warnings,
             )
         }
 
-        if (dartIntake > 0.3) {
-            val half = dartIntake / 2
-            var tipY = if (isFront) f.apexY + 2.5 else f.armDepth + 3.0
-            // A deep neck (e.g. a pot back) may come down over the dart: stop the dart 1" below it.
-            val neckAbove = neckPath.points().filter { kotlin.math.abs(it.x - f.apexX) <= half + 1.0 }.maxOfOrNull { it.y }
+        // A dart pointing up from the bottom: stops below any deep neck (e.g. a pot back) and is
+        // left out if no room is left.
+        fun bottomDart(x: Double, intake: Double, wantedTipY: Double) {
+            val half = intake / 2
+            var tipY = wantedTipY
+            val neckAbove = neckPath.points().filter { kotlin.math.abs(it.x - x) <= half + 1.0 }.maxOfOrNull { it.y }
             if (neckAbove != null) tipY = max(tipY, neckAbove + 1.0 * INCH)
-            val a = Pt(f.apexX - half, hemY(f.apexX - half))
-            val b = Pt(f.apexX + half, hemY(f.apexX + half))
-            if (min(a.y, b.y) - tipY >= 1.5 * INCH) darts += Dart(a, Pt(f.apexX, tipY), b)
+            val a = Pt(x - half, hemY(x - half))
+            val b = Pt(x + half, hemY(x + half))
+            if (min(a.y, b.y) - tipY >= 1.5 * INCH) darts += Dart(a, Pt(x, tipY), b)
+        }
+
+        if (dartIntake > 0.3) {
+            // 3- and 4-dart fronts move about a third of the waist shaping into a small dart near
+            // the hooks, so the dart under the bust stays slim.
+            var main = dartIntake
+            if (isFront && dartIntake >= 0.75 * INCH) {
+                val hook = min(dartIntake * 0.35, 0.75 * INCH)
+                val mainHalf = (dartIntake - hook) / 2
+                val hookX = (m.adjustment(F.HOOK_DART_DISTANCE) ?: HOOK_DART_DISTANCE)
+                    .coerceAtMost(f.apexX - mainHalf - hook / 2 - 1.0)
+                if (hookX - hook / 2 >= 1.0) {
+                    main -= hook
+                    bottomDart(hookX, hook, max(centreLength - HOOK_DART_HEIGHT, f.apexY + 1.0 * INCH))
+                }
+            }
+            bottomDart(f.apexX, main, if (isFront) f.apexY + 2.5 else f.armDepth + 3.0)
         }
 
         if (isFront) {
             // Side (bust) dart takes up the extra front length so both side seams match.
-            val backSide = sideSeamLength(f, isFront = false)
+            val backSide = sideSeamLength(f, isFront = false, m)
             val frontSide = sideBottom.dist(underarm)
             val intake = (frontSide - backSide).coerceIn(0.0, MAX_SIDE_DART)
-            if (f.frontLength - f.backLength > MAX_SIDE_DART + 0.5 * INCH) {
-                warnings += tr("warn.side_dart", cm(MAX_SIDE_DART))
+            if (f.frontLength - f.backLength > maxSideDart + 0.5 * INCH) {
+                warnings += tr("warn.side_dart", cm(maxSideDart))
             }
             if (intake > 0.3) {
                 val dir = (underarm - sideBottom).normalized()
-                // About 2½" above the bottom of the side seam, pointing at the bust point.
-                val centre = sideBottom + dir * min(2.5 * INCH + intake / 2, frontSide / 2)
-                val legA = centre - dir * (intake / 2)
-                val legB = centre + dir * (intake / 2)
                 val apex = Pt(f.apexX, f.apexY)
-                val tip = apex + (centre - apex).normalized() * 3.0
-                darts += Dart(legA, tip, legB)
+                fun sideDartAt(fromBottom: Double, w: Double) {
+                    val centre = sideBottom + dir * min(fromBottom + w / 2, frontSide / 2)
+                    val tip = apex + (centre - apex).normalized() * 3.0
+                    darts += Dart(centre - dir * (w / 2), tip, centre + dir * (w / 2))
+                }
+                if (model.body == BodyStyle.FOUR_DART && intake >= 0.6 * INCH && frontSide > 5.5 * INCH) {
+                    // Two side darts, 1" apart, each taking half: a smoother line over the bust.
+                    sideDartAt(2.0 * INCH, intake / 2)
+                    sideDartAt(2.0 * INCH + intake / 2 + 1.0 * INCH, intake / 2)
+                } else {
+                    // About 2½" above the bottom of the side seam, pointing at the bust point.
+                    sideDartAt(2.5 * INCH, intake)
+                }
             }
             val apex = Pt(f.apexX, f.apexY)
             markings += Marking(apex + Pt(-0.8, 0.0), apex + Pt(0.8, 0.0), Marking.Kind.GUIDE)
@@ -481,7 +541,158 @@ object BlouseDrafter {
         return listOf(centre, side)
     }
 
-    private fun sideSeamLength(f: BodiceFrame, isFront: Boolean): Double {
+    /**
+     * Katori / Sabyasachi front: a belt (patti) across the bottom and two cup panels above it.
+     * The cup seam starts on the armhole (katori) or the middle of the shoulder (sabyasachi),
+     * passes through the bust point and reaches the belt; the waist shaping is the gap between
+     * the cup panels at the belt line, closed again in the belt so it fits the waist. The side
+     * panel is shortened at the side seam so front and back side seams match, as in princess.
+     */
+    private fun draftBeltedFront(
+        f: BodiceFrame,
+        model: BlouseModel,
+        spec: NeckSpec,
+        neckPath: PathD,
+        centreTop: Pt,
+        isOpening: Boolean,
+        armhole: PathD,
+        underarm: Pt,
+        shoulder: Pt,
+        neck: Pt,
+        hemCentre: Pt,
+        sideBottom: Pt,
+        dartIntake: Double,
+        sideExcess: Double,
+        neckDepth: Double,
+        warnings: MutableList<String>,
+    ): List<Piece> {
+        val apex = Pt(f.apexX, f.apexY)
+        val fromShoulder = model.body == BodyStyle.SABYASACHI
+
+        val excess = sideExcess.coerceIn(0.0, 2.5 * INCH)
+        if (sideExcess > 2.5 * INCH) warnings += tr("warn.princess_long")
+        val sideDir = (underarm - sideBottom).normalized()
+        val sideBottomR = sideBottom + sideDir * excess
+
+        // Belt line: a level line 2½" above the centre bottom, kept below the bust and above
+        // the bottom of the side seam.
+        val yB = (hemCentre.y - BELT_HEIGHT).coerceAtMost(sideBottomR.y - 0.75 * INCH).coerceAtLeast(apex.y + 1.0 * INCH)
+        fun sideAt(y: Double): Pt {
+            val t = ((y - sideBottomR.y) / (underarm.y - sideBottomR.y)).coerceIn(0.0, 1.0)
+            return sideBottomR.lerp(underarm, t)
+        }
+        val sideTop = sideAt(yB)
+
+        // Where the cup seam starts.
+        val armCurve = armhole.segs.single() as CubicTo
+        val (lowerArm, upperArm) = armCurve.splitAtLength(underarm, armhole.length() * PRINCESS_ARMHOLE_FRACTION)
+        val top = if (fromShoulder) shoulder.lerp(neck, 0.5) else lowerArm.end
+        val upper = if (fromShoulder) {
+            CubicTo(Pt(top.x, top.y + 0.35 * (apex.y - top.y)), Pt(apex.x, apex.y - 0.4 * (apex.y - top.y)), apex)
+        } else {
+            CubicTo(Pt(top.x - 0.45 * (top.x - apex.x), top.y + 0.25 * (apex.y - top.y)), Pt(apex.x, apex.y - 0.45 * (apex.y - top.y)), apex)
+        }
+        val half = if (dartIntake > 0.3) dartIntake / 2 else 0.0
+        val cupL = Pt(apex.x - half, yB)
+        val cupR = Pt(apex.x + half, yB)
+        fun down(to: Pt) = CubicTo(Pt(apex.x, apex.y + (to.y - apex.y) * 0.45), Pt(to.x, to.y - (to.y - apex.y) * 0.45), to)
+        val lowerL = down(cupL)
+        val lowerR = down(cupR)
+
+        val centreEdges = buildList {
+            add(Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, Pt(0.0, yB))))
+            add(Edge(EdgeKind.BELT, PathD.line(Pt(0.0, yB), cupL)))
+            add(Edge(EdgeKind.PRINCESS, PathD(cupL, listOf(lowerL.reversed(apex), upper.reversed(top)))))
+            if (fromShoulder) {
+                add(Edge(EdgeKind.SHOULDER, PathD.line(top, neck)))
+            } else {
+                add(Edge(EdgeKind.ARMHOLE, PathD(top, listOf(upperArm))))
+                add(Edge(EdgeKind.SHOULDER, PathD.line(shoulder, neck)))
+            }
+            add(Edge(EdgeKind.NECK, neckPath))
+        }
+        val sideEdges = buildList {
+            add(Edge(EdgeKind.BELT, PathD.line(cupR, sideTop)))
+            add(Edge(EdgeKind.SIDE, PathD.line(sideTop, underarm)))
+            if (fromShoulder) {
+                add(Edge(EdgeKind.ARMHOLE, armhole))
+                add(Edge(EdgeKind.SHOULDER, PathD.line(shoulder, top)))
+            } else {
+                add(Edge(EdgeKind.ARMHOLE, PathD(underarm, listOf(lowerArm))))
+            }
+            add(Edge(EdgeKind.PRINCESS, PathD(top, listOf(upper, lowerR))))
+        }
+
+        // Belt: the strip below the cups with the waist shaping closed, so its top is as long as
+        // the two cup bottoms together.
+        val gapTop = cupR.x - cupL.x
+        val beltTopRight = Pt(sideTop.x - gapTop, yB)
+        val beltBottomRight = Pt(sideBottomR.x - gapTop, sideBottomR.y)
+        val beltEdges = listOf(
+            Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(Pt(0.0, yB), hemCentre)),
+            Edge(EdgeKind.HEM, PathD.line(hemCentre, beltBottomRight)),
+            Edge(EdgeKind.SIDE, PathD.line(beltBottomRight, beltTopRight)),
+            Edge(EdgeKind.BELT, PathD.line(beltTopRight, Pt(0.0, yB))),
+        )
+
+        val midUpper = upper.pointAt(top, 0.5)
+        val midTangent = (upper.pointAt(top, 0.51) - upper.pointAt(top, 0.49)).normalized()
+        val seamNotches = listOf(Notch(apex, Pt(0.0, 1.0)), Notch(midUpper, midTangent, double = true))
+        val cross = listOf(
+            Marking(apex + Pt(-0.8, 0.0), apex + Pt(0.8, 0.0), Marking.Kind.GUIDE),
+            Marking(apex + Pt(0.0, -0.8), apex + Pt(0.0, 0.8), Marking.Kind.GUIDE),
+        )
+        val noteKey = if (fromShoulder) "note.sabyasachi" else "note.katori"
+        val centreX = apex.x * 0.45
+        val centre = withOutwardNotches(
+            Piece(
+                id = "front_centre",
+                name = tr("piece.front_cup_centre"),
+                cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true),
+                edges = centreEdges,
+                markings = cross + Marking(Pt(centreX, centreTop.y + 2.0), Pt(centreX, yB - 2.0), Marking.Kind.GRAIN),
+                points = mapOf("apex" to apex, "shoulder" to shoulder, "neck" to neck, "princessTop" to top),
+                labelAt = Pt(apex.x * 0.5 + 2.0, (centreTop.y + yB) / 2 + 3.0),
+                notes = listOf(
+                    if (isOpening) tr("note.opening_short", model.opening.label, cm(SeamAllowances().opening)) else tr("note.fold"),
+                    tr("note.neck", spec.shape.label, cm(neckDepth)),
+                    tr(noteKey),
+                ),
+            ),
+            // Matches the belt at the cup's bottom corner.
+            seamNotches + Notch(cupL, Pt(1.0, 0.0)),
+        )
+        val sideX = (cupR.x + sideTop.x) / 2
+        val side = withOutwardNotches(
+            Piece(
+                id = "front_side",
+                name = tr("piece.front_cup_side"),
+                cut = CutInstruction(2, onFold = false),
+                edges = sideEdges,
+                markings = listOf(Marking(Pt(sideX, f.armDepth + 1.0), Pt(sideX, yB - 1.5), Marking.Kind.GRAIN)),
+                points = mapOf("apex" to apex, "underarm" to underarm, "princessTop" to top),
+                labelAt = Pt(sideX, (f.armDepth + yB) / 2),
+                notes = listOf(tr(noteKey)),
+            ),
+            seamNotches + PathD.line(sideTop, underarm).pointAtDistance(1.5).let { (p, t) -> Notch(p, t) },
+        )
+        val belt = withOutwardNotches(
+            Piece(
+                id = "front_belt",
+                name = tr("piece.front_belt"),
+                cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true),
+                edges = beltEdges,
+                markings = listOf(Marking(Pt(beltTopRight.x * 0.3, yB + 0.8), Pt(beltTopRight.x * 0.3, hemCentre.y - 0.8), Marking.Kind.GRAIN)),
+                points = mapOf("cupJoin" to cupL),
+                labelAt = Pt(beltTopRight.x * 0.6, (yB + hemCentre.y) / 2),
+                notes = listOf(tr("note.belt", cm(gapTop))),
+            ),
+            listOf(Notch(cupL, Pt(1.0, 0.0))),
+        )
+        return listOf(centre, side, belt)
+    }
+
+    private fun sideSeamLength(f: BodiceFrame, isFront: Boolean, m: Measurements? = null): Double {
         val bust = if (isFront) f.frontBust else f.backBust
         val waist = if (isFront) f.frontWaist else f.backWaist
         val excess = bust - waist
@@ -513,8 +724,8 @@ object BlouseDrafter {
      * Armhole from the underarm point up to the shoulder tip. The front is scooped 1" in from
      * the shoulder tip, the back ½" and flatter at the bottom.
      */
-    internal fun armholePath(underarm: Pt, shoulder: Pt, isFront: Boolean): PathD {
-        val hollowX = shoulder.x - if (isFront) 1.0 * INCH else 0.5 * INCH
+    internal fun armholePath(underarm: Pt, shoulder: Pt, isFront: Boolean, scoop: Double = if (isFront) FRONT_ARM_CURVE else BACK_ARM_CURVE): PathD {
+        val hollowX = shoulder.x - scoop
         val armDrop = underarm.y - shoulder.y
         return PathD(
             underarm,

@@ -2,6 +2,7 @@ package com.tailorsfit.app.ui.screens
 
 import com.tailorsfit.pattern.i18n.tr
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,18 +47,27 @@ fun MeasurementGuideScreen(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
             }
-            itemsIndexed(MeasurementField.entries) { i, f ->
+            itemsIndexed(MeasurementField.body) { i, f ->
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, Brand.Line),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Row(Modifier.padding(14.dp)) {
-                        NumberBadge(i + 1)
+                    Row(Modifier.padding(14.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        // Where the tape goes, drawn on a figure.
+                        androidx.compose.foundation.layout.Box(
+                            Modifier.width(110.dp).height(120.dp)
+                                .background(Brand.Parchment, RoundedCornerShape(12.dp)).padding(4.dp),
+                        ) { com.tailorsfit.app.ui.components.MeasureFigure(f, Modifier.fillMaxSize()) }
                         Spacer(Modifier.width(14.dp))
                         Column {
-                            Text(f.label, style = MaterialTheme.typography.titleMedium)
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                NumberBadge(i + 1)
+                                Spacer(Modifier.width(8.dp))
+                                Text(f.label, style = MaterialTheme.typography.titleMedium)
+                            }
+                            Spacer(Modifier.height(4.dp))
                             Text(f.help, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

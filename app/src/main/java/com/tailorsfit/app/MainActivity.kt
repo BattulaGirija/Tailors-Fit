@@ -25,9 +25,8 @@ import com.tailorsfit.app.ui.screens.AdminLoginScreen
 import com.tailorsfit.app.ui.screens.AdminTailorScreen
 import com.tailorsfit.app.ui.screens.AuthScreen
 import com.tailorsfit.app.ui.screens.ForgotPinScreen
-import com.tailorsfit.app.ui.screens.MixBackScreen
-import com.tailorsfit.app.ui.screens.MixFrontScreen
-import com.tailorsfit.app.ui.screens.MixSleeveScreen
+import com.tailorsfit.app.ui.screens.CustomizeScreen
+import com.tailorsfit.app.ui.screens.CutPatternsScreen
 import com.tailorsfit.app.ui.screens.DesignEditorScreen
 import com.tailorsfit.app.ui.screens.MeasurementGuideScreen
 import kotlinx.coroutines.launch
@@ -72,9 +71,8 @@ object Routes {
     const val ABOUT = "about"
     const val AUTH = "auth"
     const val ADMIN_LOGIN = "admin_login"
-    const val MIX_FRONT = "mix/front"
-    const val MIX_BACK = "mix/back"
-    const val MIX_SLEEVE = "mix/sleeve"
+    /** "Design your own" starts the customise screen from a plain blouse. */
+    const val NEW_DESIGN = "new"
     const val FORGOT = "forgot?login={login}"
     fun forgot(login: String) = "forgot?login=${android.net.Uri.encode(login)}"
     const val ADMIN = "admin"
@@ -82,6 +80,8 @@ object Routes {
     fun adminDesign(id: String) = "admin/design/$id"
     fun adminTailor(id: String) = "admin/tailor/$id"
     fun catalog(categoryId: String) = "catalog/$categoryId"
+    fun customize(modelId: String) = "customize/$modelId"
+    fun cut(modelId: String) = "cut/$modelId"
     fun measure(modelId: String) = "measure/$modelId"
     fun pattern(modelId: String) = "pattern/$modelId"
     fun projector(modelId: String) = "projector/$modelId"
@@ -193,7 +193,7 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
                     vm = vm,
                     onMenu = { scope.launch { drawer.open() } },
                     onCategory = { nav.navigate(Routes.catalog(it)) },
-                    onModel = { nav.navigate(Routes.measure(it)) },
+                    onModel = { nav.navigate(Routes.customize(it)) },
                     onCustomers = { nav.navigate(Routes.CUSTOMERS) },
                     onCustomer = { c ->
                         vm.selectCustomer(c)
@@ -217,20 +217,29 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
                 CatalogScreen(
                     categoryId = entry.arguments?.getString("categoryId") ?: "blouse",
                     onBack = back,
-                    onModel = { nav.navigate(Routes.measure(it)) },
-                    onDesignOwn = { nav.navigate(Routes.MIX_FRONT) },
+                    onModel = { nav.navigate(Routes.customize(it)) },
+                    onDesignOwn = { nav.navigate(Routes.customize(Routes.NEW_DESIGN)) },
                 )
             }
-            composable(Routes.MIX_FRONT) { MixFrontScreen(vm, onBack = back, onNext = { nav.navigate(Routes.MIX_BACK) }) }
-            composable(Routes.MIX_BACK) { MixBackScreen(vm, onBack = back, onNext = { nav.navigate(Routes.MIX_SLEEVE) }) }
-            composable(Routes.MIX_SLEEVE) { MixSleeveScreen(vm, onBack = back, onDone = { nav.navigate(Routes.measure(it)) }) }
+            composable("customize/{modelId}", modelArg) { entry ->
+                val modelId = entry.arguments?.getString("modelId") ?: return@composable
+                CustomizeScreen(vm, modelId, onBack = back, onNext = { nav.navigate(Routes.measure(it)) })
+            }
             composable("measure/{modelId}", modelArg) { entry ->
                 val modelId = entry.arguments?.getString("modelId") ?: return@composable
-                MeasurementScreen(vm = vm, modelId = modelId, onBack = back, onGenerate = { nav.navigate(Routes.pattern(modelId)) })
+                MeasurementScreen(
+                    vm = vm, modelId = modelId, onBack = back,
+                    onGenerate = { nav.navigate(Routes.pattern(modelId)) },
+                    onGuide = { nav.navigate(Routes.GUIDE) },
+                )
             }
             composable("pattern/{modelId}", modelArg) { entry ->
                 val modelId = entry.arguments?.getString("modelId") ?: return@composable
-                PatternScreen(vm = vm, modelId = modelId, onBack = back, onProject = { nav.navigate(Routes.projector(modelId)) })
+                PatternScreen(vm = vm, modelId = modelId, onBack = back, onCut = { nav.navigate(Routes.cut(modelId)) })
+            }
+            composable("cut/{modelId}", modelArg) { entry ->
+                val modelId = entry.arguments?.getString("modelId") ?: return@composable
+                CutPatternsScreen(vm = vm, modelId = modelId, onBack = back, onProject = { nav.navigate(Routes.projector(modelId)) })
             }
             composable("projector/{modelId}", modelArg) { entry ->
                 val modelId = entry.arguments?.getString("modelId") ?: return@composable

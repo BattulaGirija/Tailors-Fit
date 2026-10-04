@@ -357,7 +357,7 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
     var widen by rememberSaveable { mutableFloatStateOf(existing?.let { maxOf(it.front.widen, it.back.widen).toFloat() } ?: 0f) }
     var sleeve by rememberSaveable { mutableStateOf(existing?.sleeve ?: SleeveStyle.SHORT) }
     var opening by rememberSaveable { mutableStateOf(existing?.opening ?: Opening.BACK) }
-    var princess by rememberSaveable { mutableStateOf(existing?.princess ?: false) }
+    var body by rememberSaveable { mutableStateOf(existing?.body ?: com.tailorsfit.pattern.blouse.BodyStyle.THREE_DART) }
     var backDetail by rememberSaveable { mutableStateOf(existing?.backDetail ?: BackDetail.NONE) }
     var collar by rememberSaveable { mutableStateOf(existing?.collar ?: false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -371,9 +371,10 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
         back = NeckSpec(backShape, widen.toDouble(), backDepth.toDouble()),
         sleeve = sleeve,
         opening = opening,
-        princess = princess,
+        princess = body == com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS,
         backDetail = backDetail,
         collar = collar,
+        body = body,
     )
     val warnings = remember(model) { runCatching { model.draft(Measurements.defaults()).warnings }.getOrElse { listOf(it.message ?: tr("admin.cannot_draft")) } }
 
@@ -401,13 +402,8 @@ fun DesignEditorScreen(vm: AppViewModel, designId: String?, onDone: () -> Unit) 
             Chips(SleeveStyle.entries, sleeve, { it.label }) { sleeve = it }
             Section(tr("admin.opening"))
             Chips(Opening.entries, opening, { it.label }) { opening = it }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(tr("admin.princess"), style = MaterialTheme.typography.titleMedium)
-                    Text(tr("admin.princess.text"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(checked = princess, onCheckedChange = { princess = it })
-            }
+            Section(tr("admin.blouse_type"))
+            Chips(com.tailorsfit.pattern.blouse.BodyStyle.entries, body, { it.label }) { body = it }
             Section(tr("admin.back_detail"))
             Chips(BackDetail.entries, backDetail, { it.label }) { backDetail = it }
             Row(verticalAlignment = Alignment.CenterVertically) {

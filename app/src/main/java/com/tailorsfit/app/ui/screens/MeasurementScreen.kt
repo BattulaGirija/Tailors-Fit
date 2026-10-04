@@ -52,14 +52,56 @@ import com.tailorsfit.app.ui.components.AppBar
 import com.tailorsfit.pattern.model.LengthUnit
 import com.tailorsfit.pattern.model.MeasurementField
 import com.tailorsfit.pattern.model.SizePreset
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.clip
+import com.tailorsfit.app.ui.components.MeasureFigure
+import com.tailorsfit.app.ui.components.hasMeasureFigure
+import com.tailorsfit.app.ui.theme.Brand
 import kotlinx.coroutines.launch
 
+/** Measurement sections, like a tailor's order sheet. */
+private val SECTIONS = listOf(
+    "measure.section.front" to listOf(
+        MeasurementField.FRONT_LENGTH, MeasurementField.BUST, MeasurementField.WAIST,
+        MeasurementField.APEX_LENGTH, MeasurementField.APEX_TO_APEX, MeasurementField.FRONT_NECK_DEPTH,
+    ),
+    "measure.section.back" to listOf(MeasurementField.BACK_LENGTH, MeasurementField.BACK_NECK_DEPTH),
+    "measure.section.shoulder" to listOf(MeasurementField.SHOULDER, MeasurementField.ARMHOLE),
+    "measure.section.sleeve" to listOf(MeasurementField.SLEEVE_LENGTH, MeasurementField.SLEEVE_ROUND, MeasurementField.SLEEVE_OPENING),
+)
+
+/** Customization details (optional drafting adjustments), grouped the same way. */
+private val ADJUSTMENT_SECTIONS = listOf(
+    "measure.section.front" to listOf(
+        MeasurementField.FRONT_DART_WIDTH, MeasurementField.SIDE_DART_WIDTH, MeasurementField.HOOK_DART_DISTANCE,
+        MeasurementField.FRONT_ARM_CURVE, MeasurementField.NECK_BROAD,
+    ),
+    "measure.section.back" to listOf(MeasurementField.BACK_ARM_CURVE),
+    "measure.section.shoulder" to listOf(MeasurementField.SHOULDER_DROP, MeasurementField.ARMHOLE_DEPTH),
+)
+
 @Composable
-fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onGenerate: () -> Unit) {
+fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onGenerate: () -> Unit, onGuide: () -> Unit = {}) {
     val model = vm.model(modelId) ?: return
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var errors by remember { mutableStateOf<Map<MeasurementField, String>>(emptyMap()) }
+    var help by remember { mutableStateOf<MeasurementField?>(null) }
+    var showAdjustments by rememberSaveable { mutableStateOf(MeasurementField.adjustments.any { !vm.inputs[it].isNullOrBlank() }) }
+
+    fun onEdit(f: MeasurementField, text: String) {
+        vm.editMeasurement(f, text.filter { it.isDigit() || it == '.' || it == ',' })
+        if (errors.containsKey(f)) errors = errors - f
+    }
 
     Scaffold(
         topBar = { AppBar(model.name, onBack) },
@@ -74,8 +116,6 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(model.description, style = MaterialTheme.typography.bodyMedium)
-
             GarmentPreviewCard(model, vm.currentMeasurements())
 
             CustomerCard(vm)
@@ -120,22 +160,49 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
                 )
             }
 
-            Text(tr("measure.title", vm.unit.label), style = MaterialTheme.typography.titleMedium)
-            model.requiredMeasurements.forEach { f ->
-                OutlinedTextField(
-                    value = vm.inputs[f] ?: "",
-                    onValueChange = { text ->
-                        vm.editMeasurement(f, text.filter { it.isDigit() || it == '.' || it == ',' })
-                        if (errors.containsKey(f)) errors = errors - f
-                    },
-                    label = { Text(f.label) },
-                    supportingText = { Text(errors[f] ?: f.help) },
-                    isError = errors.containsKey(f),
-                    suffix = { Text(vm.unit.label) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(tr("measure.title", vm.unit.label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                TextButton(onClick = onGuide) {
+                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(" " + tr("measure.how_to"))
+                }
+            }
+            val required = model.requiredMeasurements.toSet()
+            for ((title, fields) in SECTIONS) {
+                val shown = fields.filter { it in required }
+                if (shown.isEmpty()) continue
+                MeasureSection(tr(title)) {
+                    FieldGrid(shown) { f ->
+                        MeasureField(f, vm.inputs[f] ?: "", vm.unit.label, errors[f], onHelp = { help = f }) { onEdit(f, it) }
+                    }
+                }
+            }
+
+            // Customization details: optional changes to how the pattern is drafted.
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Brand.Line),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth().clickable { showAdjustments = !showAdjustments }, verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(tr("measure.adjust.title"), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                            Text(tr("measure.adjust.text"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(if (showAdjustments) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                    }
+                    if (showAdjustments) {
+                        for ((title, fields) in ADJUSTMENT_SECTIONS) {
+                            Text(tr(title), style = MaterialTheme.typography.labelLarge, color = Brand.Plum)
+                            FieldGrid(fields) { f ->
+                                MeasureField(f, vm.inputs[f] ?: "", vm.unit.label, null, placeholder = tr("measure.auto"), onHelp = { help = f }) { onEdit(f, it) }
+                            }
+                        }
+                        TextButton(onClick = { MeasurementField.adjustments.forEach { vm.editMeasurement(it, "") } }) { Text(tr("measure.adjust.reset")) }
+                    }
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -156,6 +223,86 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
             Spacer(Modifier.height(24.dp))
         }
     }
+    help?.let { f -> MeasureHelpDialog(f) { help = null } }
+}
+
+@Composable
+private fun MeasureSection(title: String, content: @Composable () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Brand.Line),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            content()
+        }
+    }
+}
+
+/** Two fields side by side, like the columns of an order sheet. */
+@Composable
+private fun FieldGrid(fields: List<MeasurementField>, field: @Composable (MeasurementField) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        fields.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { f -> Box(Modifier.weight(1f)) { field(f) } }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MeasureField(
+    f: MeasurementField,
+    value: String,
+    unit: String,
+    error: String?,
+    placeholder: String? = null,
+    onHelp: () -> Unit,
+    onChange: (String) -> Unit,
+) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(f.label, style = MaterialTheme.typography.labelLarge, maxLines = 2, modifier = Modifier.weight(1f))
+            IconButton(onClick = onHelp, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Filled.Info, contentDescription = tr("measure.how_to"), tint = Brand.Gold, modifier = Modifier.size(18.dp))
+            }
+        }
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            placeholder = placeholder?.let { { Text(it) } },
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            suffix = { Text(unit) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** How to take one measurement: the figure with the tape line, and the instructions. */
+@Composable
+fun MeasureHelpDialog(f: MeasurementField, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(f.label) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (hasMeasureFigure(f)) {
+                    Box(Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(12.dp)).background(Brand.Parchment).padding(8.dp)) {
+                        MeasureFigure(f, Modifier.fillMaxSize())
+                    }
+                }
+                Text(f.help, style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("app.close")) } },
+    )
 }
 
 @Composable

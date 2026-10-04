@@ -43,6 +43,11 @@ enum class MeasurementField(
     val defaultCm: Double,
     val minCm: Double,
     val maxCm: Double,
+    /**
+     * Optional change to how the pattern is drafted (e.g. neck width, dart width). Left empty,
+     * the drafter works the value out itself.
+     */
+    val isAdjustment: Boolean = false,
 ) {
     BUST("bust", 91.5, 60.0, 160.0),
     WAIST("waist", 76.0, 50.0, 150.0),
@@ -56,7 +61,17 @@ enum class MeasurementField(
     BACK_NECK_DEPTH("back_neck_depth", 15.0, 3.0, 40.0),
     SLEEVE_LENGTH("sleeve_length", 15.0, 5.0, 65.0),
     SLEEVE_ROUND("sleeve_round", 30.5, 20.0, 55.0),
-    SLEEVE_OPENING("sleeve_opening", 28.0, 15.0, 50.0);
+    SLEEVE_OPENING("sleeve_opening", 28.0, 15.0, 50.0),
+
+    // Customization details (adjustments), in cm on the stitching line.
+    NECK_BROAD("adj_neck_broad", Double.NaN, 1.5 * 2.54, 5.0 * 2.54, isAdjustment = true),
+    SHOULDER_DROP("adj_shoulder_drop", Double.NaN, 0.0, 1.5 * 2.54, isAdjustment = true),
+    ARMHOLE_DEPTH("adj_armhole_depth", Double.NaN, 4.0 * 2.54, 11.0 * 2.54, isAdjustment = true),
+    FRONT_ARM_CURVE("adj_front_arm_curve", Double.NaN, 0.0, 2.0 * 2.54, isAdjustment = true),
+    BACK_ARM_CURVE("adj_back_arm_curve", Double.NaN, 0.0, 1.5 * 2.54, isAdjustment = true),
+    FRONT_DART_WIDTH("adj_front_dart", Double.NaN, 0.0, 2.5 * 2.54, isAdjustment = true),
+    SIDE_DART_WIDTH("adj_side_dart", Double.NaN, 0.0, 2.0 * 2.54, isAdjustment = true),
+    HOOK_DART_DISTANCE("adj_hook_dart_distance", Double.NaN, 1.0 * 2.54, 4.0 * 2.54, isAdjustment = true);
 
     /** Name shown to the tailor, in the current language. */
     val label: String get() = tr("field.$key")
@@ -73,6 +88,12 @@ enum class MeasurementField(
 
     companion object {
         fun byKey(key: String): MeasurementField? = entries.firstOrNull { it.key == key }
+
+        /** Body measurements (taken with the tape). */
+        val body: List<MeasurementField> get() = entries.filter { !it.isAdjustment }
+
+        /** Optional drafting adjustments. */
+        val adjustments: List<MeasurementField> get() = entries.filter { it.isAdjustment }
     }
 }
 
@@ -84,6 +105,9 @@ class Measurements(values: Map<MeasurementField, Double>) {
     private val values: Map<MeasurementField, Double> = values.toMap()
 
     operator fun get(f: MeasurementField): Double = values[f] ?: Double.NaN
+
+    /** An adjustment the tailor typed, kept within its limits; null when left to the drafter. */
+    fun adjustment(f: MeasurementField): Double? = this[f].takeIf { !it.isNaN() }?.coerceIn(f.minCm, f.maxCm)
     fun has(f: MeasurementField) = values[f]?.isNaN() == false
     fun with(f: MeasurementField, cm: Double) = Measurements(values + (f to cm))
     fun asMap(): Map<MeasurementField, Double> = values
@@ -97,7 +121,7 @@ class Measurements(values: Map<MeasurementField, Double>) {
     override fun toString() = values.entries.joinToString(prefix = "Measurements(", postfix = ")") { "${it.key.key}=${it.value}" }
 
     companion object {
-        fun defaults(fields: Collection<MeasurementField> = MeasurementField.entries): Measurements =
+        fun defaults(fields: Collection<MeasurementField> = MeasurementField.body): Measurements =
             Measurements(fields.associateWith { it.defaultCm })
     }
 }
@@ -128,6 +152,6 @@ enum class SizePreset(val label: String, private val bust: Double) {
             MeasurementField.SLEEVE_ROUND to 2.0,
             MeasurementField.SLEEVE_OPENING to 1.5,
         )
-        return Measurements(MeasurementField.entries.associateWith { f -> f.defaultCm + (grade[f] ?: 0.0) * step })
+        return Measurements(MeasurementField.body.associateWith { f -> f.defaultCm + (grade[f] ?: 0.0) * step })
     }
 }
