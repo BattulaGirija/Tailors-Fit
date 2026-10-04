@@ -213,6 +213,7 @@ class ScreenshotTest {
         compose.onNodeWithText("Neck").performClick()
         save("42-customize-front-neck")
         compose.onNode(hasText("Back") and hasClickAction()).performClick()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Pot (matka)"))
         compose.onNodeWithText("Pot (matka)").performClick()
         save("43-customize-back-neck")
         // The chosen design opens like any other.
