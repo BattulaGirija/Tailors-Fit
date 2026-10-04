@@ -18,8 +18,11 @@ import kotlin.math.min
 /** True for measurements taken on the back of the body (the figure is drawn from behind). */
 private val BACK_VIEW = setOf(MeasurementField.SHOULDER, MeasurementField.BACK_LENGTH, MeasurementField.BACK_NECK_DEPTH)
 
+/** Optional fields that still have a picture. */
+private val ADJUSTMENT_FIGURES = setOf(MeasurementField.FRONT_LENGTH, MeasurementField.APEX_TO_APEX)
+
 /** Whether [MeasureFigure] has a picture for this field. */
-fun hasMeasureFigure(f: MeasurementField) = !f.isAdjustment
+fun hasMeasureFigure(f: MeasurementField) = !f.isAdjustment || f in ADJUSTMENT_FIGURES
 
 /**
  * A simple upper-body figure (100 × 110 units) with the measurement for [field] drawn in gold:
@@ -49,6 +52,9 @@ fun MeasureFigure(field: MeasurementField, modifier: Modifier = Modifier) {
         when (field) {
             MeasurementField.BUST -> loop(50f, 54f, 21f, 3.5f)
             MeasurementField.WAIST -> loop(50f, 75f, 17f, 3f)
+            MeasurementField.UPPER_CHEST -> loop(50f, 46f, 20f, 3f)
+            MeasurementField.SHOULDER_WIDTH -> line(36f to 28f, 23f to 33f)
+            MeasurementField.CHEST_HEIGHT -> line(45f to 26f, 40f to 54f, 40f to 66f)
             MeasurementField.SHOULDER -> line(23f to 33f, 50f to 30f, 77f to 33f)
             MeasurementField.FRONT_LENGTH -> line(45f to 26f, 40f to 54f, 40f to 76f)
             MeasurementField.BACK_LENGTH -> line(45f to 26f, 45f to 76f)

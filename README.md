@@ -28,8 +28,13 @@ published to the same link and installs over the previous version.
 2. **Customise it.** A front / back sketch with three tabs: **Blouse** (type and where the hooks
    go), **Sleeve**, and **Neck** with **Front** and **Back** (shape and depth, including pot,
    paan, keyhole and dori backs).
-3. **Enter measurements** in inches or cm, grouped like an order sheet (Front, Back, Shoulder,
-   Sleeve). The ⓘ next to each field (and *How to measure*) shows where the tape goes on a
+3. **Enter measurements** in inches or cm, in the order of a tailor's blouse sheet: Length,
+   Upper chest, Center chest, Shoulder width, Sleeve length, Sleeve round, Middle hand round,
+   Front neck height, Back neck height, Waist loose, Front dart point, Chest height, Full
+   shoulder, Armhole round. The front length (Length + ½" + half of center chest − upper
+   chest), the bust points (center chest ÷ 10 from the centre) and the neck width (full
+   shoulder ÷ 2 − shoulder width) are worked out from these; katori / sabyasachi belts sit at
+   the chest height. The ⓘ next to each field (and *How to measure*) shows where the tape goes on a
    figure. Start from a standard size (S–XXL) and adjust; customers can be saved and reloaded.
    **Customization details** (optional) change the draft itself: neck broad, front / side dart
    width, hook dart distance, front and back arm curve, shoulder drop and armhole depth.

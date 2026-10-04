@@ -68,20 +68,10 @@ import com.tailorsfit.app.ui.components.hasMeasureFigure
 import com.tailorsfit.app.ui.theme.Brand
 import kotlinx.coroutines.launch
 
-/** Measurement sections, like a tailor's order sheet. */
-private val SECTIONS = listOf(
-    "measure.section.front" to listOf(
-        MeasurementField.FRONT_LENGTH, MeasurementField.BUST, MeasurementField.WAIST,
-        MeasurementField.APEX_LENGTH, MeasurementField.APEX_TO_APEX, MeasurementField.FRONT_NECK_DEPTH,
-    ),
-    "measure.section.back" to listOf(MeasurementField.BACK_LENGTH, MeasurementField.BACK_NECK_DEPTH),
-    "measure.section.shoulder" to listOf(MeasurementField.SHOULDER, MeasurementField.ARMHOLE),
-    "measure.section.sleeve" to listOf(MeasurementField.SLEEVE_LENGTH, MeasurementField.SLEEVE_ROUND, MeasurementField.SLEEVE_OPENING),
-)
-
 /** Customization details (optional drafting adjustments), grouped the same way. */
 private val ADJUSTMENT_SECTIONS = listOf(
     "measure.section.front" to listOf(
+        MeasurementField.FRONT_LENGTH, MeasurementField.APEX_TO_APEX,
         MeasurementField.FRONT_DART_WIDTH, MeasurementField.SIDE_DART_WIDTH, MeasurementField.HOOK_DART_DISTANCE,
         MeasurementField.FRONT_ARM_CURVE, MeasurementField.NECK_BROAD,
     ),
@@ -167,14 +157,10 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
                     Text(" " + tr("measure.how_to"))
                 }
             }
-            val required = model.requiredMeasurements.toSet()
-            for ((title, fields) in SECTIONS) {
-                val shown = fields.filter { it in required }
-                if (shown.isEmpty()) continue
-                MeasureSection(tr(title)) {
-                    FieldGrid(shown) { f ->
-                        MeasureField(f, vm.inputs[f] ?: "", vm.unit.label, errors[f], onHelp = { help = f }) { onEdit(f, it) }
-                    }
+            // The measurement sheet, in the usual order (sleeve rows only when the design has sleeves).
+            MeasureSection(tr("measure.details")) {
+                FieldGrid(model.requiredMeasurements) { f ->
+                    MeasureField(f, vm.inputs[f] ?: "", vm.unit.label, errors[f], onHelp = { help = f }) { onEdit(f, it) }
                 }
             }
 

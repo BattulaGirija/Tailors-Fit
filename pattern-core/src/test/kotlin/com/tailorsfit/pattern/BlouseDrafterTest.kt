@@ -34,7 +34,11 @@ class BlouseDrafterTest {
             for (piece in pattern.pieces) {
                 val outline = piece.seamOutline()
                 assertTrue(outline.all { !it.x.isNaN() && !it.y.isNaN() }, "${model.id}/${piece.id} has NaN")
-                val minArea = if (piece.edges.any { it.kind == EdgeKind.BAND }) 20.0 else 100.0
+                val minArea = when {
+                    piece.edges.any { it.kind == EdgeKind.BAND } -> 20.0
+                    piece.id == "front_belt" -> 40.0
+                    else -> 100.0
+                }
                 assertTrue(piece.area() > minArea, "${model.id}/${piece.id} area ${piece.area()}")
                 // Darts, notches and markings live on or inside the piece.
                 for (d in piece.darts) assertTrue(pointInPolygon(d.tip, outline), "${model.id}/${piece.id} dart tip outside")
@@ -374,5 +378,43 @@ class BlouseDrafterTest {
         assertEquals(2, front.darts.size)
         // Body measurements alone are what the design asks for; adjustments are optional.
         assertTrue(BlouseCatalog.models.all { model -> model.requiredMeasurements.none { it.isAdjustment } })
+    }
+
+    @Test
+    fun draftsFromATailorsMeasurementSheet() {
+        // Size 36 sheet: Length 14, Upper chest 36, Center chest 36, Shoulder width 2, Sleeve
+        // length 6, Sleeve round 12, Middle hand round 13, Front neck 7, Back neck 10, Waist
+        // loose 30, Front dart point 9.5, Chest height 13.5, Full shoulder 15, Armhole 16.
+        val inch = BlouseDrafter.INCH
+        val sheet = mapOf(
+            MeasurementField.BACK_LENGTH to 14.0, MeasurementField.UPPER_CHEST to 36.0, MeasurementField.BUST to 36.0,
+            MeasurementField.SHOULDER_WIDTH to 2.0, MeasurementField.SLEEVE_LENGTH to 6.0, MeasurementField.SLEEVE_OPENING to 12.0,
+            MeasurementField.SLEEVE_ROUND to 13.0, MeasurementField.FRONT_NECK_DEPTH to 7.0, MeasurementField.BACK_NECK_DEPTH to 10.0,
+            MeasurementField.WAIST to 30.0, MeasurementField.APEX_LENGTH to 9.5, MeasurementField.CHEST_HEIGHT to 13.5,
+            MeasurementField.SHOULDER to 15.0, MeasurementField.ARMHOLE to 16.0,
+        ).mapValues { it.value * inch }
+        val m = Measurements(sheet)
+        // The sheet is everything a design needs.
+        assertEquals(MeasurementField.body.toSet(), sheet.keys)
+        for (model in BlouseCatalog.models) {
+            val p = model.draft(m)
+            assertTrue(p.pieces.isNotEmpty(), model.id)
+            for (piece in p.pieces) assertTrue(piece.area() > 20, "${model.id}/${piece.id}")
+        }
+        val front = BlouseCatalog.models.first { it.id == "blouse_round_classic" }.draft(m).pieces.first { it.id == "front" }
+        // Neck edge at full shoulder / 2 - shoulder width; shoulder tip at 7½".
+        assertEquals(5.5, front.points.getValue("neck").x / inch, 0.01)
+        assertEquals(7.5, front.points.getValue("shoulder").x / inch, 0.01)
+        // Bust points 3.6" from the centre; chest quarter 10".
+        assertEquals(3.6, front.points.getValue("apex").x / inch, 0.01)
+        assertEquals(10.0, front.points.getValue("underarm").x / inch, 0.01)
+        // Front is Length + ½" (upper chest = center chest).
+        assertEquals(14.5, front.edges.first { it.kind == EdgeKind.OPENING }.path.end.y / inch, 0.01)
+        // Katori belt: at the chest height, but at least 1½" tall at the centre (front 14½").
+        val belt = BlouseCatalog.models.first { it.id == "blouse_katori_round" }.draft(m).pieces.first { it.id == "front_belt" }
+        assertEquals(13.0, belt.edges.first { it.kind == EdgeKind.OPENING }.path.start.y / inch, 0.01)
+        val roomy = Measurements(sheet + (MeasurementField.CHEST_HEIGHT to 12.0 * inch))
+        val belt2 = BlouseCatalog.models.first { it.id == "blouse_katori_round" }.draft(roomy).pieces.first { it.id == "front_belt" }
+        assertEquals(12.0, belt2.edges.first { it.kind == EdgeKind.OPENING }.path.start.y / inch, 0.01)
     }
 }

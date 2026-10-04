@@ -88,6 +88,8 @@ object BlouseDrafter {
     const val HOOK_DART_HEIGHT = 2.5 * INCH
     /** Katori / Sabyasachi: height of the belt (patti) below the cups. */
     const val BELT_HEIGHT = 2.5 * INCH
+    /** The belt stays at least this tall at the centre front. */
+    const val MIN_BELT = 1.5 * INCH
 
     fun draft(model: BlouseModel, m: Measurements, options: DraftOptions = DraftOptions()): Pattern {
         val errors = m.validate(model.requiredMeasurements)
@@ -158,6 +160,8 @@ object BlouseDrafter {
         val slope: Double = SHOULDER_SLOPE,
         val frontScoop: Double = FRONT_ARM_CURVE,
         val backScoop: Double = BACK_ARM_CURVE,
+        /** From the shoulder down to under the bust (katori / sabyasachi belt line), if known. */
+        val chestHeight: Double? = null,
     ) {
         fun shoulderY(x: Double) = slope * (x - neckBase) / (shoulderX - neckBase)
         val neckPoint get() = Pt(neckX, shoulderY(neckX))
@@ -167,9 +171,12 @@ object BlouseDrafter {
             fun create(model: BlouseModel, m: Measurements, warnings: MutableList<String>): BodiceFrame {
                 var shoulderX = m[F.SHOULDER] / 2
                 if (model.sleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
-                // Neck width about 2½" for an average shoulder (or as the tailor set it).
-                val neckBase = m.adjustment(F.NECK_BROAD)?.coerceAtMost(shoulderX - MIN_STRAP)
-                    ?: (m[F.SHOULDER] * 0.18).coerceIn(2.25 * INCH, 3.25 * INCH)
+                // Neck width: the tailor's "neck broad" if set, else full shoulder / 2 minus the
+                // shoulder (strap) width measured on the customer.
+                val strap = m[F.SHOULDER_WIDTH].takeIf { !it.isNaN() }
+                val neckBase = (m.adjustment(F.NECK_BROAD)
+                    ?: strap?.let { shoulderX - it }
+                    ?: (m[F.SHOULDER] * 0.18)).coerceIn(1.75 * INCH, shoulderX - MIN_STRAP)
                 val slope = m.adjustment(F.SHOULDER_DROP) ?: SHOULDER_SLOPE
                 val frontScoop = m.adjustment(F.FRONT_ARM_CURVE) ?: FRONT_ARM_CURVE
                 val backScoop = m.adjustment(F.BACK_ARM_CURVE) ?: BACK_ARM_CURVE
@@ -177,8 +184,13 @@ object BlouseDrafter {
                 val neckX = min(neckBase + widen, shoulderX - MIN_STRAP)
                 if (neckBase + widen > shoulderX - MIN_STRAP) warnings += tr("warn.neck_wide", cm(MIN_STRAP))
 
-                val frontLength = m[F.FRONT_LENGTH]
+                // "Length" is measured straight down from the shoulder; the front also goes over
+                // the bust, so it is longer by ½" plus half of what the bust is bigger than the
+                // upper chest (at most 2"), unless the tailor gives the front length.
                 val backLength = m[F.BACK_LENGTH]
+                val upper = m[F.UPPER_CHEST].takeIf { !it.isNaN() } ?: (m[F.BUST] - 2.5)
+                val frontLength = m.adjustment(F.FRONT_LENGTH)
+                    ?: (backLength + (0.5 * INCH + (m[F.BUST] - upper) / 2).coerceIn(0.5 * INCH, 2.0 * INCH))
                 val chest = m[F.BUST] / 4 + BUST_EASE / 4
                 // Armhole depth: deep enough that the front and back armhole curves together are
                 // as long as the armhole round + 1" ease (like laying armhole / 2 as a slant from
@@ -202,7 +214,8 @@ object BlouseDrafter {
                 }
                 if (armDepth < slope + 8) armDepth = slope + 8
 
-                val apexX = m[F.APEX_TO_APEX] / 2
+                // Bust points: half the given distance, else center chest / 10 from the centre.
+                val apexX = m.adjustment(F.APEX_TO_APEX)?.div(2) ?: (m[F.BUST] / 10).coerceIn(2.75 * INCH, 5.0 * INCH)
                 val dx = apexX - neckBase
                 val apexLen = m[F.APEX_LENGTH]
                 var apexY = if (apexLen > kotlin.math.abs(dx)) sqrt(apexLen * apexLen - dx * dx) else apexLen
@@ -214,6 +227,9 @@ object BlouseDrafter {
                     warnings += tr("warn.front_short", cm(0.5 * INCH) + "–" + cm(2 * INCH))
                 }
                 if (m[F.WAIST] > m[F.BUST]) warnings += tr("warn.waist_big")
+                if (m[F.UPPER_CHEST] > m[F.BUST] + 2.0) warnings += tr("warn.upper_chest_big")
+                val chestHeight = m[F.CHEST_HEIGHT].takeIf { !it.isNaN() && it > apexY + 1.0 * INCH }
+                if (!m[F.CHEST_HEIGHT].isNaN() && chestHeight == null) warnings += tr("warn.chest_height")
 
                 return BodiceFrame(
                     shoulderX = shoulderX,
@@ -231,6 +247,7 @@ object BlouseDrafter {
                     slope = slope,
                     frontScoop = frontScoop,
                     backScoop = backScoop,
+                    chestHeight = chestHeight,
                 )
             }
         }
@@ -576,7 +593,12 @@ object BlouseDrafter {
 
         // Belt line: a level line 2½" above the centre bottom, kept below the bust and above
         // the bottom of the side seam.
-        val yB = (hemCentre.y - BELT_HEIGHT).coerceAtMost(sideBottomR.y - 0.75 * INCH).coerceAtLeast(apex.y + 1.0 * INCH)
+        // Belt line: at the chest height (under the bust) when measured, else 2½" above the
+        // centre bottom; the belt stays at least 1½" tall at the centre and ¾" at the side,
+        // and the line stays below the bust.
+        val yB = (f.chestHeight ?: (hemCentre.y - BELT_HEIGHT))
+            .coerceAtMost(hemCentre.y - MIN_BELT).coerceAtMost(sideBottomR.y - 0.75 * INCH)
+            .coerceAtLeast(apex.y + 1.0 * INCH)
         fun sideAt(y: Double): Pt {
             val t = ((y - sideBottomR.y) / (underarm.y - sideBottomR.y)).coerceIn(0.0, 1.0)
             return sideBottomR.lerp(underarm, t)
