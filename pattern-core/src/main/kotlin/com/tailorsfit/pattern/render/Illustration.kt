@@ -24,13 +24,15 @@ data class GarmentView(
     val trims: List<List<Pt>>,
     val holes: List<List<Pt>> = emptyList(),
     val ties: List<List<Pt>> = emptyList(),
+    /** Parts cut in net (yokes, inserts), drawn see-through over the panels. */
+    val sheer: List<List<Pt>> = emptyList(),
 )
 
 object Illustration {
     /** Front and back views of a blouse pattern (as drafted by the blouse drafter). */
     fun blouse(pattern: Pattern): List<GarmentView> {
         val fronts = asWorn(pattern.pieces).filter { it.id.startsWith("front") }
-        val back = pattern.pieces.firstOrNull { it.id == "back" }
+        val backs = pattern.pieces.filter { it.id == "back" || it.id == "back_yoke" }
         val sleeve = pattern.pieces.firstOrNull { it.id == "sleeve" }
         val style = Style(
             sleeve = pattern.meta["sleeve"] ?: "SHORT",
@@ -39,7 +41,7 @@ object Illustration {
         )
         return listOfNotNull(
             if (fronts.isNotEmpty()) view(tr("view.front"), fronts, sleeve, style, isBack = false) else null,
-            back?.let { view(tr("view.back"), listOf(it), sleeve, style, isBack = true) },
+            if (backs.isNotEmpty()) view(tr("view.back"), backs, sleeve, style, isBack = true) else null,
         )
     }
 
@@ -48,7 +50,7 @@ object Illustration {
      * it), so for drawing it is stretched back to the width of the front above it.
      */
     fun asWorn(pieces: List<Piece>): List<Piece> {
-        val front = pieces.firstOrNull { it.id == "front" } ?: return pieces
+        val front = pieces.firstOrNull { it.id == "front_side" } ?: pieces.firstOrNull { it.id == "front" } ?: return pieces
         val sideTop = front.edgesOf(EdgeKind.SIDE).firstOrNull()?.path?.start ?: return pieces
         return pieces.map { p ->
             val top = p.edgesOf(EdgeKind.BELT).firstOrNull()?.path?.start
@@ -65,6 +67,7 @@ object Illustration {
         val trims = ArrayList<List<Pt>>()
         val holes = ArrayList<List<Pt>>()
         val ties = ArrayList<List<Pt>>()
+        val sheer = ArrayList<List<Pt>>()
 
         // Armhole from underarm up to the shoulder tip (split over two panels on princess fronts).
         val armhole = halves
@@ -97,6 +100,7 @@ object Illustration {
             val opening = half.edges.any { it.kind == EdgeKind.OPENING }
             val full = asFold(half).unfolded()
             panels += full.seamOutline()
+            if (half.id == "back_yoke" || half.id == "front_insert") sheer += full.seamOutline()
             holes += full.cutouts
             full.edgesOf(EdgeKind.NECK).flatMap { it.path.points() }.sortedBy { it.x }.takeIf { it.isNotEmpty() }?.let { neckline = it }
             trims += full.edgesOf(EdgeKind.NECK).map { it.path.points() }
@@ -122,7 +126,7 @@ object Illustration {
                 ties += listOf(end, end.lerp(bottom, 0.5) + Pt(end.x * 0.08, 0.0), bottom)
             }
         }
-        return GarmentView(title, panels, seams, trims, holes, ties)
+        return GarmentView(title, panels, seams, trims, holes, ties, sheer)
     }
 
     private const val COLLAR_HEIGHT = 3.5

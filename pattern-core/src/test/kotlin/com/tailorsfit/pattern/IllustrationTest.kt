@@ -17,7 +17,10 @@ class IllustrationTest {
             for (v in views) {
                 val sleeveParts = if (model.sleeve == SleeveStyle.PUFF || model.sleeve == SleeveStyle.FRILL) 2 else 1
                 val sleeves = if (model.sleeve == SleeveStyle.SLEEVELESS) 0 else 2 * sleeveParts
-                val bodice = if (v.title != "Front") 1 else when { model.body.belted -> 4; model.body.panelled -> 3; model.hasPatti -> 2; else -> 1 }
+                val none = com.tailorsfit.pattern.blouse.YokeShape.NONE
+                val bodice = if (v.title != "Front") 1 + (if (model.backYoke != none) 1 else 0)
+                else when { model.body.belted -> 4; model.body.panelled -> 3; else -> 1 } +
+                    (if (model.hasPatti) 1 else 0) + (if (model.frontInsert != none) 1 else 0)
                 val collar = if (model.collar) 1 else 0
                 assertEquals(sleeves + bodice + collar, v.panels.size, "${model.id} ${v.title}")
                 if (v.title == "Back") {

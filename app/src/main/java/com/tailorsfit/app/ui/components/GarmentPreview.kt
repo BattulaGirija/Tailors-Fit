@@ -230,6 +230,21 @@ private fun DrawScope.drawViews(views: List<GarmentView>, cloth: Color, finish: 
                 }
                 drawPath(p, dark, style = Stroke(width = 1.2f, join = StrokeJoin.Round))
             }
+            // Net parts: see-through, with a fine mesh.
+            for (sh in v.sheer) {
+                val sp = path(sh, true)
+                drawPath(sp, Color(0xFFF7F1E8).copy(alpha = 0.72f))
+                clipPath(sp) {
+                    val step = 0.9f * scale
+                    var k = -size.height
+                    while (k < size.width) {
+                        drawLine(dark.copy(alpha = 0.18f), Offset(k, 0f), Offset(k + size.height, size.height), strokeWidth = 0.6f)
+                        drawLine(dark.copy(alpha = 0.18f), Offset(k + size.height, 0f), Offset(k, size.height), strokeWidth = 0.6f)
+                        k += step
+                    }
+                }
+                drawPath(sp, dark, style = Stroke(width = 1.2f, join = StrokeJoin.Round))
+            }
             // Openings show the backdrop through the cloth.
             for (h in v.holes) {
                 val hp = path(h, true)

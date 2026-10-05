@@ -78,6 +78,16 @@ enum class BodyStyle {
     val belted: Boolean get() = this == KATORI || this == SABYASACHI
 }
 
+/**
+ * Shape of the lower edge of a separate yoke piece (usually cut in net): across the upper back
+ * ([BlouseModel.backYoke]) or as an insert below the front neck ([BlouseModel.frontInsert]).
+ */
+enum class YokeShape {
+    NONE, STRAIGHT, V, ROUND, SCALLOP, SWEETHEART;
+
+    val label: String get() = tr("yoke.${name.lowercase()}")
+}
+
 /** Where the blouse opens (hooks / zip). The other centre is cut on the fold. */
 enum class Opening {
     FRONT, BACK;
@@ -107,12 +117,23 @@ data class BlouseModel(
     val bottomWaves: Boolean = false,
     /** Patti: a band across the bottom of the front, cut as its own piece (darted fronts only). */
     val patti: Boolean = false,
+    /** Net (or contrast) yoke across the upper back, with this lower edge. */
+    val backYoke: YokeShape = YokeShape.NONE,
+    /** Net (or contrast) insert below the front neck, with this lower edge. */
+    val frontInsert: YokeShape = YokeShape.NONE,
+    /** Front bottom curving down towards the centre. */
+    val bottomCurve: Boolean = false,
+    /** Princess seam from the middle of the shoulder instead of the armhole. */
+    val shoulderPrincess: Boolean = false,
 ) : GarmentModel {
     /** Sleeves actually drafted (a halter has none). */
     val effectiveSleeve: SleeveStyle get() = if (halter) SleeveStyle.SLEEVELESS else sleeve
 
-    /** Whether the front really gets a patti (princess, katori and sabyasachi fronts are panelled). */
-    val hasPatti: Boolean get() = patti && !body.panelled
+    /** Whether the front really gets a patti (katori and sabyasachi already have a belt). */
+    val hasPatti: Boolean get() = patti && !body.belted
+
+    /** Curved bottom (not with a patti or bottom waves, which shape the bottom themselves). */
+    val hasBottomCurve: Boolean get() = bottomCurve && !hasPatti && !bottomWaves && !body.belted
 
     override val categoryId = "blouse"
     override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
@@ -126,6 +147,10 @@ data class BlouseModel(
             effectiveSleeve.label,
             tr("tag.waves").takeIf { bottomWaves },
             tr("tag.patti").takeIf { hasPatti },
+            tr("tag.curve").takeIf { hasBottomCurve },
+            tr("tag.shoulder_cut").takeIf { shoulderPrincess && body == BodyStyle.PRINCESS },
+            tr("tag.back_yoke", backYoke.label).takeIf { backYoke != YokeShape.NONE },
+            tr("tag.front_insert", frontInsert.label).takeIf { frontInsert != YokeShape.NONE },
             tr("tag.collar").takeIf { collar },
             backDetail.label.takeIf { backDetail != BackDetail.NONE },
             opening.label,
@@ -299,6 +324,332 @@ object BlouseCatalog {
             "Sleeveless blouse with a deep V back and tie-up strings.",
             NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
             backDetail = BackDetail.DORI,
+        ),
+        // Princess cut collection: the same necks with front (FO) or back (BO) hooks, with (WP)
+        // or without (WOP) a patti, plus net yokes, net inserts, curved bottoms and shoulder cuts.
+        BlouseModel(
+            "blouse_pc_basic_fo_wp", "Princess Cut Blouse FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, patti (band) across the bottom of the front, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_basic_fo_wop", "Princess Cut Blouse FO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_basic_bo_wp", "Princess Cut Blouse BO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, patti (band) across the bottom of the front, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_basic_bo_wop", "Princess Cut Blouse BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_fo_wp", "Princess Cut Boat Neck FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, patti (band) across the bottom of the front, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_fo_wop", "Princess Cut Boat Neck FO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_bo_wp", "Princess Cut Boat Neck BO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, patti (band) across the bottom of the front, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_bo_wop", "Princess Cut Boat Neck BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_close_fo_wp", "Princess Cut Close Neck FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, patti (band) across the bottom of the front, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_close_fo_wop", "Princess Cut Close Neck FO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_close_bo_wp", "Princess Cut Close Neck BO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, patti (band) across the bottom of the front, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_close_bo_wop", "Princess Cut Close Neck BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_fo_wp", "Princess Cut Halter Neck FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, patti (band) across the bottom of the front. Front hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true, halter = true,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_fo_wop", "Princess Cut Halter Neck FO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless. Front hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, halter = true,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_bo_wp", "Princess Cut Halter Neck BO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, patti (band) across the bottom of the front. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, patti = true, halter = true,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_bo_wop", "Princess Cut Halter Neck BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, halter = true,
+        ),
+        BlouseModel(
+            "blouse_pc_high_fo_wp", "Princess Cut High Neck FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, round front neck, high (closed) back neck, patti (band) across the bottom of the front, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_high_fo_wop", "Princess Cut High Neck FO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, round front neck, high (closed) back neck, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_high_bo_wp", "Princess Cut High Neck BO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, round front neck, high (closed) back neck, patti (band) across the bottom of the front, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_high_bo_wop", "Princess Cut High Neck BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, round front neck, high (closed) back neck, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_close_double_bo", "Princess Cut Close Neck Double Side Shape BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, front bottom curving down to the centre, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, bottomCurve = true,
+        ),
+        BlouseModel(
+            "blouse_pc_close_shoulder_bo", "Princess Cut Close Neck Shoulder Middle Cut BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, princess seam from the middle of the shoulder, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, shoulderPrincess = true,
+        ),
+        BlouseModel(
+            "blouse_pc_bottom_curve_fo", "Princess Cut Bottom Curve FO",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, front bottom curving down to the centre, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, bottomCurve = true,
+        ),
+        BlouseModel(
+            "blouse_pc_bottom_curve_bo", "Princess Cut Bottom Curve BO",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, front bottom curving down to the centre, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, bottomCurve = true,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net1", "Boat Neck Princess Cut Net Model 1",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a scalloped edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.SCALLOP,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net2", "Boat Neck Princess Cut Net Model 2",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a V edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.V,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net3", "Boat Neck Princess Cut Net Model 3",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a round edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.ROUND,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net4", "Boat Neck Princess Cut Net Model 4",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a straight edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.STRAIGHT,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net5", "Boat Neck Princess Cut Net Model 5",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a sweetheart edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.SWEETHEART,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net6", "Boat Neck Princess Cut Net Model 6",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a V edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.V,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net7", "Boat Neck Princess Cut Net Model 7",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a scalloped edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.SCALLOP,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net8", "Boat Neck Princess Cut Net Model 8",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a round edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.ROUND,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net9", "Boat Neck Princess Cut Net Model 9",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a straight edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.STRAIGHT,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net10", "Boat Neck Princess Cut Net Model 10",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a scalloped edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.SCALLOP,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_net11", "Boat Neck Princess Cut Net Model 11",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net back yoke with a round edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, backYoke = YokeShape.ROUND,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_model1", "Princess Boat Model 1",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_bengaluru_fo_wp", "Bengaluru Princess Cut Blouse FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide, deep U neck with narrow straps, patti (band) across the bottom of the front, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_bengaluru2_fo_wp", "Bengaluru Princess Cut FO WP",
+            "Princess cut: two front panels joined by curved seams through the bust point, wide, deep U neck with narrow straps, patti (band) across the bottom of the front, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS, patti = true,
+        ),
+        BlouseModel(
+            "blouse_pc_bengaluru_boat_fo", "Bengaluru Boat Neck FO",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_bengaluru_high_bo_wop", "Bengaluru Princess Cut High Neck BO WOP",
+            "Princess cut: two front panels joined by curved seams through the bust point, round front neck, high (closed) back neck, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_high_model1", "High Neck Model 1",
+            "Princess cut: two front panels joined by curved seams through the bust point, high neck front and back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            princess = true, body = BodyStyle.PRINCESS,
+        ),
+        BlouseModel(
+            "blouse_pc_high_insert1", "Princess High Neck Model 1",
+            "Princess cut: two front panels joined by curved seams through the bust point, high neck front and back, net insert below the front neck with a sweetheart edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.SWEETHEART,
+        ),
+        BlouseModel(
+            "blouse_pc_high_insert2", "Princess High Neck Model 2",
+            "Princess cut: two front panels joined by curved seams through the bust point, high neck front and back, net insert below the front neck with a V edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.V,
+        ),
+        BlouseModel(
+            "blouse_pc_high_insert3", "Princess High Neck Model 3",
+            "Princess cut: two front panels joined by curved seams through the bust point, high neck front and back, net insert below the front neck with a scalloped edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.SCALLOP,
+        ),
+        BlouseModel(
+            "blouse_pc_high_insert4", "Princess High Neck Model 4",
+            "Princess cut: two front panels joined by curved seams through the bust point, high neck front and back, net insert below the front neck with a round edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.45), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.ROUND,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_insert1", "Boat Neck With WOP Model 1",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net insert below the front neck with a round edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.ROUND,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_insert2", "Boat Neck With WOP Model 2",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net insert below the front neck with a scalloped edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.SCALLOP,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_insert3", "Boat Neck With WOP Model 3",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net insert below the front neck with a V edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.V,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_insert4", "Boat Neck With WOP Model 4",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net insert below the front neck with a sweetheart edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.SWEETHEART,
+        ),
+        BlouseModel(
+            "blouse_pc_boat_insert5", "Boat Neck With WOP Model 5",
+            "Princess cut: two front panels joined by curved seams through the bust point, boat neck front and back, net insert below the front neck with a straight edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, frontInsert = YokeShape.STRAIGHT,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_insert1", "Halter Neck With WOP New Model 1",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, net insert below the front neck with a sweetheart edge. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.ROUND, depthFactor = 0.5), SleeveStyle.SLEEVELESS, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, halter = true, frontInsert = YokeShape.SWEETHEART,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_insert2", "Halter Neck With WOP New Model 2",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, net insert below the front neck with a V edge. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.ROUND, depthFactor = 0.5), SleeveStyle.SLEEVELESS, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, halter = true, frontInsert = YokeShape.V,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_insert3", "Halter Neck With WOP New Model 3",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, net insert below the front neck with a round edge. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.ROUND, depthFactor = 0.5), SleeveStyle.SLEEVELESS, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, halter = true, frontInsert = YokeShape.ROUND,
+        ),
+        BlouseModel(
+            "blouse_pc_halter_insert4", "Halter Neck With WOP New Model 4",
+            "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, net insert below the front neck with a scalloped edge. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.ROUND, depthFactor = 0.5), SleeveStyle.SLEEVELESS, Opening.BACK,
+            princess = true, body = BodyStyle.PRINCESS, halter = true, frontInsert = YokeShape.SCALLOP,
         ),
         // 3 dart collection (the common tailor's list): basic, boat, close and high necks,
         // halter and bottom waves, each with front (FO) or back (BO) opening.

@@ -161,10 +161,46 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
                                 )
                                 FilterChip(
                                     selected = spec.patti,
-                                    enabled = !spec.body.panelled,
+                                    enabled = !spec.body.belted,
                                     onClick = { vm.spec = spec.copy(patti = !spec.patti) },
                                     label = { Text(tr("mix.patti")) },
                                 )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(
+                                    selected = spec.bottomCurve,
+                                    enabled = !spec.body.belted,
+                                    onClick = { vm.spec = spec.copy(bottomCurve = !spec.bottomCurve) },
+                                    label = { Text(tr("tag.curve")) },
+                                )
+                                if (spec.body == BodyStyle.PRINCESS) {
+                                    FilterChip(
+                                        selected = spec.shoulderPrincess,
+                                        onClick = { vm.spec = spec.copy(shoulderPrincess = !spec.shoulderPrincess) },
+                                        label = { Text(tr("tag.shoulder_cut")) },
+                                    )
+                                }
+                            }
+                            Text(tr("mix.back_yoke"), style = MaterialTheme.typography.labelLarge, color = Brand.Muted)
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                com.tailorsfit.pattern.blouse.YokeShape.entries.forEach { y ->
+                                    FilterChip(
+                                        selected = spec.backYoke == y,
+                                        enabled = spec.backDetail != com.tailorsfit.pattern.blouse.BackDetail.KEYHOLE,
+                                        onClick = { vm.spec = spec.copy(backYoke = y) },
+                                        label = { Text(y.label) },
+                                    )
+                                }
+                            }
+                            Text(tr("mix.front_insert"), style = MaterialTheme.typography.labelLarge, color = Brand.Muted)
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                com.tailorsfit.pattern.blouse.YokeShape.entries.forEach { y ->
+                                    FilterChip(
+                                        selected = spec.frontInsert == y,
+                                        onClick = { vm.spec = spec.copy(frontInsert = y) },
+                                        label = { Text(y.label) },
+                                    )
+                                }
                             }
                         }
                     }

@@ -97,6 +97,12 @@ object BlouseDrafter {
     const val MIN_BELT = 1.5 * INCH
     /** Height of the patti (band) across the bottom of the front. */
     const val PATTI_HEIGHT = 1.5 * INCH
+    /** How much lower the centre of a curved front bottom is than the side. */
+    const val CURVE_DROP = 1.0 * INCH
+    /** Front insert: how far below the front neck its lower edge comes at the centre. */
+    const val INSERT_DEPTH = 2.5 * INCH
+    /** Back yoke: how much lower than at the armhole its edge comes at the centre (V, round). */
+    const val YOKE_DIP = 2.0 * INCH
 
     fun draft(model: BlouseModel, m: Measurements, options: DraftOptions = DraftOptions()): Pattern {
         val errors = m.validate(model.requiredMeasurements)
@@ -137,6 +143,11 @@ object BlouseDrafter {
             val i = pieces.indexOfFirst { it.id == "back" }
             pieces[i] = withKeyhole(pieces[i], bodice, warnings)
         }
+
+        if (model.hasPatti && model.body == BodyStyle.PRINCESS) princessPatti(pieces)
+        if (model.hasBottomCurve) curveFrontBottom(pieces)
+        if (model.frontInsert != YokeShape.NONE) frontInsert(pieces, model.frontInsert, warnings)
+        if (model.backYoke != YokeShape.NONE && model.backDetail != BackDetail.KEYHOLE) backYoke(pieces, model.backYoke, warnings)
 
         val title = buildString {
             append(model.name)
@@ -473,6 +484,186 @@ object BlouseDrafter {
     }
 
     /**
+     * Princess front with a patti: both panels are cut along a straight line [PATTI_HEIGHT]
+     * above the bottom; the band below is one piece as long as the two cut edges together.
+     */
+    private fun princessPatti(pieces: MutableList<Piece>) {
+        val ci = pieces.indexOfFirst { it.id == "front_centre" }
+        val si = pieces.indexOfFirst { it.id == "front_side" }
+        if (ci < 0 || si < 0) return
+        val centre = pieces[ci]
+        val side = pieces[si]
+        val centreEdge = centre.edges.first()
+        val hemCentre = centreEdge.path.end
+        val sideBottom = side.edgesOf(EdgeKind.SIDE).single().path.start
+        val y0 = hemCentre.y - PATTI_HEIGHT
+        val y1 = sideBottom.y - PATTI_HEIGHT
+        fun line(x: Double) = y0 + (y1 - y0) * x / sideBottom.x
+        val c = PieceSplit.split(centre, ::line) ?: return
+        val sd = PieceSplit.split(side, ::line) ?: return
+        val cSeam = c.upper.edgesOf(EdgeKind.BELT).single().path
+        val sSeam = sd.upper.edgesOf(EdgeKind.BELT).single().path
+        val pc = listOf(cSeam.start, cSeam.end).maxBy { it.x }
+        val ps = listOf(sSeam.start, sSeam.end).minBy { it.x }
+        val sideTop = listOf(sSeam.start, sSeam.end).maxBy { it.x }
+        val shift = pc - ps
+        val top = Pt(0.0, y0)
+        val topR = sideTop + shift
+        val bottomR = sideBottom + shift
+        val band = Piece(
+            id = "front_patti",
+            name = tr("piece.front_patti"),
+            cut = centre.cut,
+            edges = listOf(
+                Edge(centreEdge.kind, PathD.line(top, hemCentre)),
+                Edge(EdgeKind.HEM, PathD.line(hemCentre, bottomR)),
+                Edge(EdgeKind.SIDE, PathD.line(bottomR, topR)),
+                Edge(EdgeKind.BELT, PathD.line(topR, top)),
+            ),
+            labelAt = Pt(topR.x * 0.45, (y0 + hemCentre.y) / 2),
+            notes = listOf(tr("note.patti", cm(PATTI_HEIGHT))),
+        )
+        pieces[ci] = c.upper.copy(notes = c.upper.notes + tr("note.patti_seam"))
+        pieces[si] = sd.upper
+        pieces.add(si + 1, band)
+    }
+
+    /** Lowers the front bottom towards the centre in a smooth curve ([CURVE_DROP] at the centre). */
+    private fun curveFrontBottom(pieces: MutableList<Piece>) {
+        val fronts = pieces.indices.filter { pieces[it].id == "front" || pieces[it].id == "front_centre" || pieces[it].id == "front_side" }
+        val w = fronts.mapNotNull { pieces[it].edgesOf(EdgeKind.SIDE).firstOrNull()?.path?.start?.x }.maxOrNull() ?: return
+        fun drop(x: Double) = CURVE_DROP * (1 - (x / w).coerceIn(0.0, 1.0).let { it * it })
+        fun moved(p: Pt) = Pt(p.x, p.y + drop(p.x))
+        for (i in fronts) {
+            val piece = pieces[i]
+            val hems = piece.edges.filter { it.kind == EdgeKind.HEM }
+            if (hems.size != 1) continue
+            val hi = piece.edges.indexOf(hems.single())
+            val hemPts = hems.single().path.points()
+            val fine = hemPts.zipWithNext().flatMap { (a, b) -> (0 until 12).map { k -> a.lerp(b, k / 12.0) } } + hemPts.last()
+            val newHem = fine.map(::moved)
+            fun onHem(p: Pt) = hemPts.zipWithNext().any { (a, b) -> distToSegment(p, a, b) < 1e-6 }
+            val edges = piece.edges.mapIndexed { k, e ->
+                when {
+                    k == hi -> Edge(EdgeKind.HEM, PathD(newHem.first(), newHem.drop(1).map { LineTo(it) }))
+                    k == (hi - 1 + piece.edges.size) % piece.edges.size && drop(e.path.end.x) > 1e-6 ->
+                        e.copy(path = PathD(e.path.start, e.path.segs + LineTo(moved(e.path.end))))
+                    k == (hi + 1) % piece.edges.size && drop(e.path.start.x) > 1e-6 ->
+                        e.copy(path = PathD(moved(e.path.start), listOf(LineTo(e.path.start)) + e.path.segs))
+                    else -> e
+                }
+            }
+            pieces[i] = piece.copy(
+                edges = edges,
+                darts = piece.darts.map { d -> if (onHem(d.legA) && onHem(d.legB)) Dart(moved(d.legA), d.tip, moved(d.legB)) else d },
+                notes = piece.notes + tr("note.curve", cm(CURVE_DROP)),
+            )
+        }
+    }
+
+    private fun distToSegment(p: Pt, a: Pt, b: Pt): Double {
+        val ab = b - a
+        val len2 = ab.x * ab.x + ab.y * ab.y
+        if (len2 < 1e-12) return p.dist(a)
+        val t = (((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / len2).coerceIn(0.0, 1.0)
+        return p.dist(a.lerp(b, t))
+    }
+
+    /** 1 at the centre (t = 0) falling to 0 at t = 1: the lower edge of a front insert. */
+    private fun insertCurve(shape: YokeShape, t: Double): Double {
+        val r = sqrt((1 - t * t).coerceAtLeast(0.0))
+        return when (shape) {
+            YokeShape.NONE, YokeShape.ROUND -> r
+            YokeShape.STRAIGHT -> if (t < 0.85) 1.0 else kotlin.math.cos((t - 0.85) / 0.15 * Math.PI / 2)
+            YokeShape.V -> 1 - t
+            YokeShape.SCALLOP -> r * (1 - 0.12 * kotlin.math.abs(kotlin.math.sin(3 * Math.PI * t)))
+            YokeShape.SWEETHEART -> r - 0.2 * kotlin.math.exp(-(t / 0.22) * (t / 0.22))
+        }
+    }
+
+    /**
+     * Net insert below the front neck: the centre front piece is cut along a curve from the
+     * centre ([INSERT_DEPTH] below the neck) up to the shoulder just past the neck point.
+     */
+    private fun frontInsert(pieces: MutableList<Piece>, shape: YokeShape, warnings: MutableList<String>) {
+        val i = pieces.indexOfFirst { (it.id == "front" || it.id == "front_centre") && it.edgesOf(EdgeKind.NECK).isNotEmpty() }
+        if (i < 0) return
+        val piece = pieces[i]
+        val neckEdge = piece.edgesOf(EdgeKind.NECK).single().path
+        val neckPt = neckEdge.start
+        val depth = neckEdge.end.y
+        val apexY = piece.points["apex"]?.y ?: return
+        val shoulder = piece.points["shoulder"] ?: return
+        val y0 = min(depth + INSERT_DEPTH, apexY - 1.0 * INCH)
+        val topY = 0.0
+        var w = neckPt.x + 1.0 * INCH
+        piece.points["princessTop"]?.let { if (it.y < 1.0 * INCH) w = min(w, it.x - 0.3 * INCH) }
+        w = min(w, (neckPt.x + shoulder.x) / 2 + 1.0 * INCH)
+        // Clear of the princess seam.
+        piece.edgesOf(EdgeKind.PRINCESS).flatMap { it.path.points() }.filter { it.y <= y0 + 1.0 * INCH }
+            .minOfOrNull { it.x }?.let { w = min(w, it - 0.5 * INCH) }
+        if (w <= neckPt.x + 0.25 * INCH) w = neckPt.x + 0.25 * INCH
+        if (y0 < depth + 1.0 * INCH || w <= 1.0) {
+            warnings += tr("warn.no_insert")
+            return
+        }
+        // At least ¾" of net below the neckline everywhere, so the insert is one piece.
+        val neckPts = neckEdge.points().sortedBy { it.x }
+        fun neckY(x: Double): Double {
+            for (k in 0 until neckPts.size - 1) {
+                val a = neckPts[k]
+                val b = neckPts[k + 1]
+                if (x <= b.x) return if (b.x - a.x < 1e-9) b.y else a.y + (b.y - a.y) * ((x - a.x) / (b.x - a.x)).coerceIn(0.0, 1.0)
+            }
+            return neckPts.last().y
+        }
+        fun floor(x: Double) = if (x <= neckPt.x) neckY(x) + 0.75 * INCH else 0.75 * INCH * (w - x) / (w - neckPt.x)
+        fun line(x: Double) = if (x >= w) topY - (x - w) else max(topY + (y0 - topY) * insertCurve(shape, x / w), floor(x))
+        val split = PieceSplit.split(piece, ::line) ?: run { warnings += tr("warn.no_insert"); return }
+        val insert = split.upper.copy(
+            id = "front_insert",
+            name = tr("piece.front_insert"),
+            notes = listOf(tr("note.net", shape.label)) + piece.notes.take(1),
+        )
+        pieces[i] = split.lower
+        pieces.add(i, insert)
+    }
+
+    /** Net yoke across the upper back, its lower edge in the given shape. */
+    private fun backYoke(pieces: MutableList<Piece>, shape: YokeShape, warnings: MutableList<String>) {
+        val i = pieces.indexOfFirst { it.id == "back" }
+        if (i < 0) return
+        val back = pieces[i]
+        val depth = back.edgesOf(EdgeKind.NECK).single().path.end.y
+        val underarm = back.edgesOf(EdgeKind.SIDE).single().path.end
+        val length = back.edges.first().path.end.y
+        val w = underarm.x
+        val y0 = max(underarm.y * 0.75, depth + 1.5 * INCH)
+        fun line(x: Double): Double {
+            val t = (x / w).coerceIn(0.0, 1.0)
+            return y0 + when (shape) {
+                YokeShape.NONE, YokeShape.STRAIGHT -> 0.0
+                YokeShape.V -> YOKE_DIP * (1 - t)
+                YokeShape.ROUND -> YOKE_DIP * sqrt(1 - t * t)
+                YokeShape.SCALLOP -> 0.75 * INCH * kotlin.math.sin(3 * Math.PI * t).let { it * it }
+                YokeShape.SWEETHEART -> YOKE_DIP * sqrt(1 - t * t) - 1.0 * INCH * kotlin.math.exp(-(t / 0.2) * (t / 0.2))
+            }
+        }
+        if (line(0.0) > length - 2.0 * INCH || y0 >= underarm.y) {
+            warnings += tr("warn.no_yoke")
+            return
+        }
+        val split = PieceSplit.split(back, ::line) ?: run { warnings += tr("warn.no_yoke"); return }
+        val yoke = split.upper.copy(
+            id = "back_yoke",
+            name = tr("piece.back_yoke"),
+            notes = listOf(tr("note.net", shape.label)) + back.notes.take(1),
+        )
+        pieces[i] = split.lower
+        pieces.add(i, yoke)
+    }
+
+    /**
      * Front with a patti: the darted front is cut [PATTI_HEIGHT] above the bottom. The upper
      * part keeps its darts, which now end on the patti seam; the band below is one piece with
      * the bits of dart in it closed (so it is shorter than the seam by the dart widths there).
@@ -626,13 +817,19 @@ object BlouseDrafter {
         val apex = Pt(f.apexX, f.apexY)
         fun hemY(x: Double) = hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
 
-        // Princess seam leaves the armhole a little below the front hollow.
+        // Princess seam leaves the armhole a little below the front hollow, or (shoulder cut)
+        // the middle of the shoulder.
+        val fromShoulder = model.shoulderPrincess
         val armCurve = armhole.segs.single() as CubicTo
         val (lowerArm, upperArm) = armCurve.splitAtLength(underarm, armhole.length() * PRINCESS_ARMHOLE_FRACTION)
-        val a = lowerArm.end
+        val a = if (fromShoulder) neck.lerp(shoulder, 0.5) else lowerArm.end
 
-        // Armhole point -> bust point, arriving vertically.
-        val upper = CubicTo(
+        // Seam top -> bust point, arriving vertically.
+        val upper = if (fromShoulder) CubicTo(
+            Pt(a.x + 0.1 * (apex.x - a.x), a.y + 0.35 * (apex.y - a.y)),
+            Pt(apex.x, apex.y - 0.4 * (apex.y - a.y)),
+            apex,
+        ) else CubicTo(
             Pt(a.x - 0.45 * (a.x - apex.x), a.y + 0.25 * (apex.y - a.y)),
             Pt(apex.x, apex.y - 0.45 * (apex.y - a.y)),
             apex,
@@ -649,7 +846,13 @@ object BlouseDrafter {
         val sideDir = (underarm - sideBottom).normalized()
         val sideBottomR = sideBottom + sideDir * excess
 
-        val centreEdges = listOf(
+        val centreEdges = if (fromShoulder) listOf(
+            Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, hemCentre)),
+            Edge(EdgeKind.HEM, PathD.line(hemCentre, hemL)),
+            Edge(EdgeKind.PRINCESS, PathD(hemL, listOf(lowerL.reversed(apex), upper.reversed(a)))),
+            Edge(EdgeKind.SHOULDER, PathD.line(a, neck)),
+            Edge(EdgeKind.NECK, neckPath),
+        ) else listOf(
             Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, hemCentre)),
             Edge(EdgeKind.HEM, PathD.line(hemCentre, hemL)),
             Edge(EdgeKind.PRINCESS, PathD(hemL, listOf(lowerL.reversed(apex), upper.reversed(a)))),
@@ -657,7 +860,13 @@ object BlouseDrafter {
             Edge(EdgeKind.SHOULDER, PathD.line(shoulder, neck)),
             Edge(EdgeKind.NECK, neckPath),
         )
-        val sideEdges = listOf(
+        val sideEdges = if (fromShoulder) listOf(
+            Edge(EdgeKind.HEM, PathD.line(hemR, sideBottomR)),
+            Edge(EdgeKind.SIDE, PathD.line(sideBottomR, underarm)),
+            Edge(EdgeKind.ARMHOLE, armhole),
+            Edge(EdgeKind.SHOULDER, PathD.line(shoulder, a)),
+            Edge(EdgeKind.PRINCESS, PathD(a, listOf(upper, lowerR))),
+        ) else listOf(
             Edge(EdgeKind.HEM, PathD.line(hemR, sideBottomR)),
             Edge(EdgeKind.SIDE, PathD.line(sideBottomR, underarm)),
             Edge(EdgeKind.ARMHOLE, PathD(underarm, listOf(lowerArm))),
@@ -669,7 +878,7 @@ object BlouseDrafter {
         val midTangent = (upper.pointAt(a, 0.51) - upper.pointAt(a, 0.49)).normalized()
         val seamNotches = listOf(Notch(apex, Pt(0.0, 1.0)), Notch(midUpper, midTangent, double = true))
         val sideNotches = seamNotches.toMutableList()
-        PathD(underarm, listOf(lowerArm)).pointAtDistance(ARMHOLE_NOTCH_FROM_UNDERARM).let { (p, t) -> sideNotches += Notch(p, t) }
+        (if (fromShoulder) armhole else PathD(underarm, listOf(lowerArm))).pointAtDistance(ARMHOLE_NOTCH_FROM_UNDERARM).let { (p, t) -> sideNotches += Notch(p, t) }
         PathD.line(sideBottomR, underarm).pointAtDistance(3.0).let { (p, t) -> sideNotches += Notch(p, t) }
 
         val centreX = apex.x * 0.45

@@ -27,7 +27,7 @@ fun ModelThumbnail(model: GarmentModel, modifier: Modifier = Modifier, fill: Col
             val front = pieces.filter { it.id.startsWith("front") }.flatMap { p ->
                 if (p.id == "front_side") listOf(p.seamOutline(), p.mirrored().seamOutline()) else listOf(fullPiece(p).seamOutline())
             }
-            val back = pieces.filter { it.id == "back" }.map { fullPiece(it).seamOutline() }
+            val back = pieces.filter { it.id == "back" || it.id == "back_yoke" }.map { fullPiece(it).seamOutline() }
             listOf(front, back).filter { it.isNotEmpty() }
         }.getOrDefault(emptyList())
     }

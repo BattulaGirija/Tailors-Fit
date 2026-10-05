@@ -30,6 +30,8 @@ class BlouseDrafterTest {
                 (if (model.sleeve == SleeveStyle.PUFF || model.sleeve == SleeveStyle.FRILL) 1 else 0) +
                 (if (model.collar) 1 else 0) +
                 (if (model.hasPatti) 1 else 0) +
+                (if (model.frontInsert != com.tailorsfit.pattern.blouse.YokeShape.NONE) 1 else 0) +
+                (if (model.backYoke != com.tailorsfit.pattern.blouse.YokeShape.NONE) 1 else 0) +
                 (if (model.backDetail == com.tailorsfit.pattern.blouse.BackDetail.DORI) 1 else 0)
             assertEquals(expected, pattern.pieces.size, model.id)
             for (piece in pattern.pieces) {
@@ -38,6 +40,7 @@ class BlouseDrafterTest {
                 val minArea = when {
                     piece.edges.any { it.kind == EdgeKind.BAND } -> 20.0
                     piece.id == "front_belt" || piece.id == "front_patti" -> 40.0
+                    piece.id == "front_insert" -> 20.0
                     else -> 100.0
                 }
                 assertTrue(piece.area() > minArea, "${model.id}/${piece.id} area ${piece.area()}")
@@ -52,8 +55,8 @@ class BlouseDrafterTest {
         for (model in BlouseCatalog.models) {
             val p = model.draft(Measurements.defaults())
             val front = p.pieces.filter { it.id.startsWith("front") }.sumOf { it.lengthOf(EdgeKind.SHOULDER) }
-            val back = p.pieces.first { it.id == "back" }
-            assertEquals(front, back.lengthOf(EdgeKind.SHOULDER), 0.01, model.id)
+            val back = p.pieces.filter { it.id.startsWith("back") }.sumOf { it.lengthOf(EdgeKind.SHOULDER) }
+            assertEquals(front, back, 0.01, model.id)
         }
     }
 
@@ -218,7 +221,8 @@ class BlouseDrafterTest {
             // The two edges of the princess seam are sewn together, so they must be the same length.
             assertEquals(centre.lengthOf(EdgeKind.PRINCESS), side.lengthOf(EdgeKind.PRINCESS), 0.3, model.id)
             // Side seam matches the back without a side dart.
-            assertEquals(back.lengthOf(EdgeKind.SIDE), side.lengthOf(EdgeKind.SIDE), 0.05, model.id)
+            val patti = p.pieces.firstOrNull { it.id == "front_patti" }?.lengthOf(EdgeKind.SIDE) ?: 0.0
+            assertEquals(back.lengthOf(EdgeKind.SIDE), side.lengthOf(EdgeKind.SIDE) + patti, 0.05, model.id)
             // Seam passes through the bust point, and both panels meet the armhole at the same point.
             val apex = centre.points.getValue("apex")
             assertTrue(centre.seamOutline().any { it.dist(apex) < 0.01 } && side.seamOutline().any { it.dist(apex) < 0.01 })
@@ -482,8 +486,8 @@ class BlouseDrafterTest {
             for (d in front.darts) assertTrue(pointInPolygon(d.tip, front.seamOutline()), id)
             assertTrue(front.edgesOf(EdgeKind.HEM).isEmpty() && patti.edgesOf(EdgeKind.HEM).isNotEmpty(), id)
         }
-        // Panelled fronts have no patti; the patti survives a customised design id.
-        assertTrue(!com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(body = com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS, patti = true).toModel().hasPatti)
+        // Belted fronts have no patti; the patti survives a customised design id.
+        assertTrue(!com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(body = com.tailorsfit.pattern.blouse.BodyStyle.KATORI, patti = true).toModel().hasPatti)
         val spec = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(patti = true)
         assertTrue(com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id)!!.patti)
         // Sketch: the patti is drawn as wide as the front above it.
@@ -491,5 +495,83 @@ class BlouseDrafterTest {
         val f = sketch.first { it.id == "front" }
         val pt = sketch.first { it.id == "front_patti" }
         assertEquals(f.edgesOf(EdgeKind.SIDE).single().path.start.x, pt.edgesOf(EdgeKind.BELT).single().path.start.x, 1e-6)
+    }
+
+    @Test
+    fun princessCollection() {
+        val inch = BlouseDrafter.INCH
+        fun model(id: String) = BlouseCatalog.models.first { it.id == id }
+        assertEquals(54, BlouseCatalog.models.count { it.id.startsWith("blouse_pc_") })
+        assertTrue(BlouseCatalog.models.filter { it.id.startsWith("blouse_pc_") }.all { it.body == com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS })
+        for (m in sizes) {
+            // Princess patti: both panels cut, the band as long as both cut edges.
+            val p = model("blouse_pc_basic_fo_wp").draft(m)
+            val centre = p.pieces.first { it.id == "front_centre" }
+            val side = p.pieces.first { it.id == "front_side" }
+            val patti = p.pieces.first { it.id == "front_patti" }
+            val plainSide = model("blouse_pc_basic_fo_wop").draft(m).pieces.first { it.id == "front_side" }
+            assertEquals(centre.lengthOf(EdgeKind.BELT) + side.lengthOf(EdgeKind.BELT), patti.lengthOf(EdgeKind.BELT), 0.05)
+            assertEquals(plainSide.lengthOf(EdgeKind.SIDE), side.lengthOf(EdgeKind.SIDE) + patti.lengthOf(EdgeKind.SIDE), 0.05)
+            assertEquals(centre.lengthOf(EdgeKind.PRINCESS), side.lengthOf(EdgeKind.PRINCESS), 0.5)
+
+            // Shoulder cut: the princess seam starts halfway along the shoulder.
+            val sc = model("blouse_pc_close_shoulder_bo").draft(m)
+            val scC = sc.pieces.first { it.id == "front_centre" }
+            val scS = sc.pieces.first { it.id == "front_side" }
+            assertTrue(scC.edgesOf(EdgeKind.ARMHOLE).isEmpty())
+            assertEquals(scC.lengthOf(EdgeKind.SHOULDER), scS.lengthOf(EdgeKind.SHOULDER), 0.01)
+            assertEquals(scC.lengthOf(EdgeKind.PRINCESS), scS.lengthOf(EdgeKind.PRINCESS), 0.5)
+
+            // Bottom curve: the centre is 1" longer, the side seam unchanged.
+            val curved = model("blouse_pc_bottom_curve_fo").draft(m).pieces.first { it.id == "front_centre" }
+            val straight = model("blouse_pc_basic_fo_wop").draft(m).pieces.first { it.id == "front_centre" }
+            assertEquals(straight.edges.first().path.length() + inch, curved.edges.first().path.length(), 0.01)
+
+            // Net back yoke and front insert: the cut edges match and the pieces fit back together.
+            val net = model("blouse_pc_boat_net1").draft(m)
+            val yoke = net.pieces.first { it.id == "back_yoke" }
+            val back = net.pieces.first { it.id == "back" }
+            assertEquals(yoke.lengthOf(EdgeKind.BELT), back.lengthOf(EdgeKind.BELT), 0.01)
+            val whole = model("blouse_pc_boat_model1").draft(m).pieces.first { it.id == "back" }
+            assertEquals(whole.area(), yoke.area() + back.area(), 1.0)
+            assertTrue(yoke.edgesOf(EdgeKind.NECK).isNotEmpty() && back.edgesOf(EdgeKind.HEM).isNotEmpty())
+            for (d in back.darts) assertTrue(pointInPolygon(d.tip, back.seamOutline()))
+            val ins = model("blouse_pc_boat_insert1").draft(m)
+            val insert = ins.pieces.first { it.id == "front_insert" }
+            val rest = ins.pieces.first { it.id == "front_centre" }
+            assertEquals(insert.lengthOf(EdgeKind.BELT), rest.lengthOf(EdgeKind.BELT), 0.01)
+            assertTrue(insert.edgesOf(EdgeKind.NECK).isNotEmpty() && rest.edgesOf(EdgeKind.NECK).isEmpty())
+            assertTrue(ins.warnings.none { it.contains("insert") })
+        }
+        // The new options survive a customised design id.
+        val spec = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(
+            body = com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS, backYoke = com.tailorsfit.pattern.blouse.YokeShape.V,
+            frontInsert = com.tailorsfit.pattern.blouse.YokeShape.SCALLOP, bottomCurve = true, shoulderPrincess = true,
+        )
+        assertEquals(spec, com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id))
+        val sketch = com.tailorsfit.pattern.render.Illustration.blouse(model("blouse_pc_boat_net1").draft(Measurements.defaults()))
+        assertEquals(1, sketch[1].sheer.size)
+    }
+
+    @Test
+    fun newOptionsDraftOnEveryBlouseType() {
+        val m = Measurements.defaults()
+        val base = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC
+        var n = 0
+        for (body in com.tailorsfit.pattern.blouse.BodyStyle.entries) for (front in com.tailorsfit.pattern.blouse.FrontNeck.entries)
+            for (y in com.tailorsfit.pattern.blouse.YokeShape.entries) {
+                val k = n++
+                val spec = base.copy(
+                    body = body, backYoke = y, frontInsert = com.tailorsfit.pattern.blouse.YokeShape.entries[k % 6],
+                    bottomCurve = k % 2 == 0, patti = k % 3 == 0, shoulderPrincess = k % 4 == 0, halter = k % 5 == 0,
+                ).withFront(front, com.tailorsfit.pattern.blouse.NeckDepth.entries[k % 3])
+                val p = spec.toModel().draft(m)
+                for (piece in p.pieces) {
+                    assertTrue(piece.area() > 10, "${spec.id}/${piece.id}")
+                    assertTrue(piece.seamOutline().none { it.x.isNaN() || it.y.isNaN() }, spec.id)
+                    for (d in piece.darts) assertTrue(pointInPolygon(d.tip, piece.seamOutline()), "${spec.id}/${piece.id} dart tip outside")
+                }
+                com.tailorsfit.pattern.render.Illustration.blouse(p)
+            }
     }
 }

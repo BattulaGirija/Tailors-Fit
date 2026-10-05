@@ -70,6 +70,10 @@ data class BlouseSpec(
     val halter: Boolean = false,
     val bottomWaves: Boolean = false,
     val patti: Boolean = false,
+    val backYoke: YokeShape = YokeShape.NONE,
+    val frontInsert: YokeShape = YokeShape.NONE,
+    val bottomCurve: Boolean = false,
+    val shoulderPrincess: Boolean = false,
 ) {
     /** The opening actually used: keyhole and dori backs open at the front. */
     val effectiveOpening: Opening get() = if (backDetail != BackDetail.NONE) Opening.FRONT else opening
@@ -81,6 +85,7 @@ data class BlouseSpec(
             back.shape.name, n(back.widen), n(back.depthFactor),
             backDetail.name, sleeve.name, effectiveOpening.name, if (collar) "1" else "0",
             if (halter) "1" else "0", if (bottomWaves) "1" else "0", if (patti) "1" else "0",
+            backYoke.name, frontInsert.name, if (bottomCurve) "1" else "0", if (shoulderPrincess) "1" else "0",
         ).joinToString(SEP)
 
     fun withFront(choice: FrontNeck, depth: NeckDepth) = copy(front = choice.spec(depth).rounded(), collar = false)
@@ -107,6 +112,10 @@ data class BlouseSpec(
             halter = halter,
             bottomWaves = bottomWaves,
             patti = patti,
+            backYoke = backYoke,
+            frontInsert = frontInsert,
+            bottomCurve = bottomCurve,
+            shoulderPrincess = shoulderPrincess,
         )
     }
 
@@ -129,6 +138,10 @@ data class BlouseSpec(
             halter = model.halter,
             bottomWaves = model.bottomWaves,
             patti = model.patti,
+            backYoke = model.backYoke,
+            frontInsert = model.frontInsert,
+            bottomCurve = model.bottomCurve,
+            shoulderPrincess = model.shoulderPrincess,
         ).let { it.copy(front = it.front.rounded(), back = it.back.rounded()) }
 
         private fun NeckSpec.rounded() = NeckSpec(shape, n(widen).toDouble(), n(depthFactor).toDouble())
@@ -143,8 +156,9 @@ data class BlouseSpec(
         /** Reads an id made by [id]; null if it is not one. */
         fun parse(id: String): BlouseSpec? {
             val p = id.split(SEP)
-            // 13 parts before halter / bottom waves were added, 15 with them, 16 with the patti.
-            if (p.size !in setOf(13, 15, 16) || p[0] != PREFIX) return null
+            // 13 parts before halter / bottom waves were added, 15 with them, 16 with the patti,
+            // 20 with yokes, bottom curve and shoulder princess seams.
+            if (p.size !in setOf(13, 15, 16, 20) || p[0] != PREFIX) return null
             return runCatching {
                 BlouseSpec(
                     baseId = p[1],
@@ -158,6 +172,10 @@ data class BlouseSpec(
                     halter = p.getOrNull(13) == "1",
                     bottomWaves = p.getOrNull(14) == "1",
                     patti = p.getOrNull(15) == "1",
+                    backYoke = p.getOrNull(16)?.let { YokeShape.valueOf(it) } ?: YokeShape.NONE,
+                    frontInsert = p.getOrNull(17)?.let { YokeShape.valueOf(it) } ?: YokeShape.NONE,
+                    bottomCurve = p.getOrNull(18) == "1",
+                    shoulderPrincess = p.getOrNull(19) == "1",
                 )
             }.getOrNull()
         }
