@@ -159,6 +159,12 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
                                     onClick = { vm.spec = spec.copy(bottomWaves = !spec.bottomWaves) },
                                     label = { Text(tr("tag.waves")) },
                                 )
+                                FilterChip(
+                                    selected = spec.patti,
+                                    enabled = !spec.body.panelled,
+                                    onClick = { vm.spec = spec.copy(patti = !spec.patti) },
+                                    label = { Text(tr("mix.patti")) },
+                                )
                             }
                         }
                     }

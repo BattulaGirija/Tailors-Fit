@@ -29,6 +29,7 @@ class BlouseDrafterTest {
                 (when { model.body.belted -> 2; model.body.panelled -> 1; else -> 0 }) +
                 (if (model.sleeve == SleeveStyle.PUFF || model.sleeve == SleeveStyle.FRILL) 1 else 0) +
                 (if (model.collar) 1 else 0) +
+                (if (model.hasPatti) 1 else 0) +
                 (if (model.backDetail == com.tailorsfit.pattern.blouse.BackDetail.DORI) 1 else 0)
             assertEquals(expected, pattern.pieces.size, model.id)
             for (piece in pattern.pieces) {
@@ -36,7 +37,7 @@ class BlouseDrafterTest {
                 assertTrue(outline.all { !it.x.isNaN() && !it.y.isNaN() }, "${model.id}/${piece.id} has NaN")
                 val minArea = when {
                     piece.edges.any { it.kind == EdgeKind.BAND } -> 20.0
-                    piece.id == "front_belt" -> 40.0
+                    piece.id == "front_belt" || piece.id == "front_patti" -> 40.0
                     else -> 100.0
                 }
                 assertTrue(piece.area() > minArea, "${model.id}/${piece.id} area ${piece.area()}")
@@ -456,5 +457,39 @@ class BlouseDrafterTest {
         assertTrue(back.halter && back.bottomWaves)
         val again = com.tailorsfit.pattern.model.Catalog.model(spec.id) as com.tailorsfit.pattern.blouse.BlouseModel
         assertTrue(again.halter && again.bottomWaves && again.effectiveSleeve == SleeveStyle.SLEEVELESS)
+    }
+
+    @Test
+    fun pattiIsCutOffTheBottomOfTheFront() {
+        val inch = BlouseDrafter.INCH
+        fun model(id: String) = BlouseCatalog.models.first { it.id == id }
+        assertEquals(21, BlouseCatalog.models.count { it.id.startsWith("blouse_4d_") || it.id == "blouse_bengaluru_4d_fo" })
+        for (id in listOf("blouse_4d_basic_fo_wp", "blouse_4d_basic_bo_wp", "blouse_4d_halter_fo_wp", "blouse_4d_close_bo_wp")) for (m in sizes) {
+            val p = model(id).draft(m)
+            val plain = model(id.replace("_wp", "_wop")).draft(m).pieces.first { it.id == "front" }
+            val front = p.pieces.first { it.id == "front" }
+            val patti = p.pieces.first { it.id == "front_patti" }
+            val back = p.pieces.first { it.id == "back" }
+            // Side seams: upper front + patti = the front without a patti.
+            assertEquals(plain.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE) + patti.lengthOf(EdgeKind.SIDE), 0.15 * inch, id)
+            // The patti seam is the front's seam with the darts closed.
+            val seamDarts = front.darts.filter { d -> listOf(d.legA, d.legB).all { l -> front.edgesOf(EdgeKind.BELT).single().path.points().any { it.dist(l) < 0.05 } || kotlin.math.abs(l.y - front.edgesOf(EdgeKind.BELT).single().path.start.y) < 0.05 } }
+            assertTrue(seamDarts.isNotEmpty(), id)
+            assertEquals(front.lengthOf(EdgeKind.BELT) - seamDarts.sumOf { it.intake }, patti.lengthOf(EdgeKind.BELT), 0.05, id)
+            assertEquals(BlouseDrafter.PATTI_HEIGHT, patti.edges.first().path.length(), 0.01, id)
+            assertTrue(patti.darts.isEmpty())
+            // Darts stay inside the upper front; the hem is on the patti only.
+            for (d in front.darts) assertTrue(pointInPolygon(d.tip, front.seamOutline()), id)
+            assertTrue(front.edgesOf(EdgeKind.HEM).isEmpty() && patti.edgesOf(EdgeKind.HEM).isNotEmpty(), id)
+        }
+        // Panelled fronts have no patti; the patti survives a customised design id.
+        assertTrue(!com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(body = com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS, patti = true).toModel().hasPatti)
+        val spec = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(patti = true)
+        assertTrue(com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id)!!.patti)
+        // Sketch: the patti is drawn as wide as the front above it.
+        val sketch = com.tailorsfit.pattern.render.Illustration.asWorn(model("blouse_4d_basic_fo_wp").draft(Measurements.defaults()).pieces)
+        val f = sketch.first { it.id == "front" }
+        val pt = sketch.first { it.id == "front_patti" }
+        assertEquals(f.edgesOf(EdgeKind.SIDE).single().path.start.x, pt.edgesOf(EdgeKind.BELT).single().path.start.x, 1e-6)
     }
 }

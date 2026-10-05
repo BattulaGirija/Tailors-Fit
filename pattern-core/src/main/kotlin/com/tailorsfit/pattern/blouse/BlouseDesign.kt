@@ -69,6 +69,7 @@ data class BlouseSpec(
     val collar: Boolean = false,
     val halter: Boolean = false,
     val bottomWaves: Boolean = false,
+    val patti: Boolean = false,
 ) {
     /** The opening actually used: keyhole and dori backs open at the front. */
     val effectiveOpening: Opening get() = if (backDetail != BackDetail.NONE) Opening.FRONT else opening
@@ -79,7 +80,7 @@ data class BlouseSpec(
             front.shape.name, n(front.widen), n(front.depthFactor),
             back.shape.name, n(back.widen), n(back.depthFactor),
             backDetail.name, sleeve.name, effectiveOpening.name, if (collar) "1" else "0",
-            if (halter) "1" else "0", if (bottomWaves) "1" else "0",
+            if (halter) "1" else "0", if (bottomWaves) "1" else "0", if (patti) "1" else "0",
         ).joinToString(SEP)
 
     fun withFront(choice: FrontNeck, depth: NeckDepth) = copy(front = choice.spec(depth).rounded(), collar = false)
@@ -105,6 +106,7 @@ data class BlouseSpec(
             body = body,
             halter = halter,
             bottomWaves = bottomWaves,
+            patti = patti,
         )
     }
 
@@ -126,6 +128,7 @@ data class BlouseSpec(
             collar = model.collar,
             halter = model.halter,
             bottomWaves = model.bottomWaves,
+            patti = model.patti,
         ).let { it.copy(front = it.front.rounded(), back = it.back.rounded()) }
 
         private fun NeckSpec.rounded() = NeckSpec(shape, n(widen).toDouble(), n(depthFactor).toDouble())
@@ -140,8 +143,8 @@ data class BlouseSpec(
         /** Reads an id made by [id]; null if it is not one. */
         fun parse(id: String): BlouseSpec? {
             val p = id.split(SEP)
-            // 13 parts before halter / bottom waves were added, 15 since.
-            if ((p.size != 13 && p.size != 15) || p[0] != PREFIX) return null
+            // 13 parts before halter / bottom waves were added, 15 with them, 16 with the patti.
+            if (p.size !in setOf(13, 15, 16) || p[0] != PREFIX) return null
             return runCatching {
                 BlouseSpec(
                     baseId = p[1],
@@ -154,6 +157,7 @@ data class BlouseSpec(
                     collar = p[12] == "1",
                     halter = p.getOrNull(13) == "1",
                     bottomWaves = p.getOrNull(14) == "1",
+                    patti = p.getOrNull(15) == "1",
                 )
             }.getOrNull()
         }

@@ -95,6 +95,8 @@ object BlouseDrafter {
     const val WAVE_LENGTH = 3.0 * INCH
     /** The belt stays at least this tall at the centre front. */
     const val MIN_BELT = 1.5 * INCH
+    /** Height of the patti (band) across the bottom of the front. */
+    const val PATTI_HEIGHT = 1.5 * INCH
 
     fun draft(model: BlouseModel, m: Measurements, options: DraftOptions = DraftOptions()): Pattern {
         val errors = m.validate(model.requiredMeasurements)
@@ -333,7 +335,7 @@ object BlouseDrafter {
         }
         // Bottom waves: scallops hanging below the bottom line, a whole number of them from the
         // centre to the side so both ends stay on the line.
-        val waves = model.bottomWaves && !(isFront && model.body.panelled)
+        val waves = model.bottomWaves && !(isFront && (model.body.panelled || model.hasPatti))
         val waveCount = max(2, Math.round(sideBottom.x / WAVE_LENGTH).toInt())
         fun wave(x: Double) = if (!waves) 0.0 else WAVE_DEPTH * (1 - kotlin.math.cos(2 * Math.PI * waveCount * x / sideBottom.x)) / 2
         fun hemY(x: Double) = baseHemY(x) + wave(x)
@@ -443,6 +445,12 @@ object BlouseDrafter {
 
         val name = if (isFront) tr("piece.front") else tr("piece.back")
         val cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true)
+        if (isFront && model.hasPatti) {
+            return pattiFront(
+                f, model, spec, neckPath, centreTop, isOpening, armhole, underarm, shoulder, neck,
+                hemPath, ::baseHemY, sideBottom, darts, neckDepth, cut,
+            )
+        }
         val notes = buildList {
             add(if (isOpening) tr("note.opening", model.opening.label, cm(SeamAllowances().opening)) else tr("note.fold"))
             if (model.halter) add(tr("note.halter"))
@@ -462,6 +470,133 @@ object BlouseDrafter {
             labelAt = Pt(bust * 0.52, f.armDepth - 3.5),
             notes = notes,
         ), notches))
+    }
+
+    /**
+     * Front with a patti: the darted front is cut [PATTI_HEIGHT] above the bottom. The upper
+     * part keeps its darts, which now end on the patti seam; the band below is one piece with
+     * the bits of dart in it closed (so it is shorter than the seam by the dart widths there).
+     */
+    private fun pattiFront(
+        f: BodiceFrame,
+        model: BlouseModel,
+        spec: NeckSpec,
+        neckPath: PathD,
+        centreTop: Pt,
+        isOpening: Boolean,
+        armhole: PathD,
+        underarm: Pt,
+        shoulder: Pt,
+        neck: Pt,
+        hemPath: PathD,
+        hemY: (Double) -> Double,
+        sideBottom: Pt,
+        darts: List<Dart>,
+        neckDepth: Double,
+        cut: CutInstruction,
+    ): List<Piece> {
+        val dir = (underarm - sideBottom).normalized()
+        val sideTop = sideBottom + dir * PATTI_HEIGHT
+        fun seamY(x: Double) = hemY(x) - PATTI_HEIGHT
+        // The seam follows the bottom line, PATTI_HEIGHT higher, and meets the side seam at sideTop.
+        val hemPts = hemPath.points()
+        val seamPts = hemPts.dropLast(1).map { Pt(it.x, it.y - PATTI_HEIGHT) }.filter { it.x < sideTop.x - 0.05 } + sideTop
+        fun onHem(p: Pt) = kotlin.math.abs(p.y - hemY(p.x)) < 1e-6
+        val bottomDarts = darts.filter { onHem(it.legA) && onHem(it.legB) }.sortedBy { it.tip.x }
+        // Where a dart leg crosses the seam (the tip is above it, the leg end below).
+        fun cross(tip: Pt, leg: Pt): Pt {
+            var lo = 0.0
+            var hi = 1.0
+            repeat(50) {
+                val mid = (lo + hi) / 2
+                val q = tip.lerp(leg, mid)
+                if (q.y < seamY(q.x)) lo = mid else hi = mid
+            }
+            val q = tip.lerp(leg, hi)
+            return Pt(q.x, seamY(q.x))
+        }
+        val upperDarts = darts.map { d -> if (d in bottomDarts) Dart(cross(d.tip, d.legA), d.tip, cross(d.tip, d.legB)) else d }
+        val seamDarts = upperDarts.filter { d -> bottomDarts.any { it.tip == d.tip } }.sortedBy { it.tip.x }
+
+        // Upper front.
+        val seam = PathD(seamPts.first(), seamPts.drop(1).map { LineTo(it) })
+        val upperEdges = listOf(
+            Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, seamPts.first())),
+            Edge(EdgeKind.BELT, seam),
+            Edge(EdgeKind.SIDE, PathD.line(sideTop, underarm)),
+            Edge(EdgeKind.ARMHOLE, armhole),
+            Edge(EdgeKind.SHOULDER, PathD.line(shoulder, neck)),
+            Edge(EdgeKind.NECK, neckPath),
+        )
+        val apex = Pt(f.apexX, f.apexY)
+        val grainX = f.frontBust * 0.62
+        val upperNotches = ArrayList<Notch>()
+        armhole.pointAtDistance(ARMHOLE_NOTCH_FROM_UNDERARM).let { (p, t) -> upperNotches += Notch(p, t) }
+        val upper = withOutwardNotches(Piece(
+            id = "front",
+            name = tr("piece.front"),
+            cut = cut,
+            edges = upperEdges,
+            darts = upperDarts,
+            markings = listOf(
+                Marking(apex + Pt(-0.8, 0.0), apex + Pt(0.8, 0.0), Marking.Kind.GUIDE),
+                Marking(apex + Pt(0.0, -0.8), apex + Pt(0.0, 0.8), Marking.Kind.GUIDE),
+                Marking(Pt(grainX, f.armDepth + 1.0), Pt(grainX, seamY(grainX) - 3.0), Marking.Kind.GRAIN),
+            ),
+            points = mapOf("apex" to apex, "underarm" to underarm, "shoulder" to shoulder, "neck" to neck),
+            labelAt = Pt(f.frontBust * 0.52, f.armDepth - 3.5),
+            notes = buildList {
+                add(if (isOpening) tr("note.opening", model.opening.label, cm(SeamAllowances().opening)) else tr("note.fold"))
+                if (model.halter) add(tr("note.halter"))
+                add(tr("note.neck", spec.shape.label, cm(neckDepth)))
+                if (upperDarts.isNotEmpty()) add(tr("note.darts", upperDarts.joinToString(" + ") { cm(it.intake) }))
+                add(tr("note.patti_seam"))
+            },
+        ), upperNotches)
+
+        // Patti: the strip between the seam and the bottom with the dart wedges taken out.
+        fun closeUp(line: List<Pt>, wedges: List<Pair<Double, Double>>): List<Pt> {
+            val all = (line + wedges.flatMap { (a, b) -> listOf(a, b) }.map { x -> Pt(x, Double.NaN) })
+            val out = ArrayList<Pt>()
+            val ys = line
+            fun yAt(x: Double): Double {
+                for (i in 0 until ys.size - 1) {
+                    val a = ys[i]
+                    val b = ys[i + 1]
+                    if (x >= a.x - 1e-9 && x <= b.x + 1e-9) return if (b.x - a.x < 1e-9) a.y else a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x)
+                }
+                return ys.last().y
+            }
+            val xs = all.map { it.x }.distinct().sorted()
+            for (x in xs) {
+                if (wedges.any { (a, b) -> x > a + 1e-9 && x < b - 1e-9 }) continue
+                val shift = wedges.filter { (_, b) -> b <= x + 1e-9 }.sumOf { (a, b) -> b - a }
+                val p = Pt(x - shift, yAt(x))
+                if (out.isEmpty() || out.last().dist(p) > 1e-6) out += p else out[out.size - 1] = Pt(p.x, (out.last().y + p.y) / 2)
+            }
+            return out
+        }
+        val top = closeUp(seamPts, seamDarts.map { it.legA.x to it.legB.x })
+        val bottom = closeUp(hemPts, bottomDarts.map { it.legA.x to it.legB.x })
+        val bandEdges = listOf(
+            Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(top.first(), bottom.first())),
+            Edge(EdgeKind.HEM, PathD(bottom.first(), bottom.drop(1).map { LineTo(it) })),
+            Edge(EdgeKind.SIDE, PathD.line(bottom.last(), top.last())),
+            Edge(EdgeKind.BELT, PathD(top.last(), top.dropLast(1).reversed().map { LineTo(it) })),
+        )
+        val midX = top.last().x * 0.5
+        val band = Piece(
+            id = "front_patti",
+            name = tr("piece.front_patti"),
+            cut = cut,
+            edges = bandEdges,
+            markings = listOf(
+                Marking(Pt(midX - 2.0, (seamY(midX) + hemY(midX)) / 2), Pt(midX + 2.0, (seamY(midX) + hemY(midX)) / 2), Marking.Kind.GUIDE),
+            ),
+            labelAt = Pt(top.last().x * 0.45, (seamY(midX) + hemY(midX)) / 2),
+            notes = listOf(tr("note.patti", cm(PATTI_HEIGHT))),
+        )
+        return listOf(upper, band)
     }
 
     /**

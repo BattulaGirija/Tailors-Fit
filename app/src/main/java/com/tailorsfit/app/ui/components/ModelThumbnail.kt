@@ -23,7 +23,7 @@ fun ModelThumbnail(model: GarmentModel, modifier: Modifier = Modifier, fill: Col
     // Each group is one garment view (front, back) made of one or more panels in a shared frame.
     val groups: List<List<List<Pt>>> = remember(model) {
         runCatching {
-            val pieces = model.draft(Measurements.defaults()).pieces
+            val pieces = com.tailorsfit.pattern.render.Illustration.asWorn(model.draft(Measurements.defaults()).pieces)
             val front = pieces.filter { it.id.startsWith("front") }.flatMap { p ->
                 if (p.id == "front_side") listOf(p.seamOutline(), p.mirrored().seamOutline()) else listOf(fullPiece(p).seamOutline())
             }

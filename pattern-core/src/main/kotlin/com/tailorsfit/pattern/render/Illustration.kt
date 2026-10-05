@@ -29,7 +29,7 @@ data class GarmentView(
 object Illustration {
     /** Front and back views of a blouse pattern (as drafted by the blouse drafter). */
     fun blouse(pattern: Pattern): List<GarmentView> {
-        val fronts = pattern.pieces.filter { it.id.startsWith("front") }
+        val fronts = asWorn(pattern.pieces).filter { it.id.startsWith("front") }
         val back = pattern.pieces.firstOrNull { it.id == "back" }
         val sleeve = pattern.pieces.firstOrNull { it.id == "sleeve" }
         val style = Style(
@@ -41,6 +41,20 @@ object Illustration {
             if (fronts.isNotEmpty()) view(tr("view.front"), fronts, sleeve, style, isBack = false) else null,
             back?.let { view(tr("view.back"), listOf(it), sleeve, style, isBack = true) },
         )
+    }
+
+    /**
+     * Pieces as they look sewn: a patti is cut shorter than its seam (the darts are closed in
+     * it), so for drawing it is stretched back to the width of the front above it.
+     */
+    fun asWorn(pieces: List<Piece>): List<Piece> {
+        val front = pieces.firstOrNull { it.id == "front" } ?: return pieces
+        val sideTop = front.edgesOf(EdgeKind.SIDE).firstOrNull()?.path?.start ?: return pieces
+        return pieces.map { p ->
+            val top = p.edgesOf(EdgeKind.BELT).firstOrNull()?.path?.start
+            if (p.id != "front_patti" || top == null || top.x <= 0) p
+            else p.map({ Pt(it.x * sideTop.x / top.x, it.y) })
+        }
     }
 
     private class Style(val sleeve: String, val collar: Boolean, val ties: Boolean)

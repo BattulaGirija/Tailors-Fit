@@ -105,9 +105,14 @@ data class BlouseModel(
     val halter: Boolean = false,
     /** Wavy (scalloped) bottom edge on the front and back. */
     val bottomWaves: Boolean = false,
+    /** Patti: a band across the bottom of the front, cut as its own piece (darted fronts only). */
+    val patti: Boolean = false,
 ) : GarmentModel {
     /** Sleeves actually drafted (a halter has none). */
     val effectiveSleeve: SleeveStyle get() = if (halter) SleeveStyle.SLEEVELESS else sleeve
+
+    /** Whether the front really gets a patti (princess, katori and sabyasachi fronts are panelled). */
+    val hasPatti: Boolean get() = patti && !body.panelled
 
     override val categoryId = "blouse"
     override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
@@ -120,6 +125,7 @@ data class BlouseModel(
             tr("tag.halter").takeIf { halter },
             effectiveSleeve.label,
             tr("tag.waves").takeIf { bottomWaves },
+            tr("tag.patti").takeIf { hasPatti },
             tr("tag.collar").takeIf { collar },
             backDetail.label.takeIf { backDetail != BackDetail.NONE },
             opening.label,
@@ -369,6 +375,134 @@ object BlouseCatalog {
             "blouse_3d_model1", "Basic Blouse 3 Dart Model 1",
             "Sweetheart front neck, round back, 3 darts, short sleeves. Back hooks.",
             NeckSpec(NeckShape.SWEETHEART, widen = 0.5), NeckSpec(NeckShape.ROUND), SleeveStyle.SHORT, Opening.BACK,
+        ),
+        // 4 dart collection: the same necks, front (FO) or back (BO) hooks, with (WP) or
+        // without (WOP) a patti across the bottom of the front.
+        BlouseModel(
+            "blouse_4d_basic_fo_wp", "4 Dart Basic Blouse FO WP",
+            "Basic 4 dart blouse: wide round neck front, U back, short sleeves. With patti (band) across the bottom of the front. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_basic_fo_wop", "4 Dart Basic Blouse FO WOP",
+            "Basic 4 dart blouse: wide round neck front, U back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_basic_bo_wp", "4 Dart Basic Blouse BO WP",
+            "Basic 4 dart blouse: wide round neck front, U back, short sleeves. With patti (band) across the bottom of the front. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_basic_bo_wop", "4 Dart Basic Blouse BO WOP",
+            "Basic 4 dart blouse: wide round neck front, U back, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_boat_fo_wp", "4 Dart Boat Neck FO WP",
+            "Boat neck front and back, 4 darts, short sleeves. With patti (band) across the bottom of the front. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_boat_fo_wop", "4 Dart Boat Neck FO WOP",
+            "Boat neck front and back, 4 darts, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_boat_bo_wp", "4 Dart Boat Neck BO WP",
+            "Boat neck front and back, 4 darts, short sleeves. With patti (band) across the bottom of the front. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_boat_bo_wop", "4 Dart Boat Neck BO WOP",
+            "Boat neck front and back, 4 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_close_fo_wp", "4 Dart Close Neck FO WP",
+            "Close (high, narrow) round neck front and back, 4 darts, short sleeves. With patti (band) across the bottom of the front. Front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_close_fo_wop", "4 Dart Close Neck FO WOP",
+            "Close (high, narrow) round neck front and back, 4 darts, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_close_bo_wp", "4 Dart Close Neck BO WP",
+            "Close (high, narrow) round neck front and back, 4 darts, short sleeves. With patti (band) across the bottom of the front. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_close_bo_wop", "4 Dart Close Neck BO WOP",
+            "Close (high, narrow) round neck front and back, 4 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_halter_fo_wp", "4 Dart Halter Neck FO WP",
+            "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. With patti (band) across the bottom of the front. Front hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, halter = true, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_halter_fo_wop", "4 Dart Halter Neck FO WOP",
+            "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. Front hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, halter = true, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_halter_bo_wp", "4 Dart Halter Neck BO WP",
+            "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. With patti (band) across the bottom of the front. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            body = BodyStyle.FOUR_DART, halter = true, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_halter_bo_wop", "4 Dart Halter Neck BO WOP",
+            "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            body = BodyStyle.FOUR_DART, halter = true, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_high_fo_wp", "4 Dart High Neck FO WP",
+            "Round front neck with a high (closed) back neck, 4 darts, short sleeves. With patti (band) across the bottom of the front. Front hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_high_fo_wop", "4 Dart High Neck FO WOP",
+            "Round front neck with a high (closed) back neck, 4 darts, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_4d_high_bo_wp", "4 Dart High Neck BO WP",
+            "Round front neck with a high (closed) back neck, 4 darts, short sleeves. With patti (band) across the bottom of the front. Back hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = true,
+        ),
+        BlouseModel(
+            "blouse_4d_high_bo_wop", "4 Dart High Neck BO WOP",
+            "Round front neck with a high (closed) back neck, 4 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+            body = BodyStyle.FOUR_DART, patti = false,
+        ),
+        BlouseModel(
+            "blouse_bengaluru_4d_fo", "Bengaluru 4 Dart Model FO",
+            "Bengaluru model with 4 darts: wide, deep U front neck with narrow straps, deep U back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.FOUR_DART,
         ),
         BlouseModel(
             "blouse_4dart_round", "4 Dart Round Neck",
