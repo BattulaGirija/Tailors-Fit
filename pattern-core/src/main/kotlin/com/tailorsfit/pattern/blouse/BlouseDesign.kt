@@ -67,6 +67,8 @@ data class BlouseSpec(
     val opening: Opening,
     val backDetail: BackDetail = BackDetail.NONE,
     val collar: Boolean = false,
+    val halter: Boolean = false,
+    val bottomWaves: Boolean = false,
 ) {
     /** The opening actually used: keyhole and dori backs open at the front. */
     val effectiveOpening: Opening get() = if (backDetail != BackDetail.NONE) Opening.FRONT else opening
@@ -77,6 +79,7 @@ data class BlouseSpec(
             front.shape.name, n(front.widen), n(front.depthFactor),
             back.shape.name, n(back.widen), n(back.depthFactor),
             backDetail.name, sleeve.name, effectiveOpening.name, if (collar) "1" else "0",
+            if (halter) "1" else "0", if (bottomWaves) "1" else "0",
         ).joinToString(SEP)
 
     fun withFront(choice: FrontNeck, depth: NeckDepth) = copy(front = choice.spec(depth).rounded(), collar = false)
@@ -100,6 +103,8 @@ data class BlouseSpec(
             backDetail = backDetail,
             collar = collar,
             body = body,
+            halter = halter,
+            bottomWaves = bottomWaves,
         )
     }
 
@@ -119,6 +124,8 @@ data class BlouseSpec(
             opening = model.opening,
             backDetail = model.backDetail,
             collar = model.collar,
+            halter = model.halter,
+            bottomWaves = model.bottomWaves,
         ).let { it.copy(front = it.front.rounded(), back = it.back.rounded()) }
 
         private fun NeckSpec.rounded() = NeckSpec(shape, n(widen).toDouble(), n(depthFactor).toDouble())
@@ -133,7 +140,8 @@ data class BlouseSpec(
         /** Reads an id made by [id]; null if it is not one. */
         fun parse(id: String): BlouseSpec? {
             val p = id.split(SEP)
-            if (p.size != 13 || p[0] != PREFIX) return null
+            // 13 parts before halter / bottom waves were added, 15 since.
+            if ((p.size != 13 && p.size != 15) || p[0] != PREFIX) return null
             return runCatching {
                 BlouseSpec(
                     baseId = p[1],
@@ -144,6 +152,8 @@ data class BlouseSpec(
                     sleeve = SleeveStyle.valueOf(p[10]),
                     opening = Opening.valueOf(p[11]),
                     collar = p[12] == "1",
+                    halter = p.getOrNull(13) == "1",
+                    bottomWaves = p.getOrNull(14) == "1",
                 )
             }.getOrNull()
         }

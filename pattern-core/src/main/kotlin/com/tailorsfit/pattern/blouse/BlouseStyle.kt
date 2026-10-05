@@ -101,7 +101,14 @@ data class BlouseModel(
     val collar: Boolean = false,
     /** How the front is shaped; [princess] designs default to [BodyStyle.PRINCESS]. */
     val body: BodyStyle = if (princess) BodyStyle.PRINCESS else BodyStyle.THREE_DART,
+    /** Halter: shoulders cut in close to the neck, always sleeveless. */
+    val halter: Boolean = false,
+    /** Wavy (scalloped) bottom edge on the front and back. */
+    val bottomWaves: Boolean = false,
 ) : GarmentModel {
+    /** Sleeves actually drafted (a halter has none). */
+    val effectiveSleeve: SleeveStyle get() = if (halter) SleeveStyle.SLEEVELESS else sleeve
+
     override val categoryId = "blouse"
     override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
     override val description: String get() = if (I18n.has("model.$id.desc")) tr("model.$id.desc") else baseDescription
@@ -110,7 +117,9 @@ data class BlouseModel(
             body.label,
             tr("tag.front", front.shape.label),
             tr("tag.back", back.shape.label),
-            sleeve.label,
+            tr("tag.halter").takeIf { halter },
+            effectiveSleeve.label,
+            tr("tag.waves").takeIf { bottomWaves },
             tr("tag.collar").takeIf { collar },
             backDetail.label.takeIf { backDetail != BackDetail.NONE },
             opening.label,
@@ -120,8 +129,8 @@ data class BlouseModel(
         get() = MeasurementField.body.filter { f ->
             when (f) {
                 MeasurementField.SLEEVE_LENGTH, MeasurementField.SLEEVE_OPENING ->
-                    sleeve != SleeveStyle.SLEEVELESS && sleeve != SleeveStyle.CAP
-                MeasurementField.SLEEVE_ROUND -> sleeve != SleeveStyle.SLEEVELESS
+                    effectiveSleeve != SleeveStyle.SLEEVELESS && effectiveSleeve != SleeveStyle.CAP
+                MeasurementField.SLEEVE_ROUND -> effectiveSleeve != SleeveStyle.SLEEVELESS
                 else -> true
             }
         }
@@ -284,6 +293,82 @@ object BlouseCatalog {
             "Sleeveless blouse with a deep V back and tie-up strings.",
             NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
             backDetail = BackDetail.DORI,
+        ),
+        // 3 dart collection (the common tailor's list): basic, boat, close and high necks,
+        // halter and bottom waves, each with front (FO) or back (BO) opening.
+        BlouseModel(
+            "blouse_3d_basic_fo", "3 Dart Basic Blouse FO",
+            "Basic 3 dart blouse: wide round neck front, U back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_3d_basic_bo", "3 Dart Basic Blouse BO",
+            "Basic 3 dart blouse: wide round neck front, U back, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_3d_boat_fo", "3 Dart Boat Neck FO",
+            "Boat neck front and back, 3 darts, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_3d_boat_bo", "3 Dart Boat Neck BO",
+            "Boat neck front and back, 3 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.55), NeckSpec(NeckShape.BOAT, widen = 4.0, depthFactor = 0.8), SleeveStyle.SHORT, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_3d_close_fo", "3 Dart Close Neck FO",
+            "Close (high, narrow) round neck front and back, 3 darts, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_3d_close_bo", "3 Dart Close Neck BO",
+            "Close (high, narrow) round neck front and back, 3 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_3d_halter_fo", "3 Dart Halter Neck FO",
+            "Halter: shoulders cut in close to the neck, round front, deep U back, sleeveless. Front hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            halter = true,
+        ),
+        BlouseModel(
+            "blouse_3d_halter_bo", "3 Dart Halter Neck BO",
+            "Halter: shoulders cut in close to the neck, round front, U back, sleeveless. Back hooks.",
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SLEEVELESS, Opening.BACK,
+            halter = true,
+        ),
+        BlouseModel(
+            "blouse_3d_high_fo", "3 Dart High Neck FO",
+            "Round front neck with a high (closed) back neck, 3 darts, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_3d_high_bo", "3 Dart High Neck BO",
+            "Round front neck with a high (closed) back neck, 3 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.ROUND, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
+        ),
+        BlouseModel(
+            "blouse_3d_basic_fo_bw", "3 Dart Basic Blouse FO BW",
+            "Basic 3 dart blouse with a wavy (scalloped) bottom edge, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            bottomWaves = true,
+        ),
+        BlouseModel(
+            "blouse_3d_basic_bo_bw", "3 Dart Basic Blouse Back Open Bottom Waves",
+            "Basic 3 dart blouse with a wavy (scalloped) bottom edge, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            bottomWaves = true,
+        ),
+        BlouseModel(
+            "blouse_bengaluru_fo", "Bengaluru Blouse Model FO",
+            "Bengaluru model: wide, deep U front neck with narrow straps, deep U back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+        ),
+        BlouseModel(
+            "blouse_3d_model1", "Basic Blouse 3 Dart Model 1",
+            "Sweetheart front neck, round back, 3 darts, short sleeves. Back hooks.",
+            NeckSpec(NeckShape.SWEETHEART, widen = 0.5), NeckSpec(NeckShape.ROUND), SleeveStyle.SHORT, Opening.BACK,
         ),
         BlouseModel(
             "blouse_4dart_round", "4 Dart Round Neck",

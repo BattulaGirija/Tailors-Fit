@@ -146,6 +146,20 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
                                     )
                                 }
                             }
+                            Text(tr("mix.style"), style = MaterialTheme.typography.labelLarge, color = Brand.Muted)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(
+                                    selected = spec.halter,
+                                    onClick = { vm.spec = spec.copy(halter = !spec.halter) },
+                                    label = { Text(tr("tag.halter")) },
+                                )
+                                FilterChip(
+                                    selected = spec.bottomWaves,
+                                    enabled = !spec.body.panelled,
+                                    onClick = { vm.spec = spec.copy(bottomWaves = !spec.bottomWaves) },
+                                    label = { Text(tr("tag.waves")) },
+                                )
+                            }
                         }
                     }
                 }

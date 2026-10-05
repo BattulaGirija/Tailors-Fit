@@ -88,6 +88,11 @@ object BlouseDrafter {
     const val HOOK_DART_HEIGHT = 2.5 * INCH
     /** Katori / Sabyasachi: height of the belt (patti) below the cups. */
     const val BELT_HEIGHT = 2.5 * INCH
+    /** Halter strap width on the shoulder. */
+    const val HALTER_STRAP = 1.75 * INCH
+    /** Bottom waves: depth and (about) length of each wave. */
+    const val WAVE_DEPTH = 0.4 * INCH
+    const val WAVE_LENGTH = 3.0 * INCH
     /** The belt stays at least this tall at the centre front. */
     const val MIN_BELT = 1.5 * INCH
 
@@ -114,7 +119,7 @@ object BlouseDrafter {
             tr("summary.shoulder_drop") to cm(bodice.slope),
         )
 
-        if (model.sleeve != SleeveStyle.SLEEVELESS) {
+        if (model.effectiveSleeve != SleeveStyle.SLEEVELESS) {
             val sleevePieces = draftSleeve(model, m, frontArm, backArm, warnings)
             val sleeve = sleevePieces.first()
             pieces += sleevePieces
@@ -136,7 +141,7 @@ object BlouseDrafter {
             if (options.customerName.isNotBlank()) append(" — ").append(options.customerName)
         }
         val meta = mapOf(
-            "sleeve" to model.sleeve.name,
+            "sleeve" to model.effectiveSleeve.name,
             "collar" to model.collar.toString(),
             "back" to model.backDetail.name,
         )
@@ -170,7 +175,7 @@ object BlouseDrafter {
         companion object {
             fun create(model: BlouseModel, m: Measurements, warnings: MutableList<String>): BodiceFrame {
                 var shoulderX = m[F.SHOULDER] / 2
-                if (model.sleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
+                if (model.effectiveSleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
                 // Neck width: the tailor's "neck broad" if set, else full shoulder / 2 minus the
                 // shoulder (strap) width measured on the customer.
                 val strap = m[F.SHOULDER_WIDTH].takeIf { !it.isNaN() }
@@ -181,7 +186,9 @@ object BlouseDrafter {
                 val frontScoop = m.adjustment(F.FRONT_ARM_CURVE) ?: FRONT_ARM_CURVE
                 val backScoop = m.adjustment(F.BACK_ARM_CURVE) ?: BACK_ARM_CURVE
                 val widen = max(model.front.widen, model.back.widen)
-                val neckX = min(neckBase + widen, shoulderX - MIN_STRAP)
+                val neckX = min(neckBase + widen, shoulderX - MIN_STRAP).coerceAtLeast(1.5 * INCH)
+                // Halter: the shoulder (strap) stops a little beyond the neck; the armhole is cut in.
+                if (model.halter) shoulderX = min(shoulderX, neckX + HALTER_STRAP)
                 if (neckBase + widen > shoulderX - MIN_STRAP) warnings += tr("warn.neck_wide", cm(MIN_STRAP))
 
                 // "Length" is measured straight down from the shoulder; the front also goes over
@@ -319,7 +326,22 @@ object BlouseDrafter {
 
         // Bottom: level from the centre to under the bust point, then straight to the side.
         val hemBend = Pt(min(f.apexX, sideBottom.x * 0.6), centreLength)
-        val hemPath = if (sideBottom.y < centreLength - 0.05) PathD(hemCentre, listOf(LineTo(hemBend), LineTo(sideBottom))) else PathD.line(hemCentre, sideBottom)
+        fun baseHemY(x: Double) = when {
+            sideBottom.y >= centreLength - 0.05 -> hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
+            x <= hemBend.x -> centreLength
+            else -> centreLength + (sideBottom.y - centreLength) * ((x - hemBend.x) / (sideBottom.x - hemBend.x))
+        }
+        // Bottom waves: scallops hanging below the bottom line, a whole number of them from the
+        // centre to the side so both ends stay on the line.
+        val waves = model.bottomWaves && !(isFront && model.body.panelled)
+        val waveCount = max(2, Math.round(sideBottom.x / WAVE_LENGTH).toInt())
+        fun wave(x: Double) = if (!waves) 0.0 else WAVE_DEPTH * (1 - kotlin.math.cos(2 * Math.PI * waveCount * x / sideBottom.x)) / 2
+        fun hemY(x: Double) = baseHemY(x) + wave(x)
+        val hemPath = when {
+            waves -> PathD(hemCentre, (1..waveCount * 12).map { i -> val x = sideBottom.x * i / (waveCount * 12); LineTo(if (i == waveCount * 12) sideBottom else Pt(x, hemY(x))) })
+            sideBottom.y < centreLength - 0.05 -> PathD(hemCentre, listOf(LineTo(hemBend), LineTo(sideBottom)))
+            else -> PathD.line(hemCentre, sideBottom)
+        }
         val edges = listOf(
             Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(centreTop, hemCentre)),
             Edge(EdgeKind.HEM, hemPath),
@@ -331,11 +353,6 @@ object BlouseDrafter {
 
         val darts = ArrayList<Dart>()
         val markings = ArrayList<Marking>()
-        fun hemY(x: Double) = when {
-            sideBottom.y >= centreLength - 0.05 -> hemCentre.y + (sideBottom.y - hemCentre.y) * (x / sideBottom.x)
-            x <= hemBend.x -> centreLength
-            else -> centreLength + (sideBottom.y - centreLength) * ((x - hemBend.x) / (sideBottom.x - hemBend.x))
-        }
 
         if (isFront && model.body.panelled) {
             val sideExcess = sideBottom.dist(underarm) - sideSeamLength(f, isFront = false, m)
@@ -428,6 +445,8 @@ object BlouseDrafter {
         val cut = if (isOpening) CutInstruction(2, onFold = false) else CutInstruction(1, onFold = true)
         val notes = buildList {
             add(if (isOpening) tr("note.opening", model.opening.label, cm(SeamAllowances().opening)) else tr("note.fold"))
+            if (model.halter) add(tr("note.halter"))
+            if (waves) add(tr("note.waves"))
             add(tr("note.neck", spec.shape.label, cm(neckDepth)))
             if (darts.isNotEmpty()) add(tr("note.darts", darts.joinToString(" + ") { cm(it.intake) }))
         }

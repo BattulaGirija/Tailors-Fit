@@ -58,6 +58,7 @@ class DesignStore(context: Context) {
         put("id", m.id); put("name", m.baseName); put("description", m.baseDescription)
         put("front", neckJson(m.front)); put("back", neckJson(m.back))
         put("sleeve", m.sleeve.name); put("opening", m.opening.name); put("princess", m.princess); put("body", m.body.name)
+        put("halter", m.halter); put("waves", m.bottomWaves)
         put("backDetail", m.backDetail.name); put("collar", m.collar)
     }
 
@@ -70,6 +71,8 @@ class DesignStore(context: Context) {
         sleeve = SleeveStyle.valueOf(o.getString("sleeve")),
         opening = Opening.valueOf(o.getString("opening")),
         princess = o.optBoolean("princess"),
+        halter = o.optBoolean("halter"),
+        bottomWaves = o.optBoolean("waves"),
         body = runCatching { com.tailorsfit.pattern.blouse.BodyStyle.valueOf(o.optString("body")) }
             .getOrDefault(if (o.optBoolean("princess")) com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS else com.tailorsfit.pattern.blouse.BodyStyle.THREE_DART),
         backDetail = runCatching { BackDetail.valueOf(o.optString("backDetail")) }.getOrDefault(BackDetail.NONE),

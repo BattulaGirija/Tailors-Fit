@@ -4,11 +4,13 @@ An Android app that drafts sewing patterns from a customer's measurements, so a 
 **print the pieces at true size** or **project them straight onto the cloth** and cut along
 the lines. There is no manual drafting with chalk and no separate cutting master.
 
-The first category is **saree blouses**, with 34 designs: round, boat, V, sweetheart, square,
+The first category is **saree blouses**, with 48 designs: round, boat, V, sweetheart, square,
 deep U back, sleeveless, cap / elbow / ¾ sleeves, front or back opening, and **princess cut**
 fronts (two panels joined by a curved seam through the bust point instead of darts), plus
 trending styles: puff, bell and frill sleeves, paan (leaf) and pot (matka) necks, keyhole and
-dori tie-up backs, and mandarin / high-neck collars.
+dori tie-up backs, and mandarin / high-neck collars. The **3 Dart** tab has the common tailor's
+list: basic, boat, close, high and halter necks and bottom waves, each with front (FO) or back
+(BO) hooks, plus the Bengaluru model.
 
 ## Download (test version)
 
@@ -25,8 +27,8 @@ published to the same link and installs over the previous version.
 1. **Pick a design.** Home → *Saree Blouses*. Designs are grouped in tabs (**All, 3 Dart,
    4 Dart, Princess, Katori, Sabyasachi**) with a search box; every sketch is drawn from the
    design's real draft. Or tap **Design your own** to start from a plain blouse.
-2. **Customise it.** A front / back sketch with three tabs: **Blouse** (type and where the hooks
-   go), **Sleeve**, and **Neck** with **Front** and **Back** (shape and depth, including pot,
+2. **Customise it.** A front / back sketch with three tabs: **Blouse** (type, where the hooks
+   go, **Halter** and **Bottom waves**), **Sleeve**, and **Neck** with **Front** and **Back** (shape and depth, including pot,
    paan, keyhole and dori backs).
 3. **Enter measurements** in inches or cm, in the order of a tailor's blouse sheet: Length,
    Upper chest, Center chest, Shoulder width, Sleeve length, Sleeve round, Middle hand round,
@@ -137,6 +139,8 @@ cut on the fold.
 | Front length | the side dart takes up to 1¼" of the extra front length; any more lifts the bottom of the front at the side, so the front bottom curves down to the centre and both side seams match |
 | Sleeve | underarm width = arm round + 2"; the cap is ½" shorter than the blouse armhole (the armhole is eased onto it), which gives the low cap of a blouse sleeve (about 4") |
 | Princess cut | the front is split along a curve from the armhole through the bust point to the bottom; the dart under the bust becomes the gap between the two curves at the bottom |
+| Halter | the shoulder ends 1¾" from the neck point, front and back; no sleeve |
+| Bottom waves | the bottom edge is cut in a whole number of scallops about 3" long and ⅖" deep; the darts still open on it |
 | Neck | the shape comes from the design, the depth from the customer's measurement. Pot (matka): narrow below the shoulder, a round belly wider than the neck, round at the bottom |
 
 Seam allowances: neck and armhole ⅜", shoulder ⅝", side 1" (room to let out), bottom and sleeve

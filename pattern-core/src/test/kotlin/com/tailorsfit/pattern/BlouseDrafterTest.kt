@@ -417,4 +417,44 @@ class BlouseDrafterTest {
         val belt2 = BlouseCatalog.models.first { it.id == "blouse_katori_round" }.draft(roomy).pieces.first { it.id == "front_belt" }
         assertEquals(12.0, belt2.edges.first { it.kind == EdgeKind.OPENING }.path.start.y / inch, 0.01)
     }
+
+    @Test
+    fun threeDartCollectionHalterAndWaves() {
+        val inch = BlouseDrafter.INCH
+        fun model(id: String) = BlouseCatalog.models.first { it.id == id }
+        val ids = listOf(
+            "blouse_3d_basic_fo", "blouse_3d_basic_bo", "blouse_3d_boat_fo", "blouse_3d_boat_bo", "blouse_3d_close_fo",
+            "blouse_3d_close_bo", "blouse_3d_halter_fo", "blouse_3d_halter_bo", "blouse_3d_high_fo", "blouse_3d_high_bo",
+            "blouse_3d_basic_fo_bw", "blouse_3d_basic_bo_bw", "blouse_bengaluru_fo", "blouse_3d_model1",
+        )
+        for (id in ids) assertEquals(com.tailorsfit.pattern.blouse.BodyStyle.THREE_DART, model(id).body, id)
+        for (m in sizes) {
+            // Halter: the shoulder ends 1¾" from the neck point, front and back, and there is no sleeve.
+            val halter = model("blouse_3d_halter_fo").draft(m)
+            assertTrue(halter.pieces.none { it.id == "sleeve" })
+            for (id in listOf("front", "back")) {
+                val pc = halter.pieces.first { it.id == id }
+                val sh = pc.points["shoulder"] ?: continue
+                assertEquals(1.75, (sh.x - pc.points.getValue("neck").x) / inch, 0.01, id)
+            }
+            // Waves: the bottom edge goes up and down; the darts still open on it.
+            val waves = model("blouse_3d_basic_fo_bw").draft(m)
+            val plain = model("blouse_3d_basic_fo").draft(m)
+            for (id in listOf("front", "back")) {
+                val w = waves.pieces.first { it.id == id }
+                val pl = plain.pieces.first { it.id == id }
+                val hem = w.edgesOf(EdgeKind.HEM).flatMap { it.path.points() }
+                assertTrue(hem.size > pl.edgesOf(EdgeKind.HEM).sumOf { it.path.points().size } + 10, id)
+                val ys = hem.map { it.y }
+                assertTrue(ys.max() - ys.min() > 0.3 * inch, id)
+                assertEquals(pl.lengthOf(EdgeKind.SIDE), w.lengthOf(EdgeKind.SIDE), 0.5 * inch, id)
+            }
+        }
+        // A customised design keeps halter and waves through its id.
+        val spec = com.tailorsfit.pattern.blouse.BlouseSpec.of(model("blouse_3d_halter_bo")).copy(bottomWaves = true)
+        val back = com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id)!!
+        assertTrue(back.halter && back.bottomWaves)
+        val again = com.tailorsfit.pattern.model.Catalog.model(spec.id) as com.tailorsfit.pattern.blouse.BlouseModel
+        assertTrue(again.halter && again.bottomWaves && again.effectiveSleeve == SleeveStyle.SLEEVELESS)
+    }
 }
