@@ -1,18 +1,2 @@
-Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/37470849116
-ScreenshotTest > lehengaCatalogAndPattern FAILED
-    java.lang.IllegalStateException at ScreenshotTest.kt:70
-> Task :app:testDebugUnitTest FAILED
-BUILD FAILED in 1m 40s
-    <failure message="java.lang.IllegalStateException: Cannot call setContent twice per test!" type="java.lang.IllegalStateException">java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:471)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:348)
-	at com.tailorsfit.app.ScreenshotTest.show(ScreenshotTest.kt:70)
-	at com.tailorsfit.app.ScreenshotTest.lehengaCatalogAndPattern(ScreenshotTest.kt:254)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+Run: https://github.com/BattulaGirija/Tailors-Fit/actions/runs/37471486166
+BUILD SUCCESSFUL in 1m 17s
