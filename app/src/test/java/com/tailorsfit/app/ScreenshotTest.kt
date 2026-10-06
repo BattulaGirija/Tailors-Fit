@@ -246,10 +246,14 @@ class ScreenshotTest {
     }
 
     @Test
-    fun lehengaCatalogAndPattern() {
+    fun lehengaCatalog() {
         show { CatalogScreen("lehenga", onBack = {}, onModel = {}) }
         awaitText("Skirt")
         save("51-catalog-lehenga")
+    }
+
+    @Test
+    fun lehengaCutPatterns() {
         val vm = vm()
         show { CutPatternsScreen(vm, "lehenga_kali12", onBack = {}, onProject = {}) }
         awaitText("Tap a piece")
