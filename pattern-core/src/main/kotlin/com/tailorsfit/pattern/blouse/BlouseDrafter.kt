@@ -128,7 +128,7 @@ object BlouseDrafter {
         )
 
         if (model.effectiveSleeve != SleeveStyle.SLEEVELESS) {
-            val sleevePieces = draftSleeve(model, m, frontArm, backArm, warnings)
+            val sleevePieces = draftSleeve(model.effectiveSleeve, m, frontArm, backArm, warnings)
             val sleeve = sleevePieces.first()
             pieces += sleevePieces
             summary += tr("summary.cap_height") to cm(sleeve.points.getValue("capHeight").y)
@@ -1095,7 +1095,7 @@ object BlouseDrafter {
      * Adds notches given as (point, tangent along the seam). The tangent is turned into the
      * normal that points out of the piece, whatever the direction the seam was travelled in.
      */
-    private fun withOutwardNotches(piece: Piece, raw: List<Notch>): Piece {
+    internal fun withOutwardNotches(piece: Piece, raw: List<Notch>): Piece {
         val poly = piece.seamOutline()
         val notches = raw.map { n ->
             var normal = Pt(n.outward.y, -n.outward.x)
@@ -1185,8 +1185,8 @@ object BlouseDrafter {
         )
     }
 
-    private fun draftSleeve(
-        model: BlouseModel,
+    internal fun draftSleeve(
+        sleeve: SleeveStyle,
         m: Measurements,
         frontArm: Double,
         backArm: Double,
@@ -1212,7 +1212,7 @@ object BlouseDrafter {
             h = (lo + hi) / 2
         }
 
-        var length = when (model.sleeve) {
+        var length = when (sleeve) {
             SleeveStyle.CAP -> h + 4.0
             else -> m[F.SLEEVE_LENGTH]
         }
@@ -1220,13 +1220,13 @@ object BlouseDrafter {
             warnings += tr("warn.sleeve_short", cm(h + 2.0))
             length = h + 2.0
         }
-        if (model.sleeve == SleeveStyle.ELBOW && length < h + 12) {
+        if (sleeve == SleeveStyle.ELBOW && length < h + 12) {
             warnings += tr("warn.elbow_short", cm(length))
         }
-        if (model.sleeve == SleeveStyle.THREE_QUARTER && length < h + 20) {
+        if (sleeve == SleeveStyle.THREE_QUARTER && length < h + 20) {
             warnings += tr("warn.threeq_short", cm(length))
         }
-        var hemHalf = when (model.sleeve) {
+        var hemHalf = when (sleeve) {
             SleeveStyle.CAP -> w - 0.5
             else -> (m[F.SLEEVE_OPENING] + SLEEVE_HEM_EASE) / 2
         }
@@ -1234,17 +1234,17 @@ object BlouseDrafter {
 
         // Puff: taller, wider cap and a wide hem, both gathered (into the armhole / a band).
         // Bell: the hem flares out.
-        val puff = model.sleeve == SleeveStyle.PUFF
+        val puff = sleeve == SleeveStyle.PUFF
         val capW = if (puff) w * PUFF_WIDTH else w
         val capH = if (puff) h + PUFF_EXTRA_CAP else h
         if (puff) hemHalf = capW
-        if (model.sleeve == SleeveStyle.BELL) hemHalf = w * BELL_FLARE
+        if (sleeve == SleeveStyle.BELL) hemHalf = w * BELL_FLARE
         // A taller cap moves the hem down by the same amount, keeping the sleeve length.
-        return listOf(sleevePiece(model, capW, capH, length + (capH - h), hemHalf, bicepHalf = w)) +
-            sleeveExtras(model, m, hemHalf)
+        return listOf(sleevePiece(sleeve, capW, capH, length + (capH - h), hemHalf, bicepHalf = w)) +
+            sleeveExtras(sleeve, m, hemHalf)
     }
 
-    private fun sleevePiece(model: BlouseModel, w: Double, h: Double, length: Double, hemHalf: Double, bicepHalf: Double): Piece {
+    private fun sleevePiece(sleeve: SleeveStyle, w: Double, h: Double, length: Double, hemHalf: Double, bicepHalf: Double): Piece {
         val right = capHalf(w, h)
         val left = right.map(Pt::mirroredX).reversed()
         val cap = PathD(left.start, left.segs + right.segs)
@@ -1281,16 +1281,16 @@ object BlouseDrafter {
             points = mapOf("capHeight" to Pt(0.0, h), "underarmRight" to underR, "underarmLeft" to underL),
             labelAt = Pt(-w * 0.12, h * 0.62 + min(4.0, (length - h) * 0.3)),
             notes = listOfNotNull(
-                tr("note.sleeve_length", model.sleeve.label, cm(length)),
+                tr("note.sleeve_length", sleeve.label, cm(length)),
                 tr("note.cap", cm(h)),
                 tr("note.gather_cap").takeIf { w > bicepHalf + 0.01 },
-                tr("note.gather_hem").takeIf { model.sleeve == SleeveStyle.PUFF },
+                tr("note.gather_hem").takeIf { sleeve == SleeveStyle.PUFF },
             ),
         ), notches)
     }
 
     /** Band for puff sleeves, frills for frill sleeves. */
-    private fun sleeveExtras(model: BlouseModel, m: Measurements, hemHalf: Double): List<Piece> = when (model.sleeve) {
+    private fun sleeveExtras(sleeve: SleeveStyle, m: Measurements, hemHalf: Double): List<Piece> = when (sleeve) {
         SleeveStyle.PUFF ->
             listOf(bandPiece("sleeve_band", tr("piece.sleeve_band"), SLEEVE_BAND_WIDTH, m[F.SLEEVE_OPENING] + SLEEVE_HEM_EASE, 2, tr("note.band")))
         SleeveStyle.FRILL ->

@@ -400,7 +400,7 @@ class BlouseDrafterTest {
         ).mapValues { it.value * inch }
         val m = Measurements(sheet)
         // The sheet is everything a design needs.
-        assertEquals(MeasurementField.body.toSet(), sheet.keys)
+        assertEquals(MeasurementField.blouse.toSet(), sheet.keys)
         for (model in BlouseCatalog.models) {
             val p = model.draft(m)
             assertTrue(p.pieces.isNotEmpty(), model.id)

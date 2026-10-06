@@ -164,8 +164,8 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
                 }
             }
 
-            // Customization details: optional changes to how the pattern is drafted.
-            Surface(
+            // Customization details: optional changes to how the blouse is drafted.
+            if (model is com.tailorsfit.pattern.blouse.BlouseModel) Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.dp, Brand.Line),

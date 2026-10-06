@@ -29,6 +29,102 @@ data class GarmentView(
 )
 
 object Illustration {
+    /** Front and back views of any garment drafted by this library. */
+    fun of(pattern: Pattern): List<GarmentView> = when (pattern.meta["category"]) {
+        "kurti" -> kurti(pattern)
+        "skirt" -> skirt(pattern)
+        else -> blouse(pattern)
+    }
+
+    /** A kurti: bodice and sleeves like a blouse; an anarkali adds its flared skirt below the waist. */
+    fun kurti(pattern: Pattern): List<GarmentView> {
+        val views = blouse(pattern.copy(pieces = pattern.pieces.filter { it.id != "kali" && it.id != "collar" }))
+        if (pattern.meta["cut"] != "ANARKALI") return views.map { slits(it, pattern) }
+        val waistX = pattern.meta["waistX"]?.toDoubleOrNull() ?: return views
+        val length = pattern.meta["length"]?.toDoubleOrNull() ?: return views
+        val kalis = pattern.meta["kalis"]?.toIntOrNull() ?: 12
+        return views.map { v ->
+            // The bodice bottom is the lowest point of the bodice panel at the centre.
+            val bodice = v.panels.maxBy { p -> p.count { kotlin.math.abs(it.x) < 1e-6 } }
+            val top = bodice.filter { kotlin.math.abs(it.x) < 1e-6 }.maxOf { it.y }
+            val skirtLen = length - (pattern.meta["waistY"]?.toDoubleOrNull() ?: top)
+            val hemHalf = waistX + skirtLen * 0.6
+            val n = 24
+            val hem = (0..n).map { i ->
+                val t = -1.0 + 2.0 * i / n
+                Pt(hemHalf * t, top + skirtLen + 1.2 * sin(i * Math.PI / 2).let { it * it } + 2.0 * (1 - t * t))
+            }
+            val skirt = listOf(Pt(-waistX, top)) + hem + Pt(waistX, top)
+            val seams = (1 until kalis / 2).map { i ->
+                val t = -1.0 + 2.0 * i / (kalis / 2)
+                listOf(Pt(waistX * t, top), Pt(hemHalf * t, top + skirtLen))
+            }
+            v.copy(panels = listOf(skirt) + v.panels, seams = v.seams + seams + listOf(listOf(Pt(-waistX, top), Pt(waistX, top))), trims = v.trims + listOf(hem))
+        }
+    }
+
+    /** Short dashes at the side seams where the slits open. */
+    private fun slits(v: GarmentView, pattern: Pattern): GarmentView {
+        val slitY = pattern.meta["slitY"]?.toDoubleOrNull() ?: return v
+        val xs = v.panels.flatten().filter { it.y > slitY }
+        if (xs.isEmpty()) return v
+        val bottom = xs.maxOf { it.y }
+        val right = v.panels.flatten().filter { kotlin.math.abs(it.y - slitY) < 4.0 }.maxOfOrNull { it.x } ?: return v
+        return v.copy(trims = v.trims + listOf(listOf(Pt(right, slitY), Pt(right, bottom)), listOf(Pt(-right, slitY), Pt(-right, bottom))))
+    }
+
+    /** A lehenga or skirt seen from the front and the back. */
+    fun skirt(pattern: Pattern): List<GarmentView> {
+        val meta = pattern.meta
+        fun d(key: String) = meta[key]?.toDoubleOrNull() ?: 0.0
+        val waist = d("waistHalf")
+        val hip = d("hipHalf")
+        val hipY = d("hipY")
+        val hem = d("hemHalf")
+        val length = d("length")
+        val band = d("band")
+        val cut = meta["cut"] ?: "A_LINE"
+        val kalis = meta["kalis"]?.toIntOrNull() ?: 8
+        val wavy = cut in setOf("KALIDAR", "CIRCLE", "HALF_CIRCLE", "GATHERED", "TIERED", "MERMAID", "PLEATED")
+        val n = 32
+        val hemLine = (0..n).map { i ->
+            val t = -1.0 + 2.0 * i / n
+            val wave = if (wavy) 1.5 * sin(i * Math.PI / 2).let { it * it } else 0.0
+            Pt(hem * t, length + wave + (if (wavy) 2.5 else 0.8) * (1 - t * t))
+        }
+        val mermaid = cut == "MERMAID"
+        val kneeY = hipY + (length - hipY) * 0.5
+        val rightSide = if (mermaid) listOf(Pt(waist, 0.0), Pt(hip, hipY), Pt(hip * 0.92, kneeY)) else listOf(Pt(waist, 0.0), Pt(hip, hipY))
+        val outline = rightSide.reversed().map { Pt(-it.x, it.y) } + hemLine + rightSide.reversed()
+        val waistband = listOf(Pt(-waist, -band), Pt(waist, -band), Pt(waist, 0.0), Pt(-waist, 0.0))
+        val seams = ArrayList<List<Pt>>()
+        when (cut) {
+            "KALIDAR", "CIRCLE", "HALF_CIRCLE", "MERMAID" -> {
+                val visible = maxOf(2, kalis / 2)
+                for (i in 1 until visible) {
+                    val t = -1.0 + 2.0 * i / visible
+                    seams += if (mermaid) listOf(Pt(waist * t, 0.0), Pt(hip * t, hipY), Pt(hip * 0.92 * t, kneeY), Pt(hem * t, length))
+                    else listOf(Pt(waist * t, 0.0), Pt(hip * t, hipY), Pt(hem * t, length))
+                }
+            }
+            "TIERED" -> for (k in 1..2) {
+                val y = length * k / 3
+                val w = hip + (hem - hip) * (y - hipY).coerceAtLeast(0.0) / (length - hipY)
+                seams += listOf(Pt(-w, y), Pt(w, y))
+            }
+            "PLEATED" -> for (i in 1 until 8) {
+                val t = -1.0 + 2.0 * i / 8
+                seams += listOf(Pt(waist * t, 0.0), Pt(waist * t * 1.05, 14.0))
+            }
+            "A_LINE", "PENCIL" -> for (sgn in listOf(-1.0, 1.0)) seams += listOf(Pt(sgn * waist * 0.5, 0.0), Pt(sgn * waist * 0.52, 10.0))
+        }
+        val front = GarmentView(tr("view.front"), listOf(outline, waistband), seams, listOf(hemLine, listOf(Pt(-waist, -band), Pt(waist, -band))))
+        // Skirts close with a zip at the centre back; lehengas tie at the side.
+        val backSeams = if (meta["lehenga"] == "true") seams else seams + listOf(listOf(Pt(0.0, -band), Pt(0.0, 18.0)))
+        val back = front.copy(title = tr("view.back"), seams = backSeams)
+        return listOf(front, back)
+    }
+
     /** Front and back views of a blouse pattern (as drafted by the blouse drafter). */
     fun blouse(pattern: Pattern): List<GarmentView> {
         val fronts = asWorn(pattern.pieces).filter { it.id.startsWith("front") }

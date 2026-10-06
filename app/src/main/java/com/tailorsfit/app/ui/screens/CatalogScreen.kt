@@ -61,19 +61,20 @@ fun CatalogScreen(categoryId: String, onBack: () -> Unit, onModel: (String) -> U
     val category = Catalog.category(categoryId)
     val all = Catalog.modelsIn(categoryId)
     val isBlouse = categoryId == "blouse"
-    var tab by rememberSaveable { mutableStateOf(0) } // 0 = All, then BodyStyle.entries
+    var tab by rememberSaveable { mutableStateOf(0) } // 0 = All, then the groups
     var query by rememberSaveable { mutableStateOf("") }
-    val bodies = BodyStyle.entries
+    // Blouses by type (3 Dart, 4 Dart ...), kurtis by cut, lehengas and skirts apart.
+    val groups = if (isBlouse) BodyStyle.entries.map { it.label } else all.map { it.group }.filter { it.isNotBlank() }.distinct()
     val models = all
-        .filter { tab == 0 || (it as? BlouseModel)?.body == bodies[tab - 1] }
+        .filter { tab == 0 || it.group == groups.getOrNull(tab - 1) }
         .filter { m -> query.isBlank() || matches(m, query) }
 
     Scaffold(topBar = { AppBar(category?.name ?: tr("catalog.title"), onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            if (isBlouse) {
-                ScrollableTabRow(selectedTabIndex = tab, edgePadding = 12.dp, containerColor = MaterialTheme.colorScheme.background) {
+            run {
+                if (groups.size > 1) ScrollableTabRow(selectedTabIndex = tab, edgePadding = 12.dp, containerColor = MaterialTheme.colorScheme.background) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(tr("cat.all")) })
-                    bodies.forEachIndexed { i, b -> Tab(selected = tab == i + 1, onClick = { tab = i + 1 }, text = { Text(b.label) }) }
+                    groups.forEachIndexed { i, g -> Tab(selected = tab == i + 1, onClick = { tab = i + 1 }, text = { Text(g) }) }
                 }
                 OutlinedTextField(
                     value = query,
@@ -130,8 +131,8 @@ private fun DesignCard(model: GarmentModel, onClick: () -> Unit) {
                 BlouseSketch(model, back = true, modifier = Modifier.weight(1f).fillMaxHeight())
             }
             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                (model as? BlouseModel)?.let {
-                    Text(it.body.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Brand.Gold)
+                if (model.group.isNotBlank()) {
+                    Text(model.group.uppercase(), style = MaterialTheme.typography.labelSmall, color = Brand.Gold)
                 }
                 Text(model.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(

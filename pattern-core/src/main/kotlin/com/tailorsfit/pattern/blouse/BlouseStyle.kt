@@ -35,12 +35,14 @@ enum class SleeveStyle(val typicalLengthInch: Double) {
     BELL(9.0),
     /** Short sleeve with a gathered frill at the hem. */
     FRILL(6.0),
+    /** Down to the wrist (kurtis). */
+    FULL(22.0),
     ;
 
     /** Standard measurements with this style's usual sleeve length (for sketches). */
     fun sketchMeasurements(base: Measurements = Measurements.defaults()): Measurements =
         if (typicalLengthInch > 0) base.with(MeasurementField.SLEEVE_LENGTH, typicalLengthInch * 2.54)
-            .with(MeasurementField.SLEEVE_OPENING, base[MeasurementField.SLEEVE_OPENING] - (typicalLengthInch - 6.0).coerceAtLeast(0.0) * 0.35)
+            .with(MeasurementField.SLEEVE_OPENING, (base[MeasurementField.SLEEVE_OPENING] - (typicalLengthInch - 6.0).coerceAtLeast(0.0) * 0.35).coerceAtLeast(18.0))
         else base
 
     val label: String get() = tr("sleeve.${name.lowercase()}")
@@ -136,6 +138,7 @@ data class BlouseModel(
     val hasBottomCurve: Boolean get() = bottomCurve && !hasPatti && !bottomWaves && !body.belted
 
     override val categoryId = "blouse"
+    override val group: String get() = body.label
     override val name: String get() = if (I18n.has("model.$id.name")) tr("model.$id.name") else baseName
     override val description: String get() = if (I18n.has("model.$id.desc")) tr("model.$id.desc") else baseDescription
     override val tags: List<String>
@@ -157,7 +160,7 @@ data class BlouseModel(
         )
 
     override val requiredMeasurements: List<MeasurementField>
-        get() = MeasurementField.body.filter { f ->
+        get() = MeasurementField.blouse.filter { f ->
             when (f) {
                 MeasurementField.SLEEVE_LENGTH, MeasurementField.SLEEVE_OPENING ->
                     effectiveSleeve != SleeveStyle.SLEEVELESS && effectiveSleeve != SleeveStyle.CAP

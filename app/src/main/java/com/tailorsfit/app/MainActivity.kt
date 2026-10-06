@@ -108,6 +108,10 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
     val modelArg = listOf(navArgument("modelId") { type = NavType.StringType })
     val route = nav.currentBackStackEntryAsState().value?.destination?.route
 
+    // Blouses are customised first (necks, sleeves ...); other garments go straight to measuring.
+    fun open(modelId: String) = nav.navigate(
+        if (vm.model(modelId) is com.tailorsfit.pattern.blouse.BlouseModel) Routes.customize(modelId) else Routes.measure(modelId),
+    )
     fun toAuth() = nav.navigate(Routes.AUTH) { popUpTo(nav.graph.id) { inclusive = true } }
     fun toHome() = nav.navigate(Routes.HOME) { popUpTo(nav.graph.id) { inclusive = true } }
     fun toAdmin() = nav.navigate(Routes.ADMIN) { popUpTo(nav.graph.id) { inclusive = true } }
@@ -193,7 +197,7 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
                     vm = vm,
                     onMenu = { scope.launch { drawer.open() } },
                     onCategory = { nav.navigate(Routes.catalog(it)) },
-                    onModel = { nav.navigate(Routes.customize(it)) },
+                    onModel = { open(it) },
                     onCustomers = { nav.navigate(Routes.CUSTOMERS) },
                     onCustomer = { c ->
                         vm.selectCustomer(c)
@@ -217,7 +221,7 @@ private fun AppContent(vm: AppViewModel, startRoute: String?, customer: String?)
                 CatalogScreen(
                     categoryId = entry.arguments?.getString("categoryId") ?: "blouse",
                     onBack = back,
-                    onModel = { nav.navigate(Routes.customize(it)) },
+                    onModel = { open(it) },
                     onDesignOwn = { nav.navigate(Routes.customize(Routes.NEW_DESIGN)) },
                 )
             }

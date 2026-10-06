@@ -63,7 +63,8 @@ class GeometryAndLayoutTest {
             val pattern = model.draft(Measurements.defaults())
             val opts = LayoutOptions(fabricWidth = 90.0)
             val layout = LayoutEngine.layout(pattern, opts)
-            assertEquals(pattern.pieces.size, layout.placed.size)
+            // One placement per fold piece, one per pair (a frill cut 4 is two pairs).
+            assertEquals(pattern.pieces.sumOf { if (it.cut.onFold) it.cut.count else (it.cut.count + 1) / 2 }, layout.placed.size)
             val boxes = layout.placed.map { it.piece.bounds(opts.allowances).translated(it.offset.x, it.offset.y) }
             assertNoOverlaps(layout, model.id)
             for ((pp, box) in layout.placed.zip(boxes)) {

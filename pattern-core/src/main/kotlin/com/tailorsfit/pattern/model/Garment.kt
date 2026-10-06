@@ -25,20 +25,25 @@ interface GarmentModel {
     val tags: List<String>
     val requiredMeasurements: List<MeasurementField>
 
+    /** Tab the design is listed under in its category (blouse type, kurti cut, lehenga / skirt). */
+    val group: String get() = ""
+
     fun draft(measurements: Measurements, options: DraftOptions = DraftOptions()): Pattern
 }
 
 object Catalog {
     val categories = listOf(
         GarmentCategory("blouse", available = true),
-        GarmentCategory("kurti", available = false),
+        GarmentCategory("kurti", available = true),
         GarmentCategory("salwar", available = false),
-        GarmentCategory("lehenga", available = false),
+        GarmentCategory("lehenga", available = true),
         GarmentCategory("petticoat", available = false),
     )
 
     /** Designs that ship with the app. */
-    val builtIn: List<GarmentModel> by lazy { com.tailorsfit.pattern.blouse.BlouseCatalog.models }
+    val builtIn: List<GarmentModel> by lazy {
+        com.tailorsfit.pattern.blouse.BlouseCatalog.models + com.tailorsfit.pattern.kurti.KurtiCatalog.models + com.tailorsfit.pattern.skirt.SkirtCatalog.models
+    }
 
     /** Designs added by an admin (kept by the app and handed in with [configure]). */
     @Volatile

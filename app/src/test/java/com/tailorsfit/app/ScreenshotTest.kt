@@ -237,6 +237,26 @@ class ScreenshotTest {
     }
 
     @Test
+    fun kurtiAndLehengaCatalogs() {
+        show { CatalogScreen("kurti", onBack = {}, onModel = {}) }
+        awaitText("Anarkali")
+        save("50-catalog-kurtis")
+        compose.onNodeWithText("Anarkali").performClick()
+        save("50b-catalog-anarkali")
+    }
+
+    @Test
+    fun lehengaCatalogAndPattern() {
+        show { CatalogScreen("lehenga", onBack = {}, onModel = {}) }
+        awaitText("Skirt")
+        save("51-catalog-lehenga")
+        val vm = vm()
+        show { CutPatternsScreen(vm, "lehenga_kali12", onBack = {}, onProject = {}) }
+        awaitText("Tap a piece")
+        save("52-cut-lehenga")
+    }
+
+    @Test
     fun cutPatterns() {
         val vm = vm()
         show { CutPatternsScreen(vm, "blouse_katori_sweetheart", onBack = {}, onProject = {}) }

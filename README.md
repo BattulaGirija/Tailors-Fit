@@ -15,6 +15,14 @@ list: basic, boat, close, high and halter necks and bottom waves, each with fron
 in princess cut, plus net yoke backs, net front inserts, curved bottoms, a princess seam from the
 middle of the shoulder and the Bengaluru models.
 
+**Kurtis** (14 designs): straight with side slits (round, V, square, boat neck with puff sleeves,
+mandarin collar), A-line, flared, high-low and anarkali (12 or 16 kalis), with short, elbow, ¾,
+full, bell or puff sleeves.
+
+**Lehenga & Skirts** (18 designs): 8 / 12 / 16 / 24 kali lehengas, circular, half circle, A-line,
+mermaid (fishtail), gathered ghagra and tiered lehengas; A-line, pencil, circle, half circle,
+gathered, tiered, box pleated and 6-panel skirts.
+
 ## Download (test version)
 
 **https://github.com/BattulaGirija/Tailors-Fit/releases/latest/download/TailorsFit.apk**
@@ -158,6 +166,17 @@ cut on the fold.
 Seam allowances: neck and armhole ⅜", shoulder ⅝", side 1" (room to let out), bottom and sleeve
 hem ¾", hook overlap 1", princess seam ⅝". The app also warns about suspicious measurements (for
 example, front shorter than back, or an arm round too big for the armhole).
+
+## Drafting method (kurti, lehenga, skirt)
+
+| Part | Rule |
+|---|---|
+| Kurti body | chest / 4 + 1", natural waist / 4 + 1", hip / 4 + ¾"; ¾" shoulder slope; the armhole as deep as needed for front + back curves = armhole round + 1"; a 1" side dart on the front pointing at the bust point (the front is 1" longer below it so the side seams match) |
+| Kurti hem | straight: hip + ½"; A-line and high-low: hip + 3"; flared: hip + 6"; high-low back 3" longer at the centre; slits open from 2" below the hip |
+| Anarkali | bodice to the waist with a dart under the bust; kalis from the waist (waist + 4") over the hip (hip + 4") to a hem about four times the waist |
+| Skirt | waist + 1", hip + 2", length below a 1½" waistband; A-line and pencil have a dart each side; kalis and circle sectors have curved hems that stay level once joined; circles are cut as 16 (full) or 8 (half) sectors so they fit normal cloth |
+| Gathered, tiered, pleated | straight panels up to 100 cm wide: gathered 2–3× the hip, tiers 1.3× the hip then 1.5× each, box pleats 3× the waist |
+| Closing | lehengas: drawstring casing and a 9" side placket; skirts: waistband with a 2" overlap and a zip |
 
 ## Laying pieces on the cloth (nesting)
 

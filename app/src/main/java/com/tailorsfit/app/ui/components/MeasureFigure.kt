@@ -72,6 +72,12 @@ fun MeasureFigure(field: MeasurementField, modifier: Modifier = Modifier) {
             MeasurementField.SLEEVE_LENGTH -> line(23f to 33f, 19f to 52f)
             MeasurementField.SLEEVE_ROUND -> loop(24.5f, 45f, 6.5f, 2.2f)
             MeasurementField.SLEEVE_OPENING -> loop(22.5f, 52f, 6f, 2f)
+            MeasurementField.NATURAL_WAIST -> loop(50f, 77f, 16.5f, 3f)
+            MeasurementField.HIP -> loop(50f, 91f, 18.5f, 3.2f)
+            MeasurementField.WAIST_LENGTH -> line(45f to 26f, 40f to 54f, 40f to 77f)
+            MeasurementField.WAIST_TO_HIP -> line(33.5f to 77f, 32.5f to 91f)
+            MeasurementField.KURTI_LENGTH -> line(45f to 26f, 40f to 54f, 40f to 106f)
+            MeasurementField.SKIRT_LENGTH -> line(50f to 77f, 50f to 107f)
             else -> Unit
         }
     }

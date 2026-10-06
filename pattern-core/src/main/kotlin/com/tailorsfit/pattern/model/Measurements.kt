@@ -65,6 +65,14 @@ enum class MeasurementField(
     SHOULDER("shoulder", 36.0, 28.0, 50.0),
     ARMHOLE("armhole", 40.5, 30.0, 60.0),
 
+    // Kurtis, lehengas and skirts.
+    NATURAL_WAIST("natural_waist", 76.0, 50.0, 150.0),
+    HIP("hip", 99.0, 60.0, 170.0),
+    WAIST_LENGTH("waist_length", 39.5, 28.0, 55.0),
+    WAIST_TO_HIP("waist_to_hip", 20.5, 12.0, 35.0),
+    KURTI_LENGTH("kurti_length", 106.5, 60.0, 150.0),
+    SKIRT_LENGTH("skirt_length", 101.5, 40.0, 130.0),
+
     // Customization details (adjustments), in cm on the stitching line.
     FRONT_LENGTH("front_length", Double.NaN, 28.0, 60.0, isAdjustment = true),
     APEX_TO_APEX("apex_to_apex", Double.NaN, 12.0, 28.0, isAdjustment = true),
@@ -95,6 +103,13 @@ enum class MeasurementField(
 
         /** Body measurements (taken with the tape). */
         val body: List<MeasurementField> get() = entries.filter { !it.isAdjustment }
+
+        /** The tailor's blouse measurement sheet. */
+        val blouse: List<MeasurementField>
+            get() = listOf(
+                BACK_LENGTH, UPPER_CHEST, BUST, SHOULDER_WIDTH, SLEEVE_LENGTH, SLEEVE_OPENING, SLEEVE_ROUND,
+                FRONT_NECK_DEPTH, BACK_NECK_DEPTH, WAIST, APEX_LENGTH, CHEST_HEIGHT, SHOULDER, ARMHOLE,
+            )
 
         /** Optional drafting adjustments. */
         val adjustments: List<MeasurementField> get() = entries.filter { it.isAdjustment }
@@ -155,6 +170,12 @@ enum class SizePreset(val label: String, private val bust: Double) {
             MeasurementField.SLEEVE_LENGTH to 0.0,
             MeasurementField.SLEEVE_ROUND to 2.0,
             MeasurementField.SLEEVE_OPENING to 1.5,
+            MeasurementField.NATURAL_WAIST to 5.0,
+            MeasurementField.HIP to 5.0,
+            MeasurementField.WAIST_LENGTH to 0.5,
+            MeasurementField.WAIST_TO_HIP to 0.3,
+            MeasurementField.KURTI_LENGTH to 0.0,
+            MeasurementField.SKIRT_LENGTH to 0.0,
         )
         return Measurements(MeasurementField.body.associateWith { f -> f.defaultCm + (grade[f] ?: 0.0) * step })
     }

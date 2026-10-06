@@ -285,7 +285,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val keepNeck = currentMeasurements()
         var m = p.measurements()
         // Neck depths and sleeve length are style choices, keep what the tailor typed.
-        for (f in listOf(MeasurementField.FRONT_NECK_DEPTH, MeasurementField.BACK_NECK_DEPTH, MeasurementField.SLEEVE_LENGTH) + MeasurementField.adjustments) {
+        for (f in listOf(MeasurementField.FRONT_NECK_DEPTH, MeasurementField.BACK_NECK_DEPTH, MeasurementField.SLEEVE_LENGTH, MeasurementField.KURTI_LENGTH, MeasurementField.SKIRT_LENGTH) + MeasurementField.adjustments) {
             if (keepNeck.has(f)) m = m.with(f, keepNeck[f])
         }
         fillFrom(m)

@@ -95,7 +95,7 @@ fun GarmentPreviewCard(model: GarmentModel, measurements: Measurements, modifier
     val views = remember(model, measurements) {
         val pattern = runCatching { model.draft(measurements) }.getOrNull()
             ?: runCatching { model.draft(Measurements.defaults()) }.getOrNull()
-        pattern?.let { Illustration.blouse(it) } ?: emptyList()
+        pattern?.let { Illustration.of(it) } ?: emptyList()
     }
 
     Surface(
@@ -156,8 +156,9 @@ fun GarmentPreviewCard(model: GarmentModel, measurements: Measurements, modifier
 @Composable
 fun BlouseSketch(model: GarmentModel, back: Boolean, modifier: Modifier = Modifier, cloth: Color = Color(0xFF7B1E2B)) {
     val view = remember(model.id, back) {
-        val m = (model as? com.tailorsfit.pattern.blouse.BlouseModel)?.sleeve?.sketchMeasurements() ?: Measurements.defaults()
-        runCatching { Illustration.blouse(model.draft(m)) }.getOrNull()
+        val sleeve = (model as? com.tailorsfit.pattern.blouse.BlouseModel)?.sleeve ?: (model as? com.tailorsfit.pattern.kurti.KurtiModel)?.sleeve
+        val m = sleeve?.sketchMeasurements() ?: Measurements.defaults()
+        runCatching { Illustration.of(model.draft(m)) }.getOrNull()
             ?.let { views -> views.getOrNull(if (back) 1 else 0) }
     }
     Canvas(modifier) {

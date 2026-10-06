@@ -65,8 +65,13 @@ object LayoutEngine {
     fun layout(pattern: Pattern, options: LayoutOptions = LayoutOptions()): Layout {
         val usableWidth = if (options.folded) options.fabricWidth / 2 else options.fabricWidth
         val turn = options.allowTurning
+        // A piece cut more than twice (kalis, skirt panels) is placed once per copy (per pair on
+        // folded cloth).
+        fun copies(p: Piece, n: Int): List<Piece> = (0 until n).map { i -> if (i == 0) p else p.copy(id = p.id + "_" + (i + 1)) }
         val items: List<NestItem> = if (options.folded) {
-            pattern.pieces.map { p ->
+            pattern.pieces.flatMap { p ->
+                copies(p, if (p.cut.onFold) p.cut.count.coerceAtLeast(1) else (p.cut.count + 1) / 2)
+            }.map { p ->
                 if (p.cut.onFold) {
                     NestItem(p, listOfNotNull(Orientation.NORMAL, Orientation.FLIPPED.takeIf { turn }), onFold = true)
                 } else {
@@ -81,8 +86,10 @@ object LayoutEngine {
         } else {
             pattern.pieces.flatMap { p ->
                 when {
-                    p.cut.onFold -> listOf(p.unfolded())
-                    p.cut.count >= 2 -> listOf(p, p.mirrored().copy(id = p.id + "_2"))
+                    p.cut.onFold -> copies(p.unfolded(), p.cut.count.coerceAtLeast(1))
+                    p.cut.count >= 2 -> (0 until p.cut.count).map { i ->
+                        if (i % 2 == 0) (if (i == 0) p else p.copy(id = p.id + "_" + (i + 1))) else p.mirrored().copy(id = p.id + "_" + (i + 1))
+                    }
                     else -> listOf(p)
                 }
             }.map { NestItem(it, listOfNotNull(Orientation.NORMAL, Orientation.ROTATED.takeIf { turn }), onFold = false) }
