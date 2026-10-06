@@ -748,5 +748,11 @@ object StringsEn {
         "warn.no_yoke" to "The back neck is too deep for a net yoke; it was left out.",
         "mix.back_yoke" to "Net back yoke",
         "mix.front_insert" to "Net front insert",
+        "model.blouse_saby_new3.name" to "Sabyasachi Model New 3",
+        "model.blouse_saby_new3.desc" to "Deep sweetheart front with shoulder-to-bust cup seams and a belt, round back, short sleeves. Front hooks.",
+        "model.blouse_saby_new4.name" to "Sabyasachi Model New 4",
+        "model.blouse_saby_new4.desc" to "Round front neck with shoulder-to-bust cup seams and a belt, round back, short sleeves. Front hooks.",
+        "model.blouse_saby_new5.name" to "Sabyasachi Model New 5",
+        "model.blouse_saby_new5.desc" to "Wide, deep U front with shoulder-to-bust cup seams and a belt, shallow round back, short sleeves. Front hooks.",
     )
 }

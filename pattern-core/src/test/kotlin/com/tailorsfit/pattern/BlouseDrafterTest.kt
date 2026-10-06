@@ -352,7 +352,7 @@ class BlouseDrafterTest {
 
     @Test
     fun beltedFrontsHaveCupsAndABeltThatFit() {
-        for (id in listOf("blouse_katori_sweetheart", "blouse_katori_round", "blouse_sabyasachi_square", "blouse_sabyasachi_v")) for (m in sizes) {
+        for (id in listOf("blouse_katori_sweetheart", "blouse_katori_round", "blouse_sabyasachi_square", "blouse_sabyasachi_v", "blouse_saby_new3", "blouse_saby_new4", "blouse_saby_new5")) for (m in sizes) {
             val p = BlouseCatalog.models.first { it.id == id }.draft(m)
             val centre = p.pieces.first { it.id == "front_centre" }
             val side = p.pieces.first { it.id == "front_side" }

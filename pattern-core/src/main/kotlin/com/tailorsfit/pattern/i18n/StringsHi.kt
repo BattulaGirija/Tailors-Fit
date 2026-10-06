@@ -736,5 +736,11 @@ object StringsHi {
         "warn.no_yoke" to "पीछे का गला नेट योक के लिए बहुत गहरा है; योक छोड़ दिया गया।",
         "mix.back_yoke" to "पीछे नेट योक",
         "mix.front_insert" to "आगे नेट",
+        "model.blouse_saby_new3.name" to "सब्यसाची नया मॉडल 3",
+        "model.blouse_saby_new3.desc" to "आगे गहरा स्वीटहार्ट गला, कंधे से छाती तक कप सिलाई और बेल्ट, पीछे गोल, छोटी आस्तीन। आगे हुक।",
+        "model.blouse_saby_new4.name" to "सब्यसाची नया मॉडल 4",
+        "model.blouse_saby_new4.desc" to "आगे गोल गला, कंधे से छाती तक कप सिलाई और बेल्ट, पीछे गोल, छोटी आस्तीन। आगे हुक।",
+        "model.blouse_saby_new5.name" to "सब्यसाची नया मॉडल 5",
+        "model.blouse_saby_new5.desc" to "आगे चौड़ा गहरा U गला, कंधे से छाती तक कप सिलाई और बेल्ट, पीछे उथला गोल गला, छोटी आस्तीन। आगे हुक।",
     )
 }

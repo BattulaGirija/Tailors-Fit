@@ -892,5 +892,23 @@ object BlouseCatalog {
             NeckSpec(NeckShape.V, depthFactor = 1.2), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
             body = BodyStyle.SABYASACHI,
         ),
+        BlouseModel(
+            "blouse_saby_new3", "Sabyasachi Model New 3",
+            "Deep sweetheart front with shoulder-to-bust cup seams and a belt, round back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.SWEETHEART, widen = 0.5, depthFactor = 1.2), NeckSpec(NeckShape.ROUND, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.SABYASACHI,
+        ),
+        BlouseModel(
+            "blouse_saby_new4", "Sabyasachi Model New 4",
+            "Round front neck with shoulder-to-bust cup seams and a belt, round back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.ROUND, widen = 0.5), NeckSpec(NeckShape.ROUND, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.SABYASACHI,
+        ),
+        BlouseModel(
+            "blouse_saby_new5", "Sabyasachi Model New 5",
+            "Wide, deep U front with shoulder-to-bust cup seams and a belt, shallow round back, short sleeves. Front hooks.",
+            NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.2), NeckSpec(NeckShape.ROUND, widen = 1.0, depthFactor = 0.6), SleeveStyle.SHORT, Opening.FRONT,
+            body = BodyStyle.SABYASACHI,
+        ),
     )
 }
