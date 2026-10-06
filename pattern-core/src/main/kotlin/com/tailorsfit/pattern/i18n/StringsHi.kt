@@ -742,5 +742,11 @@ object StringsHi {
         "model.blouse_saby_new4.desc" to "आगे गोल गला, कंधे से छाती तक कप सिलाई और बेल्ट, पीछे गोल, छोटी आस्तीन। आगे हुक।",
         "model.blouse_saby_new5.name" to "सब्यसाची नया मॉडल 5",
         "model.blouse_saby_new5.desc" to "आगे चौड़ा गहरा U गला, कंधे से छाती तक कप सिलाई और बेल्ट, पीछे उथला गोल गला, छोटी आस्तीन। आगे हुक।",
+        "custom.step.front" to "आगे का गला",
+        "custom.step.back" to "पीछे का गला",
+        "custom.step.sleeve" to "आस्तीन",
+        "custom.step.blouse" to "ब्लाउज़ विवरण",
+        "custom.next" to "आगे: %s",
+        "custom.prev" to "पीछे",
     )
 }

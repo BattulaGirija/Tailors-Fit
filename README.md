@@ -30,10 +30,12 @@ published to the same link and installs over the previous version.
 1. **Pick a design.** Home → *Saree Blouses*. Designs are grouped in tabs (**All, 3 Dart,
    4 Dart, Princess, Katori, Sabyasachi**) with a search box; every sketch is drawn from the
    design's real draft. Or tap **Design your own** to start from a plain blouse.
-2. **Customise it.** A front / back sketch with three tabs: **Blouse** (type, where the hooks
-   go, **Halter**, **Bottom waves**, **Patti**, **Bottom curve**, **Shoulder cut**, and a **net back
-   yoke** or **net front insert** with a straight, V, round, scallop or sweetheart edge), **Sleeve**, and **Neck** with **Front** and **Back** (shape and depth, including pot,
-   paan, keyhole and dori backs).
+2. **Customise it**, one window at a time, with a front / back sketch that follows every choice:
+   **Front neck** → **Back neck** (shape and depth, including pot, paan, keyhole and dori backs)
+   → **Sleeves** → **Blouse details** (type, where the hooks go, **Halter**, **Bottom waves**,
+   **Patti**, **Bottom curve**, **Shoulder cut**, and a **net back yoke** or **net front insert**
+   with a straight, V, round, scallop or sweetheart edge). **Next** and **Back** move between the
+   windows, and the step bar at the top jumps straight to any of them.
 3. **Enter measurements** in inches or cm, in the order of a tailor's blouse sheet: Length,
    Upper chest, Center chest, Shoulder width, Sleeve length, Sleeve round, Middle hand round,
    Front neck height, Back neck height, Waist loose, Front dart point, Chest height, Full

@@ -199,20 +199,24 @@ class ScreenshotTest {
     fun customizeBlouse() {
         val vm = vm()
         show { CustomizeScreen(vm, "blouse_round_classic", onBack = {}, onNext = {}) }
-        awaitText("Katori")
-        save("40-customize-blouse")
-        compose.onNodeWithText("Katori").performClick()
-        compose.onNodeWithText("Sleeve").performClick()
+        // Steps: front neck -> back neck -> sleeves -> blouse details.
+        compose.onNodeWithText("Next: Back neck").performClick()
+        compose.onNodeWithText("Next: Sleeves").performClick()
         save("41-customize-sleeve")
+        compose.onNodeWithText("Next: Blouse details").performClick()
+        awaitText("Katori")
+        compose.onNodeWithText("Katori").performClick()
+        save("40-customize-blouse")
+        compose.onNodeWithText("Enter measurements", substring = true).assertExists()
     }
 
     @Test
     fun customizeNeck() {
         val vm = vm()
         show { CustomizeScreen(vm, "blouse_sabyasachi_square", onBack = {}, onNext = {}) }
-        compose.onNodeWithText("Neck").performClick()
+        awaitText("Front neck")
         save("42-customize-front-neck")
-        compose.onNode(hasText("Back") and hasClickAction()).performClick()
+        compose.onNodeWithText("Next: Back neck").performClick()
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Pot (matka)"))
         compose.onNodeWithText("Pot (matka)").performClick()
         save("43-customize-back-neck")

@@ -754,5 +754,11 @@ object StringsEn {
         "model.blouse_saby_new4.desc" to "Round front neck with shoulder-to-bust cup seams and a belt, round back, short sleeves. Front hooks.",
         "model.blouse_saby_new5.name" to "Sabyasachi Model New 5",
         "model.blouse_saby_new5.desc" to "Wide, deep U front with shoulder-to-bust cup seams and a belt, shallow round back, short sleeves. Front hooks.",
+        "custom.step.front" to "Front neck",
+        "custom.step.back" to "Back neck",
+        "custom.step.sleeve" to "Sleeves",
+        "custom.step.blouse" to "Blouse details",
+        "custom.next" to "Next: %s",
+        "custom.prev" to "Back",
     )
 }

@@ -32,13 +32,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,13 +64,14 @@ import com.tailorsfit.pattern.blouse.NeckDepth
 import com.tailorsfit.pattern.blouse.Opening
 import com.tailorsfit.pattern.blouse.SleeveStyle
 
-private enum class CustomTab { BLOUSE, SLEEVE, NECK }
+/** The customisation steps, one window each, in the order a tailor decides them. */
+private enum class Step { FRONT, BACK, SLEEVE, BLOUSE }
 private enum class SketchView { BOTH, FRONT, BACK }
 
 /**
- * Customise a design before measuring: the blouse type, the sleeves, and the front and back
- * necks, with a sketch that follows every choice. Choices live in [AppViewModel.spec]; "Next"
- * opens the measurements for the resulting design.
+ * Customise a design before measuring, one step at a time: front neck, then back neck, then
+ * sleeves, then the blouse details (type, hooks, patti, net ...), with a sketch that follows
+ * every choice. Choices live in [AppViewModel.spec]; the last step opens the measurements.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,21 +86,46 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
     }
     val spec = vm.spec
     val model = remember(spec) { spec.toModel() }
-    var tab by rememberSaveable { mutableStateOf(CustomTab.BLOUSE) }
-    var neckBack by rememberSaveable { mutableStateOf(false) }
-    var view by rememberSaveable { mutableStateOf(SketchView.BOTH) }
+    var step by rememberSaveable { mutableStateOf(Step.FRONT) }
+    var view by rememberSaveable { mutableStateOf(SketchView.FRONT) }
     var frontDepth by rememberSaveable { mutableStateOf(NeckDepth.REGULAR) }
     var backDepth by rememberSaveable { mutableStateOf(NeckDepth.REGULAR) }
+    fun go(to: Step) {
+        step = to
+        view = when (to) {
+            Step.FRONT -> SketchView.FRONT
+            Step.BACK -> SketchView.BACK
+            else -> SketchView.BOTH
+        }
+    }
+    val back = { if (step.ordinal > 0) go(Step.entries[step.ordinal - 1]) else onBack() }
+    androidx.activity.compose.BackHandler(enabled = step.ordinal > 0) { back() }
 
     Scaffold(
-        topBar = { AppBar(tr("custom.title"), onBack) },
+        topBar = { AppBar(tr("custom.title"), back) },
         bottomBar = {
             Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.background) {
-                Button(
-                    onClick = { onNext(model.id) },
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp).height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Brand.Aubergine, contentColor = Brand.Ivory),
-                ) { Text(tr("mix.measure"), style = MaterialTheme.typography.labelLarge) }
+                Row(
+                    Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (step.ordinal > 0) {
+                        OutlinedButton(onClick = back, modifier = Modifier.weight(1f).height(50.dp)) {
+                            Text(tr("custom.prev"), style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                    val last = step == Step.entries.last()
+                    Button(
+                        onClick = { if (last) onNext(model.id) else go(Step.entries[step.ordinal + 1]) },
+                        modifier = Modifier.weight(2f).height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Brand.Aubergine, contentColor = Brand.Ivory),
+                    ) {
+                        Text(
+                            if (last) tr("mix.measure") else tr("custom.next", tr("custom.step.${Step.entries[step.ordinal + 1].name.lowercase()}")),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+                }
             }
         },
     ) { padding ->
@@ -111,6 +136,7 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            full { StepBar(step, ::go) }
             full {
                 SketchPanel(model, view) { view = it }
             }
@@ -118,15 +144,55 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
                 // Breadcrumb like "3 Dart · Elbow sleeve · Round front · U back".
                 Text(model.tags.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Brand.Plum)
             }
-            full {
-                TabRow(selectedTabIndex = tab.ordinal, containerColor = MaterialTheme.colorScheme.background) {
-                    CustomTab.entries.forEach { t ->
-                        Tab(selected = tab == t, onClick = { tab = t }, text = { Text(tr("custom.tab.${t.name.lowercase()}")) })
+            when (step) {
+                Step.FRONT, Step.BACK -> {
+                    val neckBack = step == Step.BACK
+                    full {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(tr("mix.depth"), style = MaterialTheme.typography.labelLarge, color = Brand.Muted)
+                            val depth = if (neckBack) backDepth else frontDepth
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                NeckDepth.entries.forEach { d ->
+                                    FilterChip(selected = d == depth, onClick = {
+                                        // Re-apply the current neck shape at the new depth.
+                                        if (neckBack) {
+                                            backDepth = d
+                                            currentBack(spec)?.let { vm.spec = spec.withBack(it, d) }
+                                        } else {
+                                            frontDepth = d
+                                            currentFront(spec)?.let { vm.spec = spec.withFront(it, d) }
+                                        }
+                                    }, label = { Text(d.label) })
+                                }
+                            }
+                        }
+                    }
+                    if (neckBack) {
+                        items(BackNeck.entries, key = { "back" + it.name }) { n ->
+                            val option = remember(spec, n, backDepth) { spec.withBack(n, backDepth).toModel() }
+                            OptionTile(n.label, currentBack(spec) == n, onClick = { vm.spec = spec.withBack(n, backDepth) }) {
+                                BlouseSketch(option, back = true, modifier = Modifier.fillMaxSize())
+                            }
+                        }
+                        if (spec.backDetail != com.tailorsfit.pattern.blouse.BackDetail.NONE) full {
+                            Text(tr("mix.front_hooks_needed", spec.backDetail.label), style = MaterialTheme.typography.bodySmall, color = Brand.Muted)
+                        }
+                    } else {
+                        items(FrontNeck.entries, key = { "front" + it.name }) { n ->
+                            val option = remember(spec, n, frontDepth) { spec.withFront(n, frontDepth).toModel() }
+                            OptionTile(n.label, currentFront(spec) == n, onClick = { vm.spec = spec.withFront(n, frontDepth) }) {
+                                BlouseSketch(option, back = false, modifier = Modifier.fillMaxSize())
+                            }
+                        }
                     }
                 }
-            }
-            when (tab) {
-                CustomTab.BLOUSE -> {
+                Step.SLEEVE -> items(SleeveStyle.entries, key = { "sleeve" + it.name }) { s ->
+                    val option = remember(spec, s) { spec.copy(sleeve = s).toModel() }
+                    OptionTile(s.label, spec.sleeve == s, onClick = { vm.spec = spec.copy(sleeve = s) }) {
+                        BlouseSketch(option, back = false, modifier = Modifier.fillMaxSize())
+                    }
+                }
+                Step.BLOUSE -> {
                     items(BodyStyle.entries, key = { "body" + it.name }) { b ->
                         val option = remember(spec, b) { spec.copy(body = b).toModel() }
                         OptionTile(b.label, spec.body == b, onClick = { vm.spec = spec.copy(body = b) }) {
@@ -205,61 +271,37 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
                         }
                     }
                 }
-                CustomTab.SLEEVE -> items(SleeveStyle.entries, key = { "sleeve" + it.name }) { s ->
-                    val option = remember(spec, s) { spec.copy(sleeve = s).toModel() }
-                    OptionTile(s.label, spec.sleeve == s, onClick = { vm.spec = spec.copy(sleeve = s) }) {
-                        BlouseSketch(option, back = false, modifier = Modifier.fillMaxSize())
-                    }
+            }
+        }
+    }
+}
+
+/** Numbered steps; a step can be tapped to go straight to it. */
+@Composable
+private fun StepBar(step: Step, onStep: (Step) -> Unit) {
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Step.entries.forEachIndexed { i, s ->
+            val current = s == step
+            val done = s.ordinal < step.ordinal
+            Row(
+                Modifier.clip(RoundedCornerShape(50)).clickable { onStep(s) }
+                    .background(if (current) Brand.Aubergine else MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(
+                    Modifier.size(20.dp).clip(CircleShape).background(if (current || done) Brand.Gold else Brand.Line),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = Brand.AubergineDeep, modifier = Modifier.size(14.dp))
+                    else Text("${i + 1}", style = MaterialTheme.typography.labelSmall, color = Brand.AubergineDeep)
                 }
-                CustomTab.NECK -> {
-                    full {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                                listOf(false to tr("custom.neck.front"), true to tr("custom.neck.back")).forEachIndexed { i, (isBack, label) ->
-                                    SegmentedButton(
-                                        selected = neckBack == isBack,
-                                        onClick = { neckBack = isBack; view = if (isBack) SketchView.BACK else SketchView.FRONT },
-                                        shape = SegmentedButtonDefaults.itemShape(i, 2),
-                                    ) { Text(label) }
-                                }
-                            }
-                            Text(tr("mix.depth"), style = MaterialTheme.typography.labelLarge, color = Brand.Muted)
-                            val depth = if (neckBack) backDepth else frontDepth
-                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                NeckDepth.entries.forEach { d ->
-                                    FilterChip(selected = d == depth, onClick = {
-                                        // Re-apply the current neck shape at the new depth.
-                                        if (neckBack) {
-                                            backDepth = d
-                                            currentBack(spec)?.let { vm.spec = spec.withBack(it, d) }
-                                        } else {
-                                            frontDepth = d
-                                            currentFront(spec)?.let { vm.spec = spec.withFront(it, d) }
-                                        }
-                                    }, label = { Text(d.label) })
-                                }
-                            }
-                        }
-                    }
-                    if (neckBack) {
-                        items(BackNeck.entries, key = { "back" + it.name }) { n ->
-                            val option = remember(spec, n, backDepth) { spec.withBack(n, backDepth).toModel() }
-                            OptionTile(n.label, currentBack(spec) == n, onClick = { vm.spec = spec.withBack(n, backDepth) }) {
-                                BlouseSketch(option, back = true, modifier = Modifier.fillMaxSize())
-                            }
-                        }
-                        if (spec.backDetail != com.tailorsfit.pattern.blouse.BackDetail.NONE) full {
-                            Text(tr("mix.front_hooks_needed", spec.backDetail.label), style = MaterialTheme.typography.bodySmall, color = Brand.Muted)
-                        }
-                    } else {
-                        items(FrontNeck.entries, key = { "front" + it.name }) { n ->
-                            val option = remember(spec, n, frontDepth) { spec.withFront(n, frontDepth).toModel() }
-                            OptionTile(n.label, currentFront(spec) == n, onClick = { vm.spec = spec.withFront(n, frontDepth) }) {
-                                BlouseSketch(option, back = false, modifier = Modifier.fillMaxSize())
-                            }
-                        }
-                    }
-                }
+                Text(
+                    tr("custom.step.${s.name.lowercase()}"),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (current) Brand.Ivory else MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
     }

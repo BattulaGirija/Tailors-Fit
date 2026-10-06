@@ -742,5 +742,11 @@ object StringsTe {
         "model.blouse_saby_new4.desc" to "ముందు గుండ్రటి మెడ, భుజం నుండి ఛాతీ వరకు కప్ కుట్లు, బెల్ట్, వెనుక గుండ్రటి, పొట్టి చేతులు. ముందు హుక్స్.",
         "model.blouse_saby_new5.name" to "సబ్యసాచి కొత్త మోడల్ 5",
         "model.blouse_saby_new5.desc" to "ముందు వెడల్పు లోతైన U మెడ, భుజం నుండి ఛాతీ వరకు కప్ కుట్లు, బెల్ట్, వెనుక లోతు తక్కువ గుండ్రటి మెడ, పొట్టి చేతులు. ముందు హుక్స్.",
+        "custom.step.front" to "ముందు మెడ",
+        "custom.step.back" to "వెనుక మెడ",
+        "custom.step.sleeve" to "చేతులు",
+        "custom.step.blouse" to "బ్లౌజ్ వివరాలు",
+        "custom.next" to "తర్వాత: %s",
+        "custom.prev" to "వెనుకకు",
     )
 }
