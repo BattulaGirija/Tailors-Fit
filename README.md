@@ -148,10 +148,10 @@ cut on the fold.
 | Chest | chest / 4 + 1" for each of front and back (4" ease in all) |
 | Waist | waist / 4 + 1"; the difference from the chest is split between the side seam (about ⅓) and a dart under the bust (at most 1¾") |
 | Shoulder | shoulder / 2 from the centre, ½" slope; neck width about 2½" |
-| Armhole | as deep as needed for the front + back armhole curves to be the armhole round + 1" (for a size 36 with a 12" shoulder this is the usual 6" deep armhole). The front is scooped 1" in from the shoulder tip, the back ½" |
+| Armhole (arm round) | leaves the shoulder end straight down, then curves out to meet the chest line level at the underarm (the back a little flatter); as deep as needed for front + back curves to be the arm round (about 6" for a size 36). The arm-curve adjustments cut it further in near the shoulder |
 | Bust point | apex-to-apex / 2 across, apex length (corrected for the slant) down |
 | Front length | the side dart takes up to 1¼" of the extra front length; any more lifts the bottom of the front at the side, so the front bottom curves down to the centre and both side seams match |
-| Sleeve | underarm width = arm round + 2"; the cap is ½" shorter than the blouse armhole (the armhole is eased onto it), which gives the low cap of a blouse sleeve (about 4") |
+| Sleeve | underarm width = arm round + 2"; the cap is ½" longer than the blouse armhole and eased into it, which gives the low cap of a blouse sleeve (about 4") |
 | Princess cut | the front is split along a curve from the armhole through the bust point to the bottom; the dart under the bust becomes the gap between the two curves at the bottom |
 | Halter | the shoulder ends 1¾" from the neck point, front and back; no sleeve |
 | Bottom waves | the bottom edge is cut in a whole number of scallops about 3" long and ⅖" deep; the darts still open on it |

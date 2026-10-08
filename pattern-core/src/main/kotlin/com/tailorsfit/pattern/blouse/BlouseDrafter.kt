@@ -54,8 +54,8 @@ object BlouseDrafter {
     const val SLEEVE_EASE = 2 * INCH
     /** Ease at the sleeve hem and in the puff sleeve band. */
     const val SLEEVE_HEM_EASE = 0.75 * INCH
-    /** Armhole drafted this much bigger than the armhole round. */
-    const val ARMHOLE_EASE = 1 * INCH
+    /** Armhole drafted this much bigger than the arm round (none: front + back curves = the arm round, as tailors draft it). */
+    const val ARMHOLE_EASE = 0.0
     /** Largest side dart; extra front length is taken by lifting the front bottom at the side. */
     const val MAX_SIDE_DART = 1.25 * INCH
     /** Largest dart under the bust (bottom dart). */
@@ -63,10 +63,10 @@ object BlouseDrafter {
     /** Narrowest shoulder strap left beside a wide neck. */
     const val MIN_STRAP = 1.25 * INCH
     /**
-     * Sleeve cap length compared with the blouse armhole. As in traditional blouse cutting the
-     * cap is ½" shorter and the armhole is eased onto it, which keeps the cap low (about 4").
+     * Sleeve cap length compared with the blouse armhole: ½" longer, eased into the armhole,
+     * which gives the low cap of a blouse sleeve (about 4").
      */
-    const val CAP_EASE = -0.5 * INCH
+    const val CAP_EASE = 0.5 * INCH
     /** Distance of the balance notches from the underarm, measured along the seam. */
     const val ARMHOLE_NOTCH_FROM_UNDERARM = 7.0
     /** Puff sleeves: cap widened by this factor and raised, gathered into the armhole. */
@@ -80,9 +80,9 @@ object BlouseDrafter {
     const val TIE_LENGTH = 18 * INCH
     /** Where the princess seam meets the armhole, as a fraction of armhole length from the underarm. */
     const val PRINCESS_ARMHOLE_FRACTION = 0.5
-    /** Usual scoop of the armhole in from the shoulder tip: front 1", back ½". */
-    const val FRONT_ARM_CURVE = 1.0 * INCH
-    const val BACK_ARM_CURVE = 0.5 * INCH
+    /** Extra scoop of the arm round in from the shoulder end (none: it leaves the shoulder straight down). */
+    const val FRONT_ARM_CURVE = 0.0
+    const val BACK_ARM_CURVE = 0.0
     /** 3-dart blouses: the small dart near the hooks, its distance from the centre and height. */
     const val HOOK_DART_DISTANCE = 2.25 * INCH
     const val HOOK_DART_HEIGHT = 2.5 * INCH
@@ -1106,18 +1106,20 @@ object BlouseDrafter {
     }
 
     /**
-     * Armhole from the underarm point up to the shoulder tip. The front is scooped 1" in from
-     * the shoulder tip, the back ½" and flatter at the bottom.
+     * Armhole (arm round) from the underarm point up to the shoulder tip, the way tailors draw
+     * it: leaving the shoulder end straight down, then curving out to meet the chest line level
+     * at the underarm. The back curve is a little flatter. [scoop] (the tailor's arm-curve
+     * adjustment) cuts the curve that much further in near the shoulder.
      */
     internal fun armholePath(underarm: Pt, shoulder: Pt, isFront: Boolean, scoop: Double = if (isFront) FRONT_ARM_CURVE else BACK_ARM_CURVE): PathD {
-        val hollowX = shoulder.x - scoop
-        val armDrop = underarm.y - shoulder.y
+        val drop = underarm.y - shoulder.y
+        val out = underarm.x - shoulder.x
         return PathD(
             underarm,
             listOf(
                 CubicTo(
-                    Pt(hollowX + (underarm.x - hollowX) * (if (isFront) 0.0 else 0.35), underarm.y),
-                    Pt(hollowX, shoulder.y + armDrop * (if (isFront) 0.55 else 0.5)),
+                    Pt(shoulder.x + out * (if (isFront) 0.25 else 0.35), underarm.y),
+                    Pt(shoulder.x - scoop, shoulder.y + drop * 0.55),
                     shoulder,
                 ),
             ),
