@@ -235,12 +235,31 @@ class BlouseDrafterTest {
     }
 
     @Test
-    fun princessArmholeEqualsDartedArmhole() {
-        val darted = BlouseCatalog.models.first { it.id == "blouse_round_back_open" }.draft(Measurements.defaults())
-        val princess = BlouseCatalog.models.first { it.id == "blouse_princess_round" }.draft(Measurements.defaults())
-        val a = darted.pieces.first { it.id == "front" }.lengthOf(EdgeKind.ARMHOLE)
-        val b = princess.pieces.filter { it.id.startsWith("front") }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
-        assertEquals(a, b, 0.05)
+    fun princessFollowsTheDraftingChart() {
+        // Size 36 on the princess drafting chart: shoulder end 5½", chest line 9" (+ ½" extra),
+        // bust point 3.6" across and 10" down, front Length + 1½", arm round 6" deep, the
+        // seam's left leg ½" inside the bust point.
+        val inch = BlouseDrafter.INCH
+        val m = Measurements.defaults()
+            .with(MeasurementField.BUST, 36 * inch).with(MeasurementField.UPPER_CHEST, 36 * inch)
+            .with(MeasurementField.SHOULDER, 14 * inch).with(MeasurementField.SHOULDER_WIDTH, 2.5 * inch)
+            .with(MeasurementField.APEX_LENGTH, 10 * inch).with(MeasurementField.BACK_LENGTH, 14 * inch)
+            .with(MeasurementField.ARMHOLE, 15.5 * inch).with(MeasurementField.WAIST, 30 * inch)
+            .with(MeasurementField.FRONT_NECK_DEPTH, 6 * inch)
+        val p = BlouseCatalog.models.first { it.id == "blouse_princess_front_open" }.draft(m)
+        val centre = p.pieces.first { it.id == "front_centre" }
+        val side = p.pieces.first { it.id == "front_side" }
+        assertEquals(5.5, centre.points.getValue("shoulder").x / inch, 0.01)
+        assertEquals(3.0, centre.points.getValue("neck").x / inch, 0.01)
+        assertEquals(9.5, side.points.getValue("underarm").x / inch, 0.01)
+        assertEquals(3.6, centre.points.getValue("apex").x / inch, 0.01)
+        assertEquals(15.5, centre.edges.first().path.end.y / inch, 0.01)
+        assertEquals(6.0, side.points.getValue("underarm").y / inch, 0.3)
+        val leftLeg = centre.edgesOf(EdgeKind.HEM).single().path.end
+        assertEquals(3.1, leftLeg.x / inch, 0.01)
+        // The seam leaves the arm round (not the shoulder), and both panels share the point.
+        assertTrue(centre.edgesOf(EdgeKind.ARMHOLE).isNotEmpty() && side.edgesOf(EdgeKind.ARMHOLE).isNotEmpty())
+        assertEquals(centre.points.getValue("princessTop"), side.points.getValue("princessTop"))
     }
 
     @Test
@@ -546,7 +565,7 @@ class BlouseDrafterTest {
         // The new options survive a customised design id.
         val spec = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(
             body = com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS, backYoke = com.tailorsfit.pattern.blouse.YokeShape.V,
-            frontInsert = com.tailorsfit.pattern.blouse.YokeShape.SCALLOP, bottomCurve = true, armholePrincess = true,
+            frontInsert = com.tailorsfit.pattern.blouse.YokeShape.SCALLOP, bottomCurve = true, shoulderPrincess = true,
         )
         assertEquals(spec, com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id))
         val sketch = com.tailorsfit.pattern.render.Illustration.blouse(model("blouse_pc_boat_net1").draft(Measurements.defaults()))
@@ -563,7 +582,7 @@ class BlouseDrafterTest {
                 val k = n++
                 val spec = base.copy(
                     body = body, backYoke = y, frontInsert = com.tailorsfit.pattern.blouse.YokeShape.entries[k % 6],
-                    bottomCurve = k % 2 == 0, patti = k % 3 == 0, armholePrincess = k % 4 == 0, halter = k % 5 == 0,
+                    bottomCurve = k % 2 == 0, patti = k % 3 == 0, shoulderPrincess = k % 4 == 0, halter = k % 5 == 0,
                 ).withFront(front, com.tailorsfit.pattern.blouse.NeckDepth.entries[k % 3])
                 val p = spec.toModel().draft(m)
                 for (piece in p.pieces) {

@@ -97,6 +97,12 @@ object BlouseDrafter {
     const val MIN_BELT = 1.5 * INCH
     /** Height of the patti (band) across the bottom of the front. */
     const val PATTI_HEIGHT = 1.5 * INCH
+    /** Princess drafting chart: front = Length + 1½" at the centre. */
+    const val PRINCESS_EXTRA_LENGTH = 1.5 * INCH
+    /** Princess drafting chart: front chest line = chest / 4 + this ("extra" at the side). */
+    const val PRINCESS_CHEST_EXTRA = 0.5 * INCH
+    /** Princess drafting chart: the seam's left leg at the bottom is this far inside the bust point. */
+    const val PRINCESS_LEG_INSIDE = 0.5 * INCH
     /** How much lower the centre of a curved front bottom is than the side. */
     const val CURVE_DROP = 1.0 * INCH
     /** Front insert: how far below the front neck its lower edge comes at the centre. */
@@ -187,7 +193,12 @@ object BlouseDrafter {
 
         companion object {
             fun create(model: BlouseModel, m: Measurements, warnings: MutableList<String>): BodiceFrame {
-                var shoulderX = m[F.SHOULDER] / 2
+                // Princess cut follows the tailor's princess drafting chart: the shoulder ends
+                // 1½" inside full shoulder / 2 (5½" for a size 36), the front chest line is
+                // chest / 4 + ½", the bottom is waist / 4 plus the dart, and the front is
+                // Length + 1½" at the centre.
+                val chart = model.body == BodyStyle.PRINCESS
+                var shoulderX = m[F.SHOULDER] / 2 - (if (chart) 1.5 * INCH else 0.0)
                 if (model.effectiveSleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
                 // Neck width: the tailor's "neck broad" if set, else full shoulder / 2 minus the
                 // shoulder (strap) width measured on the customer.
@@ -210,14 +221,16 @@ object BlouseDrafter {
                 val backLength = m[F.BACK_LENGTH]
                 val upper = m[F.UPPER_CHEST].takeIf { !it.isNaN() } ?: (m[F.BUST] - 2.5)
                 val frontLength = m.adjustment(F.FRONT_LENGTH)
-                    ?: (backLength + (0.5 * INCH + (m[F.BUST] - upper) / 2).coerceIn(0.5 * INCH, 2.0 * INCH))
+                    ?: if (chart) backLength + PRINCESS_EXTRA_LENGTH
+                    else (backLength + (0.5 * INCH + (m[F.BUST] - upper) / 2).coerceIn(0.5 * INCH, 2.0 * INCH))
                 val chest = m[F.BUST] / 4 + BUST_EASE / 4
+                val frontChest = if (chart) m[F.BUST] / 4 + PRINCESS_CHEST_EXTRA else chest
                 // Armhole depth: deep enough that the front and back armhole curves together are
                 // as long as the armhole round + 1" ease (like laying armhole / 2 as a slant from
                 // the shoulder tip to the chest line).
                 val shoulderTip = Pt(shoulderX, slope)
                 fun armholeFor(depth: Double) =
-                    armholePath(Pt(chest, depth), shoulderTip, true, frontScoop).length() +
+                    armholePath(Pt(frontChest, depth), shoulderTip, true, frontScoop).length() +
                         armholePath(Pt(chest, depth), shoulderTip, false, backScoop).length()
                 val targetArm = m[F.ARMHOLE] + ARMHOLE_EASE
                 var lo = slope + 2.0
@@ -256,9 +269,9 @@ object BlouseDrafter {
                     neckBase = neckBase,
                     neckX = neckX,
                     armDepth = armDepth,
-                    frontBust = chest,
+                    frontBust = frontChest,
                     backBust = chest,
-                    frontWaist = m[F.WAIST] / 4 + WAIST_EASE / 4,
+                    frontWaist = m[F.WAIST] / 4 + (if (chart) 0.0 else WAIST_EASE / 4),
                     backWaist = m[F.WAIST] / 4 + WAIST_EASE / 4,
                     apexX = apexX,
                     apexY = apexY,
@@ -495,32 +508,39 @@ object BlouseDrafter {
         val side = pieces[si]
         val centreEdge = centre.edges.first()
         val hemCentre = centreEdge.path.end
+        val hemL = centre.edgesOf(EdgeKind.HEM).single().path.end
+        val sideHem = side.edgesOf(EdgeKind.HEM).single().path
+        val hemR = sideHem.start
         val sideBottom = side.edgesOf(EdgeKind.SIDE).single().path.start
+        // Level across the princess seam (so both seam edges are cut at the same height), then
+        // rising with the bottom towards the side.
         val y0 = hemCentre.y - PATTI_HEIGHT
         val y1 = sideBottom.y - PATTI_HEIGHT
-        fun line(x: Double) = y0 + (y1 - y0) * x / sideBottom.x
+        val xr = hemR.x + 0.5 * INCH
+        fun line(x: Double) = if (x <= xr) y0 else y0 + (y1 - y0) * (x - xr) / (sideBottom.x - xr)
         val c = PieceSplit.split(centre, ::line) ?: return
         val sd = PieceSplit.split(side, ::line) ?: return
         val cSeam = c.upper.edgesOf(EdgeKind.BELT).single().path
         val sSeam = sd.upper.edgesOf(EdgeKind.BELT).single().path
         val pc = listOf(cSeam.start, cSeam.end).maxBy { it.x }
-        val ps = listOf(sSeam.start, sSeam.end).minBy { it.x }
-        val sideTop = listOf(sSeam.start, sSeam.end).maxBy { it.x }
-        val shift = pc - ps
+        val sPts = sSeam.points().sortedBy { it.x }
+        val ps = sPts.first()
+        val shift = Pt(pc.x - ps.x, 0.0)
         val top = Pt(0.0, y0)
-        val topR = sideTop + shift
-        val bottomR = sideBottom + shift
+        val topSide = sPts.map { it + shift } // from the joined seam point out to the side
+        val bottom = listOf(hemCentre, hemL) + sideHem.points().map { it + shift }
+        fun path(pts: List<Pt>) = PathD(pts.first(), pts.drop(1).map { LineTo(it) })
         val band = Piece(
             id = "front_patti",
             name = tr("piece.front_patti"),
             cut = centre.cut,
             edges = listOf(
                 Edge(centreEdge.kind, PathD.line(top, hemCentre)),
-                Edge(EdgeKind.HEM, PathD.line(hemCentre, bottomR)),
-                Edge(EdgeKind.SIDE, PathD.line(bottomR, topR)),
-                Edge(EdgeKind.BELT, PathD.line(topR, top)),
+                Edge(EdgeKind.HEM, path(bottom)),
+                Edge(EdgeKind.SIDE, PathD.line(bottom.last(), topSide.last())),
+                Edge(EdgeKind.BELT, path(topSide.reversed() + top)),
             ),
-            labelAt = Pt(topR.x * 0.45, (y0 + hemCentre.y) / 2),
+            labelAt = Pt(topSide.last().x * 0.45, (y0 + hemCentre.y) / 2),
             notes = listOf(tr("note.patti", cm(PATTI_HEIGHT))),
         )
         pieces[ci] = c.upper.copy(notes = c.upper.notes + tr("note.patti_seam"))
@@ -532,7 +552,11 @@ object BlouseDrafter {
     private fun curveFrontBottom(pieces: MutableList<Piece>) {
         val fronts = pieces.indices.filter { pieces[it].id == "front" || pieces[it].id == "front_centre" || pieces[it].id == "front_side" }
         val w = fronts.mapNotNull { pieces[it].edgesOf(EdgeKind.SIDE).firstOrNull()?.path?.start?.x }.maxOrNull() ?: return
-        fun drop(x: Double) = CURVE_DROP * (1 - (x / w).coerceIn(0.0, 1.0).let { it * it })
+        fun base(x: Double) = CURVE_DROP * (1 - (x / w).coerceIn(0.0, 1.0).let { it * it })
+        // Both edges of a princess seam drop by the same amount, so they stay the same length.
+        val legL = pieces.firstOrNull { it.id == "front_centre" }?.edgesOf(EdgeKind.HEM)?.singleOrNull()?.path?.end?.x
+        val legR = pieces.firstOrNull { it.id == "front_side" }?.edgesOf(EdgeKind.HEM)?.singleOrNull()?.path?.start?.x
+        fun drop(x: Double) = if (legL != null && legR != null && x >= legL - 1e-6 && x <= legR + 1e-6) base((legL + legR) / 2) else base(x)
         fun moved(p: Pt) = Pt(p.x, p.y + drop(p.x))
         for (i in fronts) {
             val piece = pieces[i]
@@ -559,6 +583,15 @@ object BlouseDrafter {
                 notes = piece.notes + tr("note.curve", cm(CURVE_DROP)),
             )
         }
+    }
+
+    private fun polylineLengthTo(pts: List<Pt>, target: Pt): Double {
+        var d = 0.0
+        for (i in 0 until pts.size - 1) {
+            if (pts[i] == target) return d
+            d += pts[i].dist(pts[i + 1])
+        }
+        return d
     }
 
     private fun distToSegment(p: Pt, a: Pt, b: Pt): Double {
@@ -831,9 +864,15 @@ object BlouseDrafter {
 
         // Princess seam leaves the armhole a little below the front hollow, or (shoulder cut)
         // the middle of the shoulder.
-        val fromShoulder = !model.armholePrincess
+        val fromShoulder = model.shoulderPrincess
         val armCurve = armhole.segs.single() as CubicTo
-        val (lowerArm, upperArm) = armCurve.splitAtLength(underarm, armhole.length() * PRINCESS_ARMHOLE_FRACTION)
+        // As on the drafting chart: the seam leaves the arm round where a 45° line up from the
+        // corner (shoulder end, chest line) meets it.
+        val corner = Pt(shoulder.x, underarm.y)
+        val armPts = armhole.points()
+        val armCross = armPts.minBy { kotlin.math.abs((it.x - corner.x) - (corner.y - it.y)) }
+        val crossAt = polylineLengthTo(armPts, armCross).coerceIn(armhole.length() * 0.2, armhole.length() * 0.7)
+        val (lowerArm, upperArm) = armCurve.splitAtLength(underarm, crossAt)
         val a = if (fromShoulder) neck.lerp(shoulder, 0.5) else lowerArm.end
 
         // Seam top -> bust point, arriving vertically.
@@ -842,15 +881,28 @@ object BlouseDrafter {
             Pt(apex.x, apex.y - 0.4 * (apex.y - a.y)),
             apex,
         ) else CubicTo(
-            Pt(a.x - 0.45 * (a.x - apex.x), a.y + 0.25 * (apex.y - a.y)),
-            Pt(apex.x, apex.y - 0.45 * (apex.y - a.y)),
+            // Down through the corner towards the bust point, arriving vertically.
+            Pt(corner.x + (a.x - corner.x) * 0.2, corner.y + (a.y - corner.y) * 0.2),
+            Pt(apex.x, apex.y - 0.45 * (apex.y - corner.y)),
             apex,
         )
-        val half = if (dartIntake > 0.3) dartIntake / 2 else 0.0
-        val hemL = Pt(apex.x - half, hemY(apex.x - half))
-        val hemR = Pt(apex.x + half, hemY(apex.x + half))
+        // At the bottom the left leg is ½" inside the bust point and the dart is the gap.
+        val gap = if (dartIntake > 0.3) dartIntake else 0.0
+        // (With a patti the bottom is cut off straight, so the legs stay even about the bust point.)
+        val leftX = (if (model.hasPatti) apex.x - gap / 2 else apex.x - PRINCESS_LEG_INSIDE).coerceAtLeast(1.0 * INCH)
+        val hemL = Pt(leftX, hemY(leftX))
         fun down(to: Pt) = CubicTo(Pt(apex.x, apex.y + (to.y - apex.y) * 0.4), Pt(to.x, to.y - (to.y - apex.y) * 0.4), to)
         val lowerL = down(hemL)
+        // The right leg slants further out, so it ends a little higher: both seam edges are
+        // then the same length.
+        val wantLen = PathD(apex, listOf(lowerL)).length()
+        var rLo = hemY(leftX + gap) - (if (model.hasPatti) 0.0 else 2.0)
+        var rHi = hemY(leftX + gap)
+        repeat(40) {
+            val mid = (rLo + rHi) / 2
+            if (PathD(apex, listOf(down(Pt(leftX + gap, mid)))).length() < wantLen) rLo = mid else rHi = mid
+        }
+        val hemR = Pt(leftX + gap, (rLo + rHi) / 2)
         val lowerR = down(hemR)
 
         val excess = sideExcess.coerceIn(0.0, 2.5 * INCH)

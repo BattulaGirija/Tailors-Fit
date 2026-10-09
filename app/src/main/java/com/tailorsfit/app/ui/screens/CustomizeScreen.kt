@@ -241,9 +241,9 @@ fun CustomizeScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onNex
                                 )
                                 if (spec.body == BodyStyle.PRINCESS) {
                                     FilterChip(
-                                        selected = spec.armholePrincess,
-                                        onClick = { vm.spec = spec.copy(armholePrincess = !spec.armholePrincess) },
-                                        label = { Text(tr("tag.armhole_cut")) },
+                                        selected = spec.shoulderPrincess,
+                                        onClick = { vm.spec = spec.copy(shoulderPrincess = !spec.shoulderPrincess) },
+                                        label = { Text(tr("tag.shoulder_cut")) },
                                     )
                                 }
                             }

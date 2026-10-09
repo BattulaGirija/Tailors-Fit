@@ -125,8 +125,8 @@ data class BlouseModel(
     val frontInsert: YokeShape = YokeShape.NONE,
     /** Front bottom curving down towards the centre. */
     val bottomCurve: Boolean = false,
-    /** Princess seam from the armhole instead of the middle of the shoulder (the usual cut). */
-    val armholePrincess: Boolean = false,
+    /** Princess seam from the middle of the shoulder instead of the arm round. */
+    val shoulderPrincess: Boolean = false,
 ) : GarmentModel {
     /** Sleeves actually drafted (a halter has none). */
     val effectiveSleeve: SleeveStyle get() = if (halter) SleeveStyle.SLEEVELESS else sleeve
@@ -151,7 +151,7 @@ data class BlouseModel(
             tr("tag.waves").takeIf { bottomWaves },
             tr("tag.patti").takeIf { hasPatti },
             tr("tag.curve").takeIf { hasBottomCurve },
-            tr("tag.armhole_cut").takeIf { armholePrincess && body == BodyStyle.PRINCESS },
+            tr("tag.shoulder_cut").takeIf { shoulderPrincess && body == BodyStyle.PRINCESS },
             tr("tag.back_yoke", backYoke.label).takeIf { backYoke != YokeShape.NONE },
             tr("tag.front_insert", frontInsert.label).takeIf { frontInsert != YokeShape.NONE },
             tr("tag.collar").takeIf { collar },
@@ -460,7 +460,7 @@ object BlouseCatalog {
             "blouse_pc_close_shoulder_bo", "Princess Cut Close Neck Shoulder Middle Cut BO WOP",
             "Princess cut: two front panels joined by curved seams through the bust point, close (high, narrow) round neck, princess seam from the middle of the shoulder, short sleeves. Back hooks.",
             NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.5), NeckSpec(NeckShape.ROUND, widen = -2.5, depthFactor = 0.35), SleeveStyle.SHORT, Opening.BACK,
-            princess = true, body = BodyStyle.PRINCESS,
+            princess = true, body = BodyStyle.PRINCESS, shoulderPrincess = true,
         ),
         BlouseModel(
             "blouse_pc_bottom_curve_fo", "Princess Cut Bottom Curve FO",

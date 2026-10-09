@@ -60,7 +60,7 @@ class DesignStore(context: Context) {
         put("sleeve", m.sleeve.name); put("opening", m.opening.name); put("princess", m.princess); put("body", m.body.name)
         put("halter", m.halter); put("waves", m.bottomWaves); put("patti", m.patti)
         put("backYoke", m.backYoke.name); put("frontInsert", m.frontInsert.name)
-        put("curve", m.bottomCurve); put("armholeCut", m.armholePrincess)
+        put("curve", m.bottomCurve); put("shoulderCut", m.shoulderPrincess)
         put("backDetail", m.backDetail.name); put("collar", m.collar)
     }
 
@@ -79,7 +79,7 @@ class DesignStore(context: Context) {
         backYoke = runCatching { com.tailorsfit.pattern.blouse.YokeShape.valueOf(o.optString("backYoke", "NONE")) }.getOrDefault(com.tailorsfit.pattern.blouse.YokeShape.NONE),
         frontInsert = runCatching { com.tailorsfit.pattern.blouse.YokeShape.valueOf(o.optString("frontInsert", "NONE")) }.getOrDefault(com.tailorsfit.pattern.blouse.YokeShape.NONE),
         bottomCurve = o.optBoolean("curve"),
-        armholePrincess = o.optBoolean("armholeCut"),
+        shoulderPrincess = o.optBoolean("shoulderCut"),
         body = runCatching { com.tailorsfit.pattern.blouse.BodyStyle.valueOf(o.optString("body")) }
             .getOrDefault(if (o.optBoolean("princess")) com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS else com.tailorsfit.pattern.blouse.BodyStyle.THREE_DART),
         backDetail = runCatching { BackDetail.valueOf(o.optString("backDetail")) }.getOrDefault(BackDetail.NONE),
