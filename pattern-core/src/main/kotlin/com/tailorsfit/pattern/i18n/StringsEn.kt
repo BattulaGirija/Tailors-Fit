@@ -887,5 +887,6 @@ object StringsEn {
         "model.skirt_pleated.desc" to "Straight panels laid in 2\" box pleats.",
         "model.skirt_panel6.name" to "6 Panel Skirt",
         "model.skirt_panel6.desc" to "Six gores (kalis) with a gentle flare.",
+        "tag.armhole_cut" to "Armhole cut",
     )
 }

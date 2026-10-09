@@ -875,5 +875,6 @@ object StringsHi {
         "model.skirt_pleated.desc" to "2\" बॉक्स प्लीट वाले सीधे पैनल।",
         "model.skirt_panel6.name" to "6 पैनल स्कर्ट",
         "model.skirt_panel6.desc" to "हल्के घेर वाली छह कलियाँ।",
+        "tag.armhole_cut" to "आर्महोल से कट",
     )
 }

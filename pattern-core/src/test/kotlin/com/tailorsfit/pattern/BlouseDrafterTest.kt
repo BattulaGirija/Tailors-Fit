@@ -546,7 +546,7 @@ class BlouseDrafterTest {
         // The new options survive a customised design id.
         val spec = com.tailorsfit.pattern.blouse.BlouseSpec.BASIC.copy(
             body = com.tailorsfit.pattern.blouse.BodyStyle.PRINCESS, backYoke = com.tailorsfit.pattern.blouse.YokeShape.V,
-            frontInsert = com.tailorsfit.pattern.blouse.YokeShape.SCALLOP, bottomCurve = true, shoulderPrincess = true,
+            frontInsert = com.tailorsfit.pattern.blouse.YokeShape.SCALLOP, bottomCurve = true, armholePrincess = true,
         )
         assertEquals(spec, com.tailorsfit.pattern.blouse.BlouseSpec.parse(spec.id))
         val sketch = com.tailorsfit.pattern.render.Illustration.blouse(model("blouse_pc_boat_net1").draft(Measurements.defaults()))
@@ -563,7 +563,7 @@ class BlouseDrafterTest {
                 val k = n++
                 val spec = base.copy(
                     body = body, backYoke = y, frontInsert = com.tailorsfit.pattern.blouse.YokeShape.entries[k % 6],
-                    bottomCurve = k % 2 == 0, patti = k % 3 == 0, shoulderPrincess = k % 4 == 0, halter = k % 5 == 0,
+                    bottomCurve = k % 2 == 0, patti = k % 3 == 0, armholePrincess = k % 4 == 0, halter = k % 5 == 0,
                 ).withFront(front, com.tailorsfit.pattern.blouse.NeckDepth.entries[k % 3])
                 val p = spec.toModel().draft(m)
                 for (piece in p.pieces) {

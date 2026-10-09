@@ -41,7 +41,7 @@ published to the same link and installs over the previous version.
 2. **Customise it**, one window at a time, with a front / back sketch that follows every choice:
    **Front neck** → **Back neck** (shape and depth, including pot, paan, keyhole and dori backs)
    → **Sleeves** → **Blouse details** (type, where the hooks go, **Halter**, **Bottom waves**,
-   **Patti**, **Bottom curve**, **Shoulder cut**, and a **net back yoke** or **net front insert**
+   **Patti**, **Bottom curve**, **Armhole cut**, and a **net back yoke** or **net front insert**
    with a straight, V, round, scallop or sweetheart edge). **Next** and **Back** move between the
    windows, and the step bar at the top jumps straight to any of them.
 3. **Enter measurements** in inches or cm, in the order of a tailor's blouse sheet: Length,
@@ -152,13 +152,13 @@ cut on the fold.
 | Bust point | apex-to-apex / 2 across, apex length (corrected for the slant) down |
 | Front length | the side dart takes up to 1¼" of the extra front length; any more lifts the bottom of the front at the side, so the front bottom curves down to the centre and both side seams match |
 | Sleeve | underarm width = arm round + 2"; the cap is ½" longer than the blouse armhole and eased into it, which gives the low cap of a blouse sleeve (about 4") |
-| Princess cut | the front is split along a curve from the armhole through the bust point to the bottom; the dart under the bust becomes the gap between the two curves at the bottom |
+| Princess cut | the front is split along a curve from the middle of the shoulder through the bust point to the bottom, so the whole arm round is on the side panel (as TailorTrix and most tailors cut it); **Armhole cut** starts the seam on the arm round instead. The dart under the bust becomes the gap between the two curves at the bottom |
 | Halter | the shoulder ends 1¾" from the neck point, front and back; no sleeve |
 | Bottom waves | the bottom edge is cut in a whole number of scallops about 3" long and ⅖" deep; the darts still open on it |
 | Patti | the darted front is cut 1½" above the bottom; the darts end on the patti seam and the band is one piece with the dart widths closed (so it is that much shorter than the seam) |
 | Princess patti | both panels are cut along one straight line 1½" above the bottom; the band is as long as the two cut edges together |
 | Bottom curve | the front bottom drops in a smooth curve to 1" lower at the centre; the side seam is unchanged |
-| Shoulder cut | the princess seam starts halfway along the shoulder instead of on the armhole |
+| Armhole cut | the princess seam starts on the arm round (halfway up) instead of the middle of the shoulder |
 | Net back yoke | the back is cut along the chosen edge, ¾ of the armhole depth down (lower at the centre for V / round), into a net yoke and the back |
 | Net front insert | the centre front is cut along the chosen edge, 2½" below the front neck at the centre, rising to the shoulder just past the neck point and staying at least ¾" below the neckline |
 | Neck | the shape comes from the design, the depth from the customer's measurement. Pot (matka): narrow below the shoulder, a round belly wider than the neck, round at the bottom |

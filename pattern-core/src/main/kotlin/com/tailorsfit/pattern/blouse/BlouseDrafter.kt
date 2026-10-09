@@ -618,7 +618,19 @@ object BlouseDrafter {
             return neckPts.last().y
         }
         fun floor(x: Double) = if (x <= neckPt.x) neckY(x) + 0.75 * INCH else 0.75 * INCH * (w - x) / (w - neckPt.x)
-        fun line(x: Double) = if (x >= w) topY - (x - w) else max(topY + (y0 - topY) * insertCurve(shape, x / w), floor(x))
+        // ... and at least ½" inside a princess seam (upper part, from its top down to the bust point).
+        val seamPts = piece.edgesOf(EdgeKind.PRINCESS).flatMap { it.path.points() }.filter { it.y <= apexY }.sortedBy { it.x }
+        fun seamY(x: Double): Double {
+            if (seamPts.size < 2 || x < seamPts.first().x) return Double.MAX_VALUE
+            for (k in 0 until seamPts.size - 1) {
+                val a = seamPts[k]
+                val b = seamPts[k + 1]
+                if (x <= b.x) return if (b.x - a.x < 1e-9) min(a.y, b.y) else a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x)
+            }
+            return seamPts.last().y
+        }
+        fun line(x: Double) = if (x >= w) topY - (x - w)
+        else min(max(topY + (y0 - topY) * insertCurve(shape, x / w), floor(x)), seamY(x) - 0.5 * INCH)
         val split = PieceSplit.split(piece, ::line) ?: run { warnings += tr("warn.no_insert"); return }
         val insert = split.upper.copy(
             id = "front_insert",
@@ -819,7 +831,7 @@ object BlouseDrafter {
 
         // Princess seam leaves the armhole a little below the front hollow, or (shoulder cut)
         // the middle of the shoulder.
-        val fromShoulder = model.shoulderPrincess
+        val fromShoulder = !model.armholePrincess
         val armCurve = armhole.segs.single() as CubicTo
         val (lowerArm, upperArm) = armCurve.splitAtLength(underarm, armhole.length() * PRINCESS_ARMHOLE_FRACTION)
         val a = if (fromShoulder) neck.lerp(shoulder, 0.5) else lowerArm.end

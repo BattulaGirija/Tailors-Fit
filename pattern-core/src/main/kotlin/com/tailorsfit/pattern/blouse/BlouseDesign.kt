@@ -73,7 +73,7 @@ data class BlouseSpec(
     val backYoke: YokeShape = YokeShape.NONE,
     val frontInsert: YokeShape = YokeShape.NONE,
     val bottomCurve: Boolean = false,
-    val shoulderPrincess: Boolean = false,
+    val armholePrincess: Boolean = false,
 ) {
     /** The opening actually used: keyhole and dori backs open at the front. */
     val effectiveOpening: Opening get() = if (backDetail != BackDetail.NONE) Opening.FRONT else opening
@@ -85,7 +85,7 @@ data class BlouseSpec(
             back.shape.name, n(back.widen), n(back.depthFactor),
             backDetail.name, sleeve.name, effectiveOpening.name, if (collar) "1" else "0",
             if (halter) "1" else "0", if (bottomWaves) "1" else "0", if (patti) "1" else "0",
-            backYoke.name, frontInsert.name, if (bottomCurve) "1" else "0", if (shoulderPrincess) "1" else "0",
+            backYoke.name, frontInsert.name, if (bottomCurve) "1" else "0", if (armholePrincess) "1" else "0",
         ).joinToString(SEP)
 
     fun withFront(choice: FrontNeck, depth: NeckDepth) = copy(front = choice.spec(depth).rounded(), collar = false)
@@ -115,7 +115,7 @@ data class BlouseSpec(
             backYoke = backYoke,
             frontInsert = frontInsert,
             bottomCurve = bottomCurve,
-            shoulderPrincess = shoulderPrincess,
+            armholePrincess = armholePrincess,
         )
     }
 
@@ -141,7 +141,7 @@ data class BlouseSpec(
             backYoke = model.backYoke,
             frontInsert = model.frontInsert,
             bottomCurve = model.bottomCurve,
-            shoulderPrincess = model.shoulderPrincess,
+            armholePrincess = model.armholePrincess,
         ).let { it.copy(front = it.front.rounded(), back = it.back.rounded()) }
 
         private fun NeckSpec.rounded() = NeckSpec(shape, n(widen).toDouble(), n(depthFactor).toDouble())
@@ -175,7 +175,7 @@ data class BlouseSpec(
                     backYoke = p.getOrNull(16)?.let { YokeShape.valueOf(it) } ?: YokeShape.NONE,
                     frontInsert = p.getOrNull(17)?.let { YokeShape.valueOf(it) } ?: YokeShape.NONE,
                     bottomCurve = p.getOrNull(18) == "1",
-                    shoulderPrincess = p.getOrNull(19) == "1",
+                    armholePrincess = p.getOrNull(19) == "1",
                 )
             }.getOrNull()
         }

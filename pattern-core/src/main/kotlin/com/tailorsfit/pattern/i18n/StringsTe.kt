@@ -875,5 +875,6 @@ object StringsTe {
         "model.skirt_pleated.desc" to "2\" బాక్స్ ప్లీట్‌లతో నేరు ప్యానెల్‌లు.",
         "model.skirt_panel6.name" to "6 ప్యానెల్ స్కర్ట్",
         "model.skirt_panel6.desc" to "తేలిక ఫ్లేర్‌తో ఆరు కలీలు.",
+        "tag.armhole_cut" to "ఆర్మ్‌హోల్ కట్",
     )
 }
