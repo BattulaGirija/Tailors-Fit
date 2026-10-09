@@ -63,12 +63,16 @@ class BlouseDrafterTest {
     @Test
     fun sideSeamsMatchOnceTheSideDartIsClosed() {
         for (m in sizes) {
+            // 3 dart: no dart in the side seam, the sides are the same length.
             val p = BlouseCatalog.models.first().draft(m)
             val front = p.pieces.first { it.id == "front" }
             val back = p.pieces.first { it.id == "back" }
-            val sideDart = front.darts.maxByOrNull { it.legA.x }!!
-            val frontClosed = front.lengthOf(EdgeKind.SIDE) - sideDart.intake
-            assertEquals(back.lengthOf(EdgeKind.SIDE), frontClosed, 0.05)
+            assertEquals(back.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE), 0.05)
+            // 4 dart: once the two side darts are closed.
+            val p4 = BlouseCatalog.models.first { it.id == "blouse_4dart_round" }.draft(m)
+            val f4 = p4.pieces.first { it.id == "front" }
+            val sideDarts = f4.darts.sortedByDescending { it.legA.x }.take(2).sumOf { it.intake }
+            assertEquals(p4.pieces.first { it.id == "back" }.lengthOf(EdgeKind.SIDE), f4.lengthOf(EdgeKind.SIDE) - sideDarts, 0.05)
         }
     }
 
@@ -86,7 +90,11 @@ class BlouseDrafterTest {
     fun sleeveCapMatchesArmholePlusEase() {
         for (m in sizes) {
             val p = BlouseCatalog.models.first().draft(m)
-            val arm = p.pieces.filter { it.id != "sleeve" }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
+            // The arm round dart is sewn shut before the sleeve goes in.
+            val front = p.pieces.first { it.id == "front" }
+            val armPts = front.edgesOf(EdgeKind.ARMHOLE).flatMap { it.path.points() }
+            val armDart = front.darts.filter { d -> armPts.any { it.dist(d.legA) < 0.3 } }.sumOf { it.intake }
+            val arm = p.pieces.filter { it.id != "sleeve" }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) } - armDart
             val cap = p.pieces.first { it.id == "sleeve" }.lengthOf(EdgeKind.SLEEVE_CAP)
             assertEquals(arm + BlouseDrafter.CAP_EASE, cap, 0.1, "size bust=${m[MeasurementField.BUST]}")
         }
@@ -118,9 +126,8 @@ class BlouseDrafterTest {
         assertEquals(6.0, (underarm.y - front.points.getValue("shoulder").y) / inch, 0.5)
         assertEquals(6.0, front.points.getValue("shoulder").x / inch, 0.01)
         assertEquals(0.5, front.points.getValue("shoulder").y / inch, 0.01)
-        // Front ½" longer than back: taken by a ½" side dart, no lift needed.
-        assertEquals(0.5, front.darts.last().intake / inch, 0.05)
-        assertEquals(back.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE) - front.darts.last().intake, 0.05)
+        // 3 dart: the side seams are the same length (no side dart).
+        assertEquals(back.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE), 0.05)
         // Sleeve cap about 3½–4½", like a traditional blouse sleeve.
         val cap = p.pieces.first { it.id == "sleeve" }.points.getValue("capHeight").y / inch
         assertTrue(cap in 3.5..4.5, "cap $cap")
@@ -132,10 +139,12 @@ class BlouseDrafterTest {
         val m = Measurements.defaults().with(MeasurementField.FRONT_LENGTH, 16.5 * inch).with(MeasurementField.BACK_LENGTH, 14 * inch)
         val front = BlouseCatalog.models.first { it.id == "blouse_round_classic" }.draft(m).pieces.first { it.id == "front" }
         val hem = front.edgesOf(EdgeKind.HEM).single().path.points()
-        // Centre stays at the full front length; the side comes up by 2½" − 1¼" side dart.
+        // Centre stays at the full front length; a 3-dart side comes up to the back length.
         assertEquals(16.5, hem.first().y / inch, 0.01)
-        assertEquals(14 + 1.25, hem.last().y / inch, 0.01)
-        assertEquals(1.25, front.darts.last().intake / inch, 0.05)
+        assertEquals(14.0, hem.last().y / inch, 0.01)
+        // 4 dart: the side comes up by 2½" − 1¼" taken in the side darts.
+        val f4 = BlouseCatalog.models.first { it.id == "blouse_4dart_round" }.draft(m).pieces.first { it.id == "front" }
+        assertEquals(14 + 1.25, f4.edgesOf(EdgeKind.HEM).single().path.points().last().y / inch, 0.01)
     }
 
     @Test
@@ -398,8 +407,9 @@ class BlouseDrafterTest {
         assertEquals(3.0, front.points.getValue("neck").x / inch, 0.01)
         assertEquals(6.5, front.points.getValue("underarm").y / inch, 0.01)
         assertEquals(0.75, front.points.getValue("shoulder").y / inch, 0.01)
-        // A ½" front dart is too small to split: one dart under the bust plus the side dart.
-        assertEquals(2, front.darts.size)
+        // 3 dart: arm round dart, centre front dart and a ½" dart under the bust.
+        assertEquals(3, front.darts.size)
+        assertEquals(0.5, front.darts.first().intake / inch, 0.01)
         // Body measurements alone are what the design asks for; adjustments are optional.
         assertTrue(BlouseCatalog.models.all { model -> model.requiredMeasurements.none { it.isAdjustment } })
     }
@@ -592,5 +602,29 @@ class BlouseDrafterTest {
                 }
                 com.tailorsfit.pattern.render.Illustration.blouse(p)
             }
+    }
+
+    @Test
+    fun threeDartFollowsTheChart() {
+        // 36 size normal blouse chart: a 4" dart from the arm round towards the bust, a 2½" dart
+        // across from the centre front, and a dart 2½" high under the bust, 1¼" wide at most.
+        val inch = BlouseDrafter.INCH
+        for (m in sizes) for (model in BlouseCatalog.models.filter { it.body == com.tailorsfit.pattern.blouse.BodyStyle.THREE_DART }) {
+            val front = model.draft(m).pieces.first { it.id == "front" }
+            val apex = front.points.getValue("apex")
+            val armPts = front.edgesOf(EdgeKind.ARMHOLE).flatMap { it.path.points() }
+            fun onArm(q: com.tailorsfit.pattern.geom.Pt) = armPts.any { it.dist(q) < 0.3 }
+            val arm = front.darts.single { onArm(it.legA) && onArm(it.legB) }
+            val armLen = arm.tip.dist(arm.legA.lerp(arm.legB, 0.5))
+            assertTrue(armLen <= 4 * inch + 0.01 && armLen > 1.5 * inch, model.id)
+            val centre = front.darts.single { kotlin.math.abs(it.legA.x) < 1e-6 && kotlin.math.abs(it.legB.x) < 1e-6 }
+            assertTrue(centre.tip.x <= 2.5 * inch + 0.01, model.id)
+            assertTrue(front.edgesOf(EdgeKind.SIDE).none { e -> front.darts.any { d -> e.path.points().any { it.dist(d.legA) < 0.3 } } }, model.id)
+            val bottom = front.darts.firstOrNull { it.tip.y > apex.y && it.legA.y > it.tip.y && it.legA.x > 0.1 }
+            if (bottom != null) {
+                assertEquals(apex.x, bottom.tip.x, 0.01, model.id)
+                assertTrue(bottom.intake <= 1.25 * inch + 0.01, model.id)
+            }
+        }
     }
 }

@@ -97,6 +97,14 @@ object BlouseDrafter {
     const val MIN_BELT = 1.5 * INCH
     /** Height of the patti (band) across the bottom of the front. */
     const val PATTI_HEIGHT = 1.5 * INCH
+    /** 3-dart chart: the dart under the bust is at most 1¼" wide and 2½" high. */
+    const val THREE_DART_BOTTOM = 1.25 * INCH
+    const val THREE_DART_BOTTOM_HEIGHT = 2.5 * INCH
+    /** 3-dart chart: the dart across from the centre front, 2½" long. */
+    const val THREE_DART_CENTRE_LENGTH = 2.5 * INCH
+    const val THREE_DART_CENTRE_WIDTH = 0.75 * INCH
+    /** 3-dart chart: the dart from the arm round, 4" long. */
+    const val THREE_DART_ARM_LENGTH = 4.0 * INCH
     /** Princess drafting chart: front = Length + 1½" at the centre. */
     const val PRINCESS_EXTRA_LENGTH = 1.5 * INCH
     /** Princess drafting chart: front chest line = chest / 4 + this ("extra" at the side). */
@@ -121,7 +129,12 @@ object BlouseDrafter {
         val back = draftBodiceHalf(bodice, isFront = false, model, m, warnings).single()
         val pieces = (fronts + back).toMutableList()
 
-        val frontArm = fronts.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
+        // A dart in the arm round is sewn shut, so the sleeve fits the armhole without it.
+        val frontArm = fronts.sumOf { p ->
+            val arm = p.edgesOf(EdgeKind.ARMHOLE).flatMap { it.path.points() }
+            fun onArm(q: Pt) = arm.any { it.dist(q) < 0.3 }
+            p.lengthOf(EdgeKind.ARMHOLE) - p.darts.filter { onArm(it.legA) && onArm(it.legB) }.sumOf { it.intake }
+        }
         val backArm = back.lengthOf(EdgeKind.ARMHOLE)
         val summary = mutableListOf(
             tr("summary.bust") to cm(bodice.frontBust * 2 + bodice.backBust * 2),
@@ -300,7 +313,10 @@ object BlouseDrafter {
         // The front side seam is as long as the back one plus the side dart; if the front is
         // longer still, its bottom rises towards the side (the curve of an Indian blouse front).
         val maxSideDart = m.adjustment(F.SIDE_DART_WIDTH) ?: MAX_SIDE_DART
-        val sideDart = if (isFront) (f.frontLength - f.backLength).coerceIn(0.0, maxSideDart) else 0.0
+        // 3-dart fronts follow the tailor's 3-dart chart: a dart from the arm round, one across
+        // from the centre front and one under the bust; there is no dart in the side seam.
+        val threeDart = isFront && model.body == BodyStyle.THREE_DART
+        val sideDart = if (isFront && !threeDart) (f.frontLength - f.backLength).coerceIn(0.0, maxSideDart) else 0.0
         val sideBottomY = if (isFront) max(f.frontLength, f.backLength).let { min(it, f.backLength + sideDart) } else f.backLength
 
         // Width lost between bust and waist: some at the side seam, the rest in a waist dart.
@@ -313,7 +329,7 @@ object BlouseDrafter {
         } else {
             sideInset = min(excess * 0.35, 2.5)
             dartIntake = excess - sideInset
-            val maxDart = min(MAX_WAIST_DART, (f.apexX - 1.0) * 2)
+            val maxDart = min(if (threeDart) THREE_DART_BOTTOM else MAX_WAIST_DART, (f.apexX - 1.0) * 2)
             if (dartIntake > maxDart) {
                 sideInset += dartIntake - maxDart
                 dartIntake = maxDart
@@ -406,7 +422,37 @@ object BlouseDrafter {
             if (min(a.y, b.y) - tipY >= 1.5 * INCH) darts += Dart(a, Pt(x, tipY), b)
         }
 
-        if (dartIntake > 0.3) {
+        if (threeDart) {
+            // Under the bust: centred on the bust point, only 2½" high.
+            if (dartIntake > 0.3) bottomDart(f.apexX, dartIntake, max(hemY(f.apexX) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH))
+            // Across from the centre front, 1" above the bust line, 2½" in.
+            val cy = max(f.apexY - 1.0 * INCH, centreTop.y + 1.5 * INCH)
+            val half = THREE_DART_CENTRE_WIDTH / 2
+            val tipX = (m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH).coerceAtMost(f.apexX - 0.5 * INCH)
+            if (cy + half < centreLength - 2.0 * INCH && tipX > 1.0 * INCH) {
+                darts += Dart(Pt(0.0, cy - half), Pt(tipX, cy), Pt(0.0, cy + half))
+            }
+            // From the arm round where a 45° line up from the corner (shoulder end, chest line)
+            // meets it, pointing at the bust point, 4" long.
+            val intake = m.adjustment(F.SIDE_DART_WIDTH) ?: (f.frontLength - f.backLength).coerceIn(0.5 * INCH, 1.0 * INCH)
+            val corner = Pt(shoulder.x, underarm.y)
+            val armPts = armhole.points()
+            var at = 0.0
+            var best = Double.MAX_VALUE
+            var run = 0.0
+            for (k in armPts.indices) {
+                if (k > 0) run += armPts[k].dist(armPts[k - 1])
+                val off = kotlin.math.abs((armPts[k].x - corner.x) - (corner.y - armPts[k].y))
+                if (off < best) { best = off; at = run }
+            }
+            at = at.coerceIn(intake, armhole.length() - intake)
+            val legA = armhole.pointAtDistance(at - intake / 2).first
+            val legB = armhole.pointAtDistance(at + intake / 2).first
+            val mouth = legA.lerp(legB, 0.5)
+            val apex = Pt(f.apexX, f.apexY)
+            val len = min(THREE_DART_ARM_LENGTH, mouth.dist(apex) - 1.0 * INCH)
+            if (len > 1.5 * INCH) darts += Dart(legA, mouth + (apex - mouth).normalized() * len, legB)
+        } else if (dartIntake > 0.3) {
             // 3- and 4-dart fronts move about a third of the waist shaping into a small dart near
             // the hooks, so the dart under the bust stays slim.
             var main = dartIntake
@@ -423,7 +469,7 @@ object BlouseDrafter {
             bottomDart(f.apexX, main, if (isFront) f.apexY + 2.5 else f.armDepth + 3.0)
         }
 
-        if (isFront) {
+        if (isFront && !threeDart) {
             // Side (bust) dart takes up the extra front length so both side seams match.
             val backSide = sideSeamLength(f, isFront = false, m)
             val frontSide = sideBottom.dist(underarm)
@@ -448,6 +494,8 @@ object BlouseDrafter {
                     sideDartAt(2.5 * INCH, intake)
                 }
             }
+        }
+        if (isFront) {
             val apex = Pt(f.apexX, f.apexY)
             markings += Marking(apex + Pt(-0.8, 0.0), apex + Pt(0.8, 0.0), Marking.Kind.GUIDE)
             markings += Marking(apex + Pt(0.0, -0.8), apex + Pt(0.0, 0.8), Marking.Kind.GUIDE)
