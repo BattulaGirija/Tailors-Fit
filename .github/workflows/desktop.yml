@@ -40,7 +40,12 @@ jobs:
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          ./gradlew -Pdesktop=true :desktop:packageMsi :desktop:createDistributable
+          set -o pipefail
+          if ! ./gradlew -Pdesktop=true :desktop:packageMsi :desktop:createDistributable 2>&1 | tee build.log; then
+            # Show the errors as annotations on the run.
+            grep -E "^e: |error:|What went wrong|Could not|Exception" -A2 build.log | head -60 | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          fi
           cp desktop/build/compose/binaries/main/msi/*.msi TailorsFit-Setup.msi
           (cd desktop/build/compose/binaries/main/app && 7z a -tzip ../../../../../../TailorsFit-Windows.zip TailorsFit)
 
