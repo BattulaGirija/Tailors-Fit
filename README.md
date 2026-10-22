@@ -33,6 +33,22 @@ Open the link (or scan the QR code) on an Android phone (Android 7 or newer), ta
 downloaded file, and allow installing from your browser if asked. Every new build is
 published to the same link and installs over the previous version.
 
+## Windows desktop (test version)
+
+**https://github.com/BattulaGirija/Tailors-Fit/releases/latest/download/TailorsFit-Setup.msi**
+
+Download and double-click to install (Windows 10 or 11). If Windows SmartScreen warns about an
+unknown app, choose **More info → Run anyway**. Without installing:
+[TailorsFit-Windows.zip](https://github.com/BattulaGirija/Tailors-Fit/releases/latest/download/TailorsFit-Windows.zip)
+(unzip and run `TailorsFit.exe`).
+
+The desktop app uses the same pattern engine as the phone app (identical patterns), on one
+screen: designs on the left, blouse options, measurements (with how-to-measure pictures and
+saved customers), and the sketch, each piece on an inch grid and the cut layout. **Print…**
+prints at true size on A4 pages (choose *Microsoft Print to PDF* for a PDF); **SVG** saves the
+layout; **Project onto cloth** shows bright lines on black on the projector screen, sized with a
+test square (arrow keys move the pattern). Customers are kept in `Documents\TailorsFit`.
+
 ## How it works
 
 1. **Pick a design.** Home → *Saree Blouses*. Designs are grouped in tabs (**All, 3 Dart,

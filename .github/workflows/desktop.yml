@@ -1,0 +1,60 @@
+name: Windows desktop
+
+# Builds the Windows installer and adds it to the same test release as the APK:
+#   https://github.com/<owner>/<repo>/releases/latest/download/TailorsFit-Setup.msi
+#   https://github.com/<owner>/<repo>/releases/latest/download/TailorsFit-Windows.zip (no install)
+on:
+  push:
+    branches:
+      - main
+      - claude/wizardly-franklin-ooznvg
+    paths-ignore:
+      - "screenshots/**"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build installer
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          ./gradlew -Pdesktop=true :desktop:packageMsi :desktop:createDistributable
+          cp desktop/build/compose/binaries/main/msi/*.msi TailorsFit-Setup.msi
+          (cd desktop/build/compose/binaries/main/app && 7z a -tzip ../../../../../../TailorsFit-Windows.zip TailorsFit)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TailorsFit-Windows
+          path: |
+            TailorsFit-Setup.msi
+            TailorsFit-Windows.zip
+
+      - name: Add to the test release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tester
+          files: |
+            TailorsFit-Setup.msi
+            TailorsFit-Windows.zip
