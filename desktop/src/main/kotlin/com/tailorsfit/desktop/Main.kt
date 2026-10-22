@@ -158,9 +158,9 @@ class AppState {
         fill(SizePreset.M.measurements())
     }
 
-    fun setLanguage(l: Language) { language = l; I18n.language = l; Store.setSetting("language", l.code) }
+    fun chooseLanguage(l: Language) { language = l; I18n.language = l; Store.setSetting("language", l.code) }
 
-    fun setUnit(u: LengthUnit) {
+    fun chooseUnit(u: LengthUnit) {
         val cm = measurements()
         unit = u
         Lengths.unit = u
@@ -229,14 +229,14 @@ private fun TopBar(state: AppState) {
         TextButton(onClick = { customers = true }) { Text(tr("desktop.customers"), color = Brand.Ivory) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             for (u in LengthUnit.entries) {
-                FilterChip(selected = state.unit == u, onClick = { state.setUnit(u) }, label = { Text(if (u == LengthUnit.INCH) tr("measure.inch") else tr("measure.cm"), color = if (state.unit == u) Brand.Ink else Brand.Ivory) })
+                FilterChip(selected = state.unit == u, onClick = { state.chooseUnit(u) }, label = { Text(if (u == LengthUnit.INCH) tr("measure.inch") else tr("measure.cm"), color = if (state.unit == u) Brand.Ink else Brand.Ivory) })
                 Spacer(Modifier.width(4.dp))
             }
         }
         Box {
             TextButton(onClick = { langMenu = true }) { Text(state.language.nativeName, color = Brand.Ivory) }
             DropdownMenu(expanded = langMenu, onDismissRequest = { langMenu = false }) {
-                for (l in Language.entries) DropdownMenuItem(text = { Text(l.nativeName) }, onClick = { langMenu = false; state.setLanguage(l) })
+                for (l in Language.entries) DropdownMenuItem(text = { Text(l.nativeName) }, onClick = { langMenu = false; state.chooseLanguage(l) })
             }
         }
     }
