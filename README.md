@@ -84,7 +84,7 @@ test square (arrow keys move the pattern). Customers are kept in `Documents\Tail
 
 | Type | Front |
 |---|---|
-| 3 Dart | as on the tailor's 3-dart chart: a 4" dart from the arm round (where a 45° line up from the corner of the shoulder-end line and the chest line meets it) towards the bust point, a 2½" dart across from the centre front 1" above the bust line, and a dart under the bust point at most 1¼" wide and 2½" high; no dart in the side seam |
+| 3 Dart | as on the tailor's 3-dart chart: a 4" dart from the arm round (where a 45° line up from the corner of the shoulder-end line and the chest line meets it) towards the bust point, a 2½" dart across from the centre front 2½" above the bust point, and a dart under the bust point at most 1¼" wide and 2½" high; no dart in the side seam |
 | 4 Dart | as 3 dart, with the side shaping split into two side darts |
 | Princess | two panels joined by a curved seam from the armhole through the bust point to the bottom |
 | Katori | cup panels joined from the armhole through the bust point, and a separate belt below |
@@ -164,7 +164,7 @@ cut on the fold.
 | Chest | chest / 4 + 1" for each of front and back (4" ease in all) |
 | Waist | waist / 4 + 1"; the difference from the chest is split between the side seam (about ⅓) and a dart under the bust (at most 1¾") |
 | Shoulder | shoulder / 2 from the centre, ½" slope; neck width about 2½" |
-| Armhole (arm round) | leaves the shoulder end straight down, then curves out to meet the chest line level at the underarm (the back a little flatter); as deep as needed for front + back curves to be the arm round (about 6" for a size 36). The arm-curve adjustments cut it further in near the shoulder |
+| Armhole (arm round) | arm round / 2 − 1¾" deep from the top (6" for a 15½" arm round), deeper only if the sleeve would not fit (cap at least 3¼"); it leaves the shoulder end straight down and curves out to meet the chest line level at the underarm |
 | Bust point | apex-to-apex / 2 across, apex length (corrected for the slant) down |
 | Front length | the side dart takes up to 1¼" of the extra front length; any more lifts the bottom of the front at the side, so the front bottom curves down to the centre and both side seams match |
 | Sleeve | underarm width = arm round + 2"; the cap is ½" longer than the blouse armhole and eased into it, which gives the low cap of a blouse sleeve (about 4") |
@@ -177,7 +177,7 @@ cut on the fold.
 | Shoulder cut | the princess seam starts at the middle of the shoulder instead of on the arm round |
 | Net back yoke | the back is cut along the chosen edge, ¾ of the armhole depth down (lower at the centre for V / round), into a net yoke and the back |
 | Net front insert | the centre front is cut along the chosen edge, 2½" below the front neck at the centre, rising to the shoulder just past the neck point and staying at least ¾" below the neckline |
-| Neck | the shape comes from the design, the depth from the customer's measurement. Pot (matka): narrow below the shoulder, a round belly wider than the neck, round at the bottom |
+| Neck | the shape comes from the design; the depth is exactly the customer's measurement (size 36: front 6½", back 9"); **Deep** adds about ½" (front 7"), high and boat necks are shallower. **Neck broad** (optional, in the measurement list) sets the neck width |
 
 Seam allowances: neck and armhole ⅜", shoulder ⅝", side 1" (room to let out), bottom and sleeve
 hem ¾", hook overlap 1", princess seam ⅝". The app also warns about suspicious measurements (for

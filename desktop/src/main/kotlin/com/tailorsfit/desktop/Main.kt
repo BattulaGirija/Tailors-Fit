@@ -451,10 +451,11 @@ private fun MeasurementPanel(state: AppState, model: GarmentModel, errors: Map<M
 
         SectionTitle(tr("measure.title", state.unit.label))
         for (f in model.requiredMeasurements) MeasureRow(state, f, errors[f], placeholder = null)
+        if (model is BlouseModel) MeasureRow(state, MeasurementField.NECK_BROAD, null, placeholder = tr("measure.auto"))
 
         if (model is BlouseModel) {
             TextButton(onClick = { showAdjust = !showAdjust }) { Text((if (showAdjust) "▾ " else "▸ ") + tr("measure.adjust.title")) }
-            if (showAdjust) for (f in MeasurementField.adjustments) MeasureRow(state, f, null, placeholder = tr("measure.auto"))
+            if (showAdjust) for (f in MeasurementField.adjustments - MeasurementField.NECK_BROAD) MeasureRow(state, f, null, placeholder = tr("measure.auto"))
         }
         state.helpField?.let { f ->
             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, border = BorderStroke(1.dp, Brand.Line), modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {

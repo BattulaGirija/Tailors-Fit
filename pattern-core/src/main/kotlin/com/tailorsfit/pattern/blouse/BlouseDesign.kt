@@ -6,7 +6,7 @@ import java.util.Locale
 
 /** How deep the neck goes compared with the customer's neck depth measurement. */
 enum class NeckDepth(val factor: Double) {
-    SHALLOW(0.8), REGULAR(1.0), DEEP(1.35);
+    SHALLOW(0.92), REGULAR(1.0), DEEP(1.08);
 
     val label: String get() = tr("depth.${name.lowercase()}")
 }
@@ -15,12 +15,12 @@ enum class NeckDepth(val factor: Double) {
 enum class FrontNeck(val shape: NeckShape, val widen: Double = 0.0, val depth: Double = 1.0) {
     ROUND(NeckShape.ROUND),
     U(NeckShape.U, widen = 0.5),
-    V(NeckShape.V, depth = 1.1),
+    V(NeckShape.V),
     SQUARE(NeckShape.SQUARE, widen = 1.0),
     SWEETHEART(NeckShape.SWEETHEART, widen = 1.0),
     BOAT(NeckShape.BOAT, widen = 4.0, depth = 0.55),
     LEAF(NeckShape.LEAF, widen = 1.0),
-    POT(NeckShape.POT, widen = 0.5, depth = 1.0),
+    POT(NeckShape.POT, widen = 0.5),
     ;
 
     val label: String get() = shape.label
@@ -31,14 +31,14 @@ enum class FrontNeck(val shape: NeckShape, val widen: Double = 0.0, val depth: D
 /** Back neck designs, including the ones with an extra detail (keyhole, dori). */
 enum class BackNeck(val shape: NeckShape, val widen: Double = 0.0, val depth: Double = 1.0, val detail: BackDetail = BackDetail.NONE) {
     ROUND(NeckShape.ROUND),
-    U(NeckShape.U, widen = 1.0, depth = 1.2),
-    V(NeckShape.V, widen = 1.0, depth = 1.2),
+    U(NeckShape.U, widen = 1.0),
+    V(NeckShape.V, widen = 1.0),
     SQUARE(NeckShape.SQUARE, widen = 1.0),
     BOAT(NeckShape.BOAT, widen = 4.0, depth = 0.8),
-    LEAF(NeckShape.LEAF, widen = 1.0, depth = 1.3),
-    POT(NeckShape.POT, widen = 0.5, depth = 1.4),
+    LEAF(NeckShape.LEAF, widen = 1.0),
+    POT(NeckShape.POT, widen = 0.5),
     KEYHOLE(NeckShape.ROUND, depth = 0.6, detail = BackDetail.KEYHOLE),
-    DORI(NeckShape.U, widen = 1.0, depth = 1.4, detail = BackDetail.DORI),
+    DORI(NeckShape.U, widen = 1.0, detail = BackDetail.DORI),
     ;
 
     val label: String get() = if (detail == BackDetail.NONE) shape.label else detail.label

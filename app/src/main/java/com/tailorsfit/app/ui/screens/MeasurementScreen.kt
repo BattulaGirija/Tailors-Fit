@@ -73,7 +73,7 @@ private val ADJUSTMENT_SECTIONS = listOf(
     "measure.section.front" to listOf(
         MeasurementField.FRONT_LENGTH, MeasurementField.APEX_TO_APEX,
         MeasurementField.FRONT_DART_WIDTH, MeasurementField.SIDE_DART_WIDTH, MeasurementField.HOOK_DART_DISTANCE,
-        MeasurementField.FRONT_ARM_CURVE, MeasurementField.NECK_BROAD,
+        MeasurementField.FRONT_ARM_CURVE,
     ),
     "measure.section.back" to listOf(MeasurementField.BACK_ARM_CURVE),
     "measure.section.shoulder" to listOf(MeasurementField.SHOULDER_DROP, MeasurementField.ARMHOLE_DEPTH),
@@ -161,6 +161,10 @@ fun MeasurementScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit, onG
             MeasureSection(tr("measure.details")) {
                 FieldGrid(model.requiredMeasurements) { f ->
                     MeasureField(f, vm.inputs[f] ?: "", vm.unit.label, errors[f], onHelp = { help = f }) { onEdit(f, it) }
+                }
+                // Neck broad: optional, worked out from the shoulder when left empty.
+                if (model is com.tailorsfit.pattern.blouse.BlouseModel) FieldGrid(listOf(MeasurementField.NECK_BROAD)) { f ->
+                    MeasureField(f, vm.inputs[f] ?: "", vm.unit.label, null, placeholder = tr("measure.auto"), onHelp = { help = f }) { onEdit(f, it) }
                 }
             }
 

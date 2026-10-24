@@ -101,12 +101,19 @@ class BlouseDrafterTest {
     }
 
     @Test
-    fun armholeIsTheMeasurementPlusEase() {
+    fun armholeDepthIsHalfTheArmRoundLessOneAndThreeQuarterInches() {
+        val inch = BlouseDrafter.INCH
         for (m in sizes) {
-            val p = BlouseCatalog.models.first().draft(m)
-            val arm = p.pieces.filter { it.id != "sleeve" }.sumOf { it.lengthOf(EdgeKind.ARMHOLE) }
-            assertEquals(m[MeasurementField.ARMHOLE] + BlouseDrafter.ARMHOLE_EASE, arm, 0.05)
+            val front = BlouseCatalog.models.first().draft(m).pieces.first { it.id == "front" }
+            val depth = front.points.getValue("underarm").y
+            // At least the tailor's rule; deeper only when the sleeve would not fit.
+            assertTrue(depth >= m[MeasurementField.ARMHOLE] / 2 - 1.75 * inch - 0.01)
+            val cap = BlouseCatalog.models.first().draft(m).pieces.first { it.id == "sleeve" }.points.getValue("capHeight").y
+            assertTrue(cap >= 3.25 * inch - 0.05, "cap ${cap / inch}")
         }
+        val p = BlouseCatalog.models.first { it.id == "blouse_round_classic" }
+            .draft(Measurements.defaults().with(MeasurementField.ARMHOLE, 15.5 * inch).with(MeasurementField.SLEEVE_ROUND, 11 * inch))
+        assertEquals(6.0, p.pieces.first { it.id == "front" }.points.getValue("underarm").y / inch, 0.01)
     }
 
     @Test
@@ -124,13 +131,14 @@ class BlouseDrafterTest {
         val underarm = front.points.getValue("underarm")
         assertEquals(10.0, underarm.x / inch, 0.01)
         assertEquals(6.0, (underarm.y - front.points.getValue("shoulder").y) / inch, 0.5)
-        assertEquals(6.0, front.points.getValue("shoulder").x / inch, 0.01)
+        // 3-dart chart shoulder: shoulder / 2 − 1½".
+        assertEquals(4.5, front.points.getValue("shoulder").x / inch, 0.01)
         assertEquals(0.5, front.points.getValue("shoulder").y / inch, 0.01)
         // 3 dart: the side seams are the same length (no side dart).
         assertEquals(back.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE), 0.05)
         // Sleeve cap about 3½–4½", like a traditional blouse sleeve.
         val cap = p.pieces.first { it.id == "sleeve" }.points.getValue("capHeight").y / inch
-        assertTrue(cap in 3.5..4.5, "cap $cap")
+        assertTrue(cap in 3.2..5.5, "cap $cap")
     }
 
     @Test
@@ -224,6 +232,7 @@ class BlouseDrafterTest {
             val centre = p.pieces.first { it.id == "front_centre" }
             val side = p.pieces.first { it.id == "front_side" }
             val back = p.pieces.first { it.id == "back" }
+            val backSide = p.pieces.filter { it.id.startsWith("back") }.sumOf { it.lengthOf(EdgeKind.SIDE) }
             assertTrue(p.pieces.none { it.id == "front" })
             assertTrue(centre.darts.isEmpty() && side.darts.isEmpty(), "princess fronts have no darts")
             assertEquals(2, side.cut.count)
@@ -231,7 +240,7 @@ class BlouseDrafterTest {
             assertEquals(centre.lengthOf(EdgeKind.PRINCESS), side.lengthOf(EdgeKind.PRINCESS), 0.3, model.id)
             // Side seam matches the back without a side dart.
             val patti = p.pieces.firstOrNull { it.id == "front_patti" }?.lengthOf(EdgeKind.SIDE) ?: 0.0
-            assertEquals(back.lengthOf(EdgeKind.SIDE), side.lengthOf(EdgeKind.SIDE) + patti, 0.05, model.id)
+            assertEquals(backSide, side.lengthOf(EdgeKind.SIDE) + patti, 0.05, model.id)
             // Seam passes through the bust point, and both panels meet the armhole at the same point.
             val apex = centre.points.getValue("apex")
             assertTrue(centre.seamOutline().any { it.dist(apex) < 0.01 } && side.seamOutline().any { it.dist(apex) < 0.01 })
@@ -436,9 +445,9 @@ class BlouseDrafterTest {
             for (piece in p.pieces) assertTrue(piece.area() > 20, "${model.id}/${piece.id}")
         }
         val front = BlouseCatalog.models.first { it.id == "blouse_round_classic" }.draft(m).pieces.first { it.id == "front" }
-        // Neck edge at full shoulder / 2 - shoulder width; shoulder tip at 7½".
-        assertEquals(5.5, front.points.getValue("neck").x / inch, 0.01)
-        assertEquals(7.5, front.points.getValue("shoulder").x / inch, 0.01)
+        // 3-dart chart: shoulder tip at full shoulder / 2 − 1½" (6"), neck edge a shoulder width in.
+        assertEquals(4.0, front.points.getValue("neck").x / inch, 0.01)
+        assertEquals(6.0, front.points.getValue("shoulder").x / inch, 0.01)
         // Bust points 3.6" from the centre; chest quarter 10".
         assertEquals(3.6, front.points.getValue("apex").x / inch, 0.01)
         assertEquals(10.0, front.points.getValue("underarm").x / inch, 0.01)

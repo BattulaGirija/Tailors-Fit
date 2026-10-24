@@ -318,7 +318,7 @@ object KurtiCatalog {
         k("straight_round", "Straight Kurti, Round Neck", "Straight kurti with side slits, round neck and ¾ sleeves — the everyday classic.",
             KurtiCut.STRAIGHT, round, backRound, SleeveStyle.THREE_QUARTER, slits = true),
         k("straight_v", "Straight Kurti, V Neck", "Straight kurti with side slits, V neck and short sleeves.",
-            KurtiCut.STRAIGHT, NeckSpec(NeckShape.V, depthFactor = 1.1), backRound, SleeveStyle.SHORT, slits = true),
+            KurtiCut.STRAIGHT, NeckSpec(NeckShape.V), backRound, SleeveStyle.SHORT, slits = true),
         k("straight_collar", "Straight Kurti, Mandarin Collar", "Straight kurti with a band collar, side slits and full sleeves.",
             KurtiCut.STRAIGHT, NeckSpec(NeckShape.ROUND, depthFactor = 0.6), NeckSpec(NeckShape.ROUND, depthFactor = 0.5), SleeveStyle.FULL, slits = true, collar = true),
         k("straight_square", "Straight Kurti, Square Neck", "Straight kurti with a square neck, side slits and ¾ sleeves.",
@@ -340,8 +340,8 @@ object KurtiCatalog {
         k("anarkali_round", "Anarkali, 12 Kalis", "Fitted bodice and a 12-kali flared skirt, round neck, full sleeves.",
             KurtiCut.ANARKALI, round, backRound, SleeveStyle.FULL, kalis = 12),
         k("anarkali_umbrella", "Umbrella Anarkali, 16 Kalis", "Very full 16-kali anarkali with a V neck and ¾ sleeves.",
-            KurtiCut.ANARKALI, NeckSpec(NeckShape.V, depthFactor = 1.1), backRound, SleeveStyle.THREE_QUARTER, kalis = 16),
+            KurtiCut.ANARKALI, NeckSpec(NeckShape.V), backRound, SleeveStyle.THREE_QUARTER, kalis = 16),
         k("anarkali_square", "Sleeveless Anarkali, Square Neck", "Sleeveless anarkali with a square neck and 12 kalis.",
-            KurtiCut.ANARKALI, NeckSpec(NeckShape.SQUARE), NeckSpec(NeckShape.U, depthFactor = 1.0), SleeveStyle.SLEEVELESS, kalis = 12),
+            KurtiCut.ANARKALI, NeckSpec(NeckShape.SQUARE), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, kalis = 12),
     )
 }

@@ -103,6 +103,11 @@ object BlouseDrafter {
     /** 3-dart chart: the dart across from the centre front, 2½" long. */
     const val THREE_DART_CENTRE_LENGTH = 2.5 * INCH
     const val THREE_DART_CENTRE_WIDTH = 0.75 * INCH
+    const val THREE_DART_CENTRE_ABOVE = 2.5 * INCH
+    /** Arm round depth = arm round / 2 minus this. */
+    const val ARMHOLE_DEPTH_LESS = 1.75 * INCH
+    /** The arm round is never so shallow that the sleeve cap would be lower than this. */
+    const val MIN_CAP_HEIGHT = 3.25 * INCH
     /** 3-dart chart: the dart from the arm round, 4" long. */
     const val THREE_DART_ARM_LENGTH = 4.0 * INCH
     /** Princess drafting chart: front = Length + 1½" at the centre. */
@@ -211,7 +216,9 @@ object BlouseDrafter {
                 // chest / 4 + ½", the bottom is waist / 4 plus the dart, and the front is
                 // Length + 1½" at the centre.
                 val chart = model.body == BodyStyle.PRINCESS
-                var shoulderX = m[F.SHOULDER] / 2 - (if (chart) 1.5 * INCH else 0.0)
+                // 3-dart blouses use the same shoulder as on the tailor's 3-dart chart (5¾" for a 36).
+                val chartShoulder = chart || model.body == BodyStyle.THREE_DART
+                var shoulderX = m[F.SHOULDER] / 2 - (if (chartShoulder) 1.5 * INCH else 0.0)
                 if (model.effectiveSleeve == SleeveStyle.SLEEVELESS) shoulderX -= 0.5 * INCH // keeps straps off the arm
                 // Neck width: the tailor's "neck broad" if set, else full shoulder / 2 minus the
                 // shoulder (strap) width measured on the customer.
@@ -252,7 +259,22 @@ object BlouseDrafter {
                     val mid = (lo + hi) / 2
                     if (armholeFor(mid) < targetArm) lo = mid else hi = mid
                 }
-                var armDepth = m.adjustment(F.ARMHOLE_DEPTH) ?: ((lo + hi) / 2)
+                // As tailors mark it: arm round / 2 − 1¾" down from the top (6" for a 15½" arm round).
+                var armDepth = m.adjustment(F.ARMHOLE_DEPTH) ?: (m[F.ARMHOLE] / 2 - ARMHOLE_DEPTH_LESS)
+                // ... but deep enough for the sleeve to fit with at least a 3¼" cap.
+                if (m.adjustment(F.ARMHOLE_DEPTH) == null && model.effectiveSleeve != SleeveStyle.SLEEVELESS && !m[F.SLEEVE_ROUND].isNaN()) {
+                    val w = (m[F.SLEEVE_ROUND] + SLEEVE_EASE) / 2
+                    // (A 3-dart front's arm round dart is sewn shut before the sleeve goes in.)
+                    val armDart = if (model.body == BodyStyle.THREE_DART)
+                        m.adjustment(F.SIDE_DART_WIDTH) ?: (frontLength - backLength).coerceIn(0.5 * INCH, 1.0 * INCH) else 0.0
+                    val need = 2 * capHalf(w, MIN_CAP_HEIGHT).length() - CAP_EASE + armDart
+                    if (armholeFor(armDepth) < need) {
+                        var a = armDepth
+                        var b = slope + 40.0
+                        repeat(50) { val mid = (a + b) / 2; if (armholeFor(mid) < need) a = mid else b = mid }
+                        armDepth = (a + b) / 2
+                    }
+                }
                 val maxArm = min(frontLength, backLength) - 6.0
                 if (armDepth > maxArm) {
                     warnings += tr("warn.armhole_deep", cm(maxArm))
@@ -415,7 +437,12 @@ object BlouseDrafter {
         fun bottomDart(x: Double, intake: Double, wantedTipY: Double) {
             val half = intake / 2
             var tipY = wantedTipY
-            val neckAbove = neckPath.points().filter { kotlin.math.abs(it.x - x) <= half + 1.0 }.maxOfOrNull { it.y }
+            val np = neckPath.points()
+            val neckAbove = np.zipWithNext().mapNotNull { (a, b) ->
+                val lo = min(a.x, b.x) - half - 1.0
+                val hi = max(a.x, b.x) + half + 1.0
+                if (x < lo || x > hi) null else max(a.y, b.y)
+            }.maxOrNull()
             if (neckAbove != null) tipY = max(tipY, neckAbove + 1.0 * INCH)
             val a = Pt(x - half, hemY(x - half))
             val b = Pt(x + half, hemY(x + half))
@@ -425,8 +452,8 @@ object BlouseDrafter {
         if (threeDart) {
             // Under the bust: centred on the bust point, only 2½" high.
             if (dartIntake > 0.3) bottomDart(f.apexX, dartIntake, max(hemY(f.apexX) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH))
-            // Across from the centre front, 1" above the bust line, 2½" in.
-            val cy = max(f.apexY - 1.0 * INCH, centreTop.y + 1.5 * INCH)
+            // Across from the centre front, 2½" above the bust point, 2½" in.
+            val cy = max(f.apexY - THREE_DART_CENTRE_ABOVE, centreTop.y + 1.0 * INCH)
             val half = THREE_DART_CENTRE_WIDTH / 2
             val tipX = (m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH).coerceAtMost(f.apexX - 0.5 * INCH)
             if (cy + half < centreLength - 2.0 * INCH && tipX > 1.0 * INCH) {
@@ -731,7 +758,7 @@ object BlouseDrafter {
         val underarm = back.edgesOf(EdgeKind.SIDE).single().path.end
         val length = back.edges.first().path.end.y
         val w = underarm.x
-        val y0 = max(underarm.y * 0.75, depth + 1.5 * INCH)
+        val y0 = max(underarm.y * 0.75, depth + 1.0 * INCH)
         fun line(x: Double): Double {
             val t = (x / w).coerceIn(0.0, 1.0)
             return y0 + when (shape) {
@@ -742,7 +769,7 @@ object BlouseDrafter {
                 YokeShape.SWEETHEART -> YOKE_DIP * sqrt(1 - t * t) - 1.0 * INCH * kotlin.math.exp(-(t / 0.2) * (t / 0.2))
             }
         }
-        if (line(0.0) > length - 2.0 * INCH || y0 >= underarm.y) {
+        if (line(0.0) > length - 2.0 * INCH || y0 > length - 3.0 * INCH) {
             warnings += tr("warn.no_yoke")
             return
         }

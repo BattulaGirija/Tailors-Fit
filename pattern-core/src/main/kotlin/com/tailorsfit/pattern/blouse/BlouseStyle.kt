@@ -194,12 +194,12 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_v", "V Neck",
             "Front V neck with a round back and front hooks.",
-            NeckSpec(NeckShape.V, depthFactor = 1.1), NeckSpec(NeckShape.ROUND), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.V), NeckSpec(NeckShape.ROUND), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_deep_back_u", "Deep U Back",
             "Modest round front with a deep U-shaped back.",
-            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.5), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_sweetheart", "Sweetheart Neck",
@@ -214,12 +214,12 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_sleeveless_round", "Sleeveless Round",
             "Round neck, no sleeves, deeper round back.",
-            NeckSpec(NeckShape.ROUND, widen = 1.0), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, widen = 1.0), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_sleeveless_v_back", "Sleeveless V Back",
             "Sleeveless blouse with a round front and a deep V at the back.",
-            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.4), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0), SleeveStyle.SLEEVELESS, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_boat_elbow", "Boat Neck, Elbow Sleeves",
@@ -230,7 +230,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_sweetheart_cap", "Sweetheart, Cap Sleeves",
             "Sweetheart front, U back and short cap sleeves.",
-            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U, depthFactor = 1.1), SleeveStyle.CAP, Opening.BACK,
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U), SleeveStyle.CAP, Opening.BACK,
         ),
         BlouseModel(
             "blouse_round_three_quarter", "Round Neck, 3/4 Sleeves",
@@ -250,7 +250,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_princess_sweetheart", "Princess Cut, Sweetheart",
             "Princess-seamed front with a sweetheart neck, deep U back and cap sleeves.",
-            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.CAP, Opening.BACK,
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U), SleeveStyle.CAP, Opening.BACK,
             princess = true,
         ),
         BlouseModel(
@@ -274,7 +274,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_paan_back", "Paan (Leaf) Back",
             "Round front with a betel-leaf shaped back neck.",
-            NeckSpec(NeckShape.ROUND, widen = 1.0), NeckSpec(NeckShape.LEAF, widen = 1.0, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, widen = 1.0), NeckSpec(NeckShape.LEAF, widen = 1.0), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_keyhole_back", "Keyhole Back",
@@ -285,7 +285,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_dori_back", "Dori Tie-up Back",
             "Round front and a deep U back held with tie-up strings (dori).",
-            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.6), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0), SleeveStyle.SHORT, Opening.FRONT,
             backDetail = BackDetail.DORI,
         ),
         BlouseModel(
@@ -309,12 +309,12 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_v_frill", "V Neck, Frill Sleeves",
             "V neck front with ruffled frills at the sleeve hem.",
-            NeckSpec(NeckShape.V, depthFactor = 1.1), NeckSpec(NeckShape.ROUND), SleeveStyle.FRILL, Opening.FRONT,
+            NeckSpec(NeckShape.V), NeckSpec(NeckShape.ROUND), SleeveStyle.FRILL, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_pot_neck", "Pot (Matka) Neck",
             "Round front neck with a deep pot-shaped (matka) back neck: narrow at the top, round and wide below; front hooks.",
-            NeckSpec(NeckShape.ROUND, widen = 0.5), NeckSpec(NeckShape.POT, widen = 0.5, depthFactor = 1.5), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, widen = 0.5), NeckSpec(NeckShape.POT, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_princess_puff", "Princess Cut, Puff Sleeves",
@@ -325,7 +325,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_v_dori_sleeveless", "Sleeveless, Deep V Tie Back",
             "Sleeveless blouse with a deep V back and tie-up strings.",
-            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.V, widen = 1.0), SleeveStyle.SLEEVELESS, Opening.FRONT,
             backDetail = BackDetail.DORI,
         ),
         // Princess cut collection: the same necks with front (FO) or back (BO) hooks, with (WP)
@@ -333,25 +333,25 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_pc_basic_fo_wp", "Princess Cut Blouse FO WP",
             "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, patti (band) across the bottom of the front, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS, patti = true,
         ),
         BlouseModel(
             "blouse_pc_basic_fo_wop", "Princess Cut Blouse FO WOP",
             "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS,
         ),
         BlouseModel(
             "blouse_pc_basic_bo_wp", "Princess Cut Blouse BO WP",
             "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, patti (band) across the bottom of the front, short sleeves. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
             princess = true, body = BodyStyle.PRINCESS, patti = true,
         ),
         BlouseModel(
             "blouse_pc_basic_bo_wop", "Princess Cut Blouse BO WOP",
             "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, short sleeves. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
             princess = true, body = BodyStyle.PRINCESS,
         ),
         BlouseModel(
@@ -405,25 +405,25 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_pc_halter_fo_wp", "Princess Cut Halter Neck FO WP",
             "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, patti (band) across the bottom of the front. Front hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS, patti = true, halter = true,
         ),
         BlouseModel(
             "blouse_pc_halter_fo_wop", "Princess Cut Halter Neck FO WOP",
             "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless. Front hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS, halter = true,
         ),
         BlouseModel(
             "blouse_pc_halter_bo_wp", "Princess Cut Halter Neck BO WP",
             "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless, patti (band) across the bottom of the front. Back hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.BACK,
             princess = true, body = BodyStyle.PRINCESS, patti = true, halter = true,
         ),
         BlouseModel(
             "blouse_pc_halter_bo_wop", "Princess Cut Halter Neck BO WOP",
             "Princess cut: two front panels joined by curved seams through the bust point, halter: shoulders cut in close to the neck, sleeveless. Back hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.BACK,
             princess = true, body = BodyStyle.PRINCESS, halter = true,
         ),
         BlouseModel(
@@ -465,13 +465,13 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_pc_bottom_curve_fo", "Princess Cut Bottom Curve FO",
             "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, front bottom curving down to the centre, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS, bottomCurve = true,
         ),
         BlouseModel(
             "blouse_pc_bottom_curve_bo", "Princess Cut Bottom Curve BO",
             "Princess cut: two front panels joined by curved seams through the bust point, wide round neck front, U back, front bottom curving down to the centre, short sleeves. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
             princess = true, body = BodyStyle.PRINCESS, bottomCurve = true,
         ),
         BlouseModel(
@@ -549,13 +549,13 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_pc_bengaluru_fo_wp", "Bengaluru Princess Cut Blouse FO WP",
             "Princess cut: two front panels joined by curved seams through the bust point, wide, deep U neck with narrow straps, patti (band) across the bottom of the front, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 1.5), NeckSpec(NeckShape.U, widen = 1.5), SleeveStyle.SHORT, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS, patti = true,
         ),
         BlouseModel(
             "blouse_pc_bengaluru2_fo_wp", "Bengaluru Princess Cut FO WP",
             "Princess cut: two front panels joined by curved seams through the bust point, wide, deep U neck with narrow straps, patti (band) across the bottom of the front, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 1.5), NeckSpec(NeckShape.U, widen = 1.5), SleeveStyle.SHORT, Opening.FRONT,
             princess = true, body = BodyStyle.PRINCESS, patti = true,
         ),
         BlouseModel(
@@ -659,12 +659,12 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_3d_basic_fo", "3 Dart Basic Blouse FO",
             "Basic 3 dart blouse: wide round neck front, U back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_3d_basic_bo", "3 Dart Basic Blouse BO",
             "Basic 3 dart blouse: wide round neck front, U back, short sleeves. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
         ),
         BlouseModel(
             "blouse_3d_boat_fo", "3 Dart Boat Neck FO",
@@ -689,13 +689,13 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_3d_halter_fo", "3 Dart Halter Neck FO",
             "Halter: shoulders cut in close to the neck, round front, deep U back, sleeveless. Front hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.5), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.FRONT,
             halter = true,
         ),
         BlouseModel(
             "blouse_3d_halter_bo", "3 Dart Halter Neck BO",
             "Halter: shoulders cut in close to the neck, round front, U back, sleeveless. Back hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SLEEVELESS, Opening.BACK,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.BACK,
             halter = true,
         ),
         BlouseModel(
@@ -711,19 +711,19 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_3d_basic_fo_bw", "3 Dart Basic Blouse FO BW",
             "Basic 3 dart blouse with a wavy (scalloped) bottom edge, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
             bottomWaves = true,
         ),
         BlouseModel(
             "blouse_3d_basic_bo_bw", "3 Dart Basic Blouse Back Open Bottom Waves",
             "Basic 3 dart blouse with a wavy (scalloped) bottom edge, short sleeves. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
             bottomWaves = true,
         ),
         BlouseModel(
             "blouse_bengaluru_fo", "Bengaluru Blouse Model FO",
             "Bengaluru model: wide, deep U front neck with narrow straps, deep U back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 1.5), NeckSpec(NeckShape.U, widen = 1.5), SleeveStyle.SHORT, Opening.FRONT,
         ),
         BlouseModel(
             "blouse_3d_model1", "Basic Blouse 3 Dart Model 1",
@@ -735,25 +735,25 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_4d_basic_fo_wp", "4 Dart Basic Blouse FO WP",
             "Basic 4 dart blouse: wide round neck front, U back, short sleeves. With patti (band) across the bottom of the front. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
             body = BodyStyle.FOUR_DART, patti = true,
         ),
         BlouseModel(
             "blouse_4d_basic_fo_wop", "4 Dart Basic Blouse FO WOP",
             "Basic 4 dart blouse: wide round neck front, U back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.FRONT,
             body = BodyStyle.FOUR_DART, patti = false,
         ),
         BlouseModel(
             "blouse_4d_basic_bo_wp", "4 Dart Basic Blouse BO WP",
             "Basic 4 dart blouse: wide round neck front, U back, short sleeves. With patti (band) across the bottom of the front. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
             body = BodyStyle.FOUR_DART, patti = true,
         ),
         BlouseModel(
             "blouse_4d_basic_bo_wop", "4 Dart Basic Blouse BO WOP",
             "Basic 4 dart blouse: wide round neck front, U back, short sleeves. Back hooks.",
-            NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.1), NeckSpec(NeckShape.U, widen = 0.5, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.U, widen = 0.5), NeckSpec(NeckShape.U, widen = 0.5), SleeveStyle.SHORT, Opening.BACK,
             body = BodyStyle.FOUR_DART, patti = false,
         ),
         BlouseModel(
@@ -807,25 +807,25 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_4d_halter_fo_wp", "4 Dart Halter Neck FO WP",
             "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. With patti (band) across the bottom of the front. Front hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.FRONT,
             body = BodyStyle.FOUR_DART, halter = true, patti = true,
         ),
         BlouseModel(
             "blouse_4d_halter_fo_wop", "4 Dart Halter Neck FO WOP",
             "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. Front hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.FRONT,
             body = BodyStyle.FOUR_DART, halter = true, patti = false,
         ),
         BlouseModel(
             "blouse_4d_halter_bo_wp", "4 Dart Halter Neck BO WP",
             "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. With patti (band) across the bottom of the front. Back hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.BACK,
             body = BodyStyle.FOUR_DART, halter = true, patti = true,
         ),
         BlouseModel(
             "blouse_4d_halter_bo_wop", "4 Dart Halter Neck BO WOP",
             "Halter: shoulders cut in close to the neck, round front, U back, 4 darts, sleeveless. Back hooks.",
-            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U, depthFactor = 1.3), SleeveStyle.SLEEVELESS, Opening.BACK,
+            NeckSpec(NeckShape.ROUND, depthFactor = 0.8), NeckSpec(NeckShape.U), SleeveStyle.SLEEVELESS, Opening.BACK,
             body = BodyStyle.FOUR_DART, halter = true, patti = false,
         ),
         BlouseModel(
@@ -855,7 +855,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_bengaluru_4d_fo", "Bengaluru 4 Dart Model FO",
             "Bengaluru model with 4 darts: wide, deep U front neck with narrow straps, deep U back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.3), NeckSpec(NeckShape.U, widen = 1.5, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 1.5), NeckSpec(NeckShape.U, widen = 1.5), SleeveStyle.SHORT, Opening.FRONT,
             body = BodyStyle.FOUR_DART,
         ),
         BlouseModel(
@@ -874,31 +874,31 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_katori_sweetheart", "Katori Sweetheart",
             "Katori cups from the armhole to the bust with a belt below, sweetheart neck, U back.",
-            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.SWEETHEART, widen = 1.0), NeckSpec(NeckShape.U), SleeveStyle.SHORT, Opening.BACK,
             body = BodyStyle.KATORI,
         ),
         BlouseModel(
             "blouse_katori_round", "Katori Round Neck, Front Hooks",
             "Katori cups and belt, round neck, deep U back. Opens at the front.",
-            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.4), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.ROUND), NeckSpec(NeckShape.U, widen = 1.0), SleeveStyle.SHORT, Opening.FRONT,
             body = BodyStyle.KATORI,
         ),
         BlouseModel(
             "blouse_sabyasachi_square", "Sabyasachi Square Neck",
             "Cup seams from the shoulder through the bust, a belt below, square neck, deep V back, elbow sleeves.",
-            NeckSpec(NeckShape.SQUARE, widen = 1.0), NeckSpec(NeckShape.V, widen = 1.0, depthFactor = 1.4), SleeveStyle.ELBOW, Opening.BACK,
+            NeckSpec(NeckShape.SQUARE, widen = 1.0), NeckSpec(NeckShape.V, widen = 1.0), SleeveStyle.ELBOW, Opening.BACK,
             body = BodyStyle.SABYASACHI,
         ),
         BlouseModel(
             "blouse_sabyasachi_v", "Sabyasachi Deep V",
             "Deep V front with shoulder-to-bust cup seams and a belt, U back, short sleeves.",
-            NeckSpec(NeckShape.V, depthFactor = 1.2), NeckSpec(NeckShape.U, depthFactor = 1.2), SleeveStyle.SHORT, Opening.BACK,
+            NeckSpec(NeckShape.V), NeckSpec(NeckShape.U), SleeveStyle.SHORT, Opening.BACK,
             body = BodyStyle.SABYASACHI,
         ),
         BlouseModel(
             "blouse_saby_new3", "Sabyasachi Model New 3",
             "Deep sweetheart front with shoulder-to-bust cup seams and a belt, round back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.SWEETHEART, widen = 0.5, depthFactor = 1.2), NeckSpec(NeckShape.ROUND, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.SWEETHEART, widen = 0.5), NeckSpec(NeckShape.ROUND, depthFactor = 0.8), SleeveStyle.SHORT, Opening.FRONT,
             body = BodyStyle.SABYASACHI,
         ),
         BlouseModel(
@@ -910,7 +910,7 @@ object BlouseCatalog {
         BlouseModel(
             "blouse_saby_new5", "Sabyasachi Model New 5",
             "Wide, deep U front with shoulder-to-bust cup seams and a belt, shallow round back, short sleeves. Front hooks.",
-            NeckSpec(NeckShape.U, widen = 1.0, depthFactor = 1.2), NeckSpec(NeckShape.ROUND, widen = 1.0, depthFactor = 0.6), SleeveStyle.SHORT, Opening.FRONT,
+            NeckSpec(NeckShape.U, widen = 1.0), NeckSpec(NeckShape.ROUND, widen = 1.0, depthFactor = 0.6), SleeveStyle.SHORT, Opening.FRONT,
             body = BodyStyle.SABYASACHI,
         ),
     )

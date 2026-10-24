@@ -58,7 +58,7 @@ enum class MeasurementField(
     SLEEVE_OPENING("sleeve_opening", 28.0, 15.0, 50.0),
     SLEEVE_ROUND("sleeve_round", 30.5, 20.0, 55.0),
     FRONT_NECK_DEPTH("front_neck_depth", 16.5, 5.0, 35.0),
-    BACK_NECK_DEPTH("back_neck_depth", 15.0, 3.0, 40.0),
+    BACK_NECK_DEPTH("back_neck_depth", 22.9, 3.0, 40.0),
     WAIST("waist", 76.0, 50.0, 150.0),
     APEX_LENGTH("apex_length", 25.5, 18.0, 40.0),
     CHEST_HEIGHT("chest_height", 33.0, 20.0, 50.0),
