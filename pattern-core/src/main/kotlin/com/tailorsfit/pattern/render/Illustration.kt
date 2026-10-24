@@ -155,7 +155,7 @@ object Illustration {
         return pieces.map { p ->
             val top = p.edgesOf(EdgeKind.BELT).firstOrNull()?.path?.start
             if (p.id != "front_patti" || top == null || top.x <= 0) p
-            else p.map({ Pt(it.x * sideTop.x / top.x, it.y - top.y + seamY) })
+            else p.map({ Pt(it.x * sideTop.x / top.x, it.y + seamY) }) // the patti's top is at y = 0 at the centre
         }
     }
 

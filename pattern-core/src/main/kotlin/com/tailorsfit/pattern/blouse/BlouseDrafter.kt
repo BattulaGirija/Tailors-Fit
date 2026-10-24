@@ -97,6 +97,10 @@ object BlouseDrafter {
     const val MIN_BELT = 1.5 * INCH
     /** Height of the patti (band) across the bottom of the front. */
     const val PATTI_HEIGHT = 1.5 * INCH
+    /** Darted fronts' patti, as on the 3-dart chart: 3½" at the centre, 3" at the side, ⅞" narrower under the bust dart. */
+    const val PATTI_CENTRE = 3.5 * INCH
+    const val PATTI_SIDE = 3.0 * INCH
+    const val PATTI_DIP = 0.85 * INCH
     /** 3-dart chart: the dart under the bust is at most 1¼" wide and 2½" high. */
     const val THREE_DART_BOTTOM = 1.25 * INCH
     const val THREE_DART_BOTTOM_HEIGHT = 2.5 * INCH
@@ -452,10 +456,10 @@ object BlouseDrafter {
             // Under the bust: centred on the bust point, only 2½" high.
             // 2½" high from the bottom (with a patti: from the patti seam), at most up to 1" below
             // the bust point.
-            val bottomTip = max(hemY(f.apexX) - (if (model.hasPatti) PATTI_HEIGHT else 0.0) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH)
+            val bottomTip = max(hemY(f.apexX) - (if (model.hasPatti) PATTI_CENTRE - PATTI_DIP else 0.0) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH)
             if (dartIntake > 0.3) bottomDart(f.apexX, dartIntake, bottomTip)
             // Straight across from the centre front at the bust point level, 2½" in.
-            val cy = min(max(f.apexY, centreTop.y + 1.0 * INCH), centreLength - (if (model.hasPatti) PATTI_HEIGHT else 0.0) - 1.5 * INCH)
+            val cy = min(max(f.apexY, centreTop.y + 1.0 * INCH), centreLength - (if (model.hasPatti) PATTI_CENTRE else 0.0) - 1.0 * INCH)
             val half = THREE_DART_CENTRE_WIDTH / 2
             val cLen = min(m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH, f.apexX - 0.75 * INCH)
             if (cy - half > centreTop.y + 0.5 * INCH && cLen > 1.0 * INCH) {
@@ -514,13 +518,15 @@ object BlouseDrafter {
                     val tip = apex + (centre - apex).normalized() * 3.0
                     darts += Dart(centre - dir * (w / 2), tip, centre + dir * (w / 2))
                 }
-                if (model.body == BodyStyle.FOUR_DART && intake >= 0.6 * INCH && frontSide > 5.5 * INCH) {
+                // With a patti the side darts sit above it.
+                val above = if (model.hasPatti) PATTI_SIDE else 0.0
+                if (model.body == BodyStyle.FOUR_DART && intake >= 0.6 * INCH && frontSide > 5.5 * INCH + above) {
                     // Two side darts, 1" apart, each taking half: a smoother line over the bust.
-                    sideDartAt(2.0 * INCH, intake / 2)
-                    sideDartAt(2.0 * INCH + intake / 2 + 1.0 * INCH, intake / 2)
+                    sideDartAt(2.0 * INCH + above, intake / 2)
+                    sideDartAt(2.0 * INCH + above + intake / 2 + 1.0 * INCH, intake / 2)
                 } else {
                     // About 2½" above the bottom of the side seam, pointing at the bust point.
-                    sideDartAt(2.5 * INCH, intake)
+                    sideDartAt(2.5 * INCH + above, intake)
                 }
             }
         }
@@ -795,13 +801,20 @@ object BlouseDrafter {
         cut: CutInstruction,
     ): List<Piece> {
         val dir = (underarm - sideBottom).normalized()
-        val sideTop = sideBottom + dir * PATTI_HEIGHT
-        fun seamY(x: Double) = hemY(x) - PATTI_HEIGHT
-        // The seam follows the bottom line, PATTI_HEIGHT higher, and meets the side seam at sideTop.
+        // As on the chart: the seam is PATTI_CENTRE above the bottom at the centre, dips by
+        // PATTI_DIP under the bust point and rises to PATTI_SIDE above the bottom at the side.
+        val sideTop = sideBottom + dir * PATTI_SIDE
+        val xd = f.apexX
+        val yC = hemY(0.0) - PATTI_CENTRE
+        val yD = hemY(xd) - PATTI_CENTRE + PATTI_DIP
+        fun blend(a: Double, b: Double, t: Double) = a + (b - a) * (1 - kotlin.math.cos(Math.PI * t.coerceIn(0.0, 1.0))) / 2
+        fun seamY(x: Double) = if (x <= xd) blend(yC, yD, x / xd) else blend(yD, sideTop.y, (x - xd) / (sideTop.x - xd))
         val hemPts = hemPath.points()
-        val seamPts = hemPts.dropLast(1).map { Pt(it.x, it.y - PATTI_HEIGHT) }.filter { it.x < sideTop.x - 0.05 } + sideTop
+        val seamPts = (0 until 40).map { i -> val x = sideTop.x * i / 40; Pt(x, seamY(x)) } + sideTop
         fun onHem(p: Pt) = kotlin.math.abs(p.y - hemY(p.x)) < 1e-6
-        val bottomDarts = darts.filter { onHem(it.legA) && onHem(it.legB) }.sortedBy { it.tip.x }
+        // Darts from the bottom that end inside the patti are left out (the patti shapes the waist).
+        val inPatti = darts.filter { onHem(it.legA) && onHem(it.legB) && it.tip.y > seamY(it.tip.x) - 0.5 * INCH }
+        val bottomDarts = darts.filter { onHem(it.legA) && onHem(it.legB) && it !in inPatti }.sortedBy { it.tip.x }
         // Where a dart leg crosses the seam (the tip is above it, the leg end below).
         fun cross(tip: Pt, leg: Pt): Pt {
             var lo = 0.0
@@ -814,7 +827,7 @@ object BlouseDrafter {
             val q = tip.lerp(leg, hi)
             return Pt(q.x, seamY(q.x))
         }
-        val upperDarts = darts.map { d -> if (d in bottomDarts) Dart(cross(d.tip, d.legA), d.tip, cross(d.tip, d.legB)) else d }
+        val upperDarts = (darts - inPatti.toSet()).map { d -> if (d in bottomDarts) Dart(cross(d.tip, d.legA), d.tip, cross(d.tip, d.legB)) else d }
         val seamDarts = upperDarts.filter { d -> bottomDarts.any { it.tip == d.tip } }.sortedBy { it.tip.x }
 
         // Upper front.
@@ -876,8 +889,49 @@ object BlouseDrafter {
             return out
         }
         val top = closeUp(seamPts, seamDarts.map { it.legA.x to it.legB.x })
-        val band = straightPatti(PathD(top.first(), top.drop(1).map { LineTo(it) }).length(), if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, cut)
+        val dartsBefore = seamDarts.filter { it.tip.x <= xd + 1e-6 }.sumOf { it.intake / 2 }
+        val band = shapedPatti(PathD(top.first(), top.drop(1).map { LineTo(it) }).length(), xd - dartsBefore, if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, cut)
         return listOf(upper, band)
+    }
+
+    /**
+     * The darted fronts' patti, as on the 3-dart chart: straight along the bottom, its top
+     * curving like the front's bottom seam (PATTI_DIP narrower under the bust dart, at [dipAt]),
+     * PATTI_CENTRE tall at the centre and PATTI_SIDE at the side; the top is as long as the
+     * front's seam with the darts closed ([topLength]).
+     */
+    private fun shapedPatti(topLength: Double, dipAt: Double, centreKind: EdgeKind, cut: CutInstruction): Piece {
+        val h = PATTI_CENTRE
+        val sideUp = PATTI_CENTRE - PATTI_SIDE
+        fun blend(a: Double, b: Double, t: Double) = a + (b - a) * (1 - kotlin.math.cos(Math.PI * t.coerceIn(0.0, 1.0))) / 2
+        fun topPts(len: Double): List<Pt> {
+            val xd = dipAt.coerceIn(len * 0.2, len * 0.8)
+            return (0..40).map { i ->
+                val x = len * i / 40
+                Pt(x, if (x <= xd) blend(0.0, PATTI_DIP, x / xd) else blend(PATTI_DIP, sideUp, (x - xd) / (len - xd)))
+            }
+        }
+        fun length(pts: List<Pt>) = pts.zipWithNext().sumOf { (a, b) -> a.dist(b) }
+        var lo = topLength * 0.8
+        var hi = topLength
+        repeat(50) { val mid = (lo + hi) / 2; if (length(topPts(mid)) < topLength) lo = mid else hi = mid }
+        val len = (lo + hi) / 2
+        val top = topPts(len)
+        fun path(pts: List<Pt>) = PathD(pts.first(), pts.drop(1).map { LineTo(it) })
+        return Piece(
+            id = "front_patti",
+            name = tr("piece.front_patti"),
+            cut = cut,
+            edges = listOf(
+                Edge(centreKind, PathD.line(Pt(0.0, 0.0), Pt(0.0, h))),
+                Edge(EdgeKind.HEM, PathD.line(Pt(0.0, h), Pt(len, h))),
+                Edge(EdgeKind.SIDE, PathD.line(Pt(len, h), top.last())),
+                Edge(EdgeKind.BELT, path(top.reversed())),
+            ),
+            markings = listOf(Marking(Pt(len * 0.3, h * 0.6), Pt(len * 0.7, h * 0.6), Marking.Kind.GRAIN)),
+            labelAt = Pt(len * 0.5, h * 0.6),
+            notes = listOf(tr("note.patti", cm(PATTI_CENTRE)), cm(len) + " × " + cm(PATTI_CENTRE) + " / " + cm(PATTI_SIDE)),
+        )
     }
 
     /**

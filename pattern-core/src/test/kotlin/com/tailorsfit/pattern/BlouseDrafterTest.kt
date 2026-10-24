@@ -515,10 +515,17 @@ class BlouseDrafterTest {
             // Side seams: upper front + patti = the front without a patti.
             assertEquals(plain.lengthOf(EdgeKind.SIDE), front.lengthOf(EdgeKind.SIDE) + patti.lengthOf(EdgeKind.SIDE), 0.15 * inch, id)
             // The patti seam is the front's seam with the darts closed.
-            val seamDarts = front.darts.filter { d -> listOf(d.legA, d.legB).all { l -> front.edgesOf(EdgeKind.BELT).single().path.points().any { it.dist(l) < 0.05 } || kotlin.math.abs(l.y - front.edgesOf(EdgeKind.BELT).single().path.start.y) < 0.05 } }
-            assertTrue(seamDarts.isNotEmpty(), id)
+            val seamLine = front.edgesOf(EdgeKind.BELT).single().path.points()
+            fun nearSeam(q: com.tailorsfit.pattern.geom.Pt) = seamLine.zipWithNext().any { (a, b) ->
+                val ab = b - a
+                val t = (((q.x - a.x) * ab.x + (q.y - a.y) * ab.y) / (ab.x * ab.x + ab.y * ab.y)).coerceIn(0.0, 1.0)
+                q.dist(a.lerp(b, t)) < 0.05
+            }
+            val seamDarts = front.darts.filter { d -> nearSeam(d.legA) && nearSeam(d.legB) }
+            // (With the 3½" patti a small size may have no dart crossing the seam.)
             assertEquals(front.lengthOf(EdgeKind.BELT) - seamDarts.sumOf { it.intake }, patti.lengthOf(EdgeKind.BELT), 0.05, id)
-            assertEquals(BlouseDrafter.PATTI_HEIGHT, patti.edges.first().path.length(), 0.01, id)
+            assertEquals(BlouseDrafter.PATTI_CENTRE, patti.edges.first().path.length(), 0.01, id)
+            assertEquals(BlouseDrafter.PATTI_SIDE, patti.lengthOf(EdgeKind.SIDE), 0.01, id)
             assertTrue(patti.darts.isEmpty())
             // Darts stay inside the upper front; the hem is on the patti only.
             for (d in front.darts) assertTrue(pointInPolygon(d.tip, front.seamOutline()), id)

@@ -171,7 +171,7 @@ cut on the fold.
 | Princess cut | follows the tailor's princess drafting chart (sizes 32–38): shoulder end 1½" inside full shoulder / 2 (5½" for a 36), front chest line chest / 4 + ½", bust point chest / 10 across, front = Length + 1½" at the centre. The seam leaves the arm round where a 45° line up from the corner (shoulder end, chest line) meets it, runs through the bust point, and at the bottom its left leg is ½" inside the bust point with the dart as the gap; the bottom is waist / 4 plus the dart. **Shoulder cut** starts the seam at the middle of the shoulder instead |
 | Halter | the shoulder ends 1¾" from the neck point, front and back; no sleeve |
 | Bottom waves | the bottom edge is cut in a whole number of scallops about 3" long and ⅖" deep; the darts still open on it |
-| Patti | the darted front is cut 1½" above the bottom; the darts end on the patti seam and the band is one piece with the dart widths closed (so it is that much shorter than the seam) |
+| Patti | darted fronts (3 and 4 dart), as on the 3-dart chart: the front is cut 3½" above the bottom at the centre and 3" at the side, the seam dipping ⅞" lower under the bust dart; the patti is straight along the bottom with its top following that curve (as long as the seam with the darts closed). Princess fronts keep a straight 1½" patti |
 | Princess patti | both panels are cut along one straight line 1½" above the bottom; the band is as long as the two cut edges together |
 | Bottom curve | the front bottom drops in a smooth curve to 1" lower at the centre; the side seam is unchanged |
 | Shoulder cut | the princess seam starts at the middle of the shoulder instead of on the arm round |
