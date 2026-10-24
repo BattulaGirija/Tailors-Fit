@@ -103,7 +103,6 @@ object BlouseDrafter {
     /** 3-dart chart: the dart across from the centre front, 2½" long. */
     const val THREE_DART_CENTRE_LENGTH = 2.5 * INCH
     const val THREE_DART_CENTRE_WIDTH = 0.75 * INCH
-    const val THREE_DART_CENTRE_ABOVE = 2.5 * INCH
     /** Arm round depth = arm round / 2 minus this. */
     const val ARMHOLE_DEPTH_LESS = 1.75 * INCH
     /** The arm round is never so shallow that the sleeve cap would be lower than this. */
@@ -451,19 +450,16 @@ object BlouseDrafter {
 
         if (threeDart) {
             // Under the bust: centred on the bust point, only 2½" high.
-            // With a patti the dart starts at the patti seam and goes up to 1" below the bust point.
-            val bottomTip = if (model.hasPatti) f.apexY + 1.0 * INCH
-            else max(hemY(f.apexX) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH)
+            // 2½" high from the bottom (with a patti: from the patti seam), at most up to 1" below
+            // the bust point.
+            val bottomTip = max(hemY(f.apexX) - (if (model.hasPatti) PATTI_HEIGHT else 0.0) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH)
             if (dartIntake > 0.3) bottomDart(f.apexX, dartIntake, bottomTip)
-            // Across from the centre front, 2½" above the bust point, 2½" in.
-            val cy = max(f.apexY - THREE_DART_CENTRE_ABOVE, centreTop.y + 1.0 * INCH)
+            // Straight across from the centre front at the bust point level, 2½" in.
+            val cy = min(max(f.apexY, centreTop.y + 1.0 * INCH), centreLength - (if (model.hasPatti) PATTI_HEIGHT else 0.0) - 1.5 * INCH)
             val half = THREE_DART_CENTRE_WIDTH / 2
-            // Pointing at the bust point, 2½" long, ending at least 1" short of it.
-            val apexPt = Pt(f.apexX, f.apexY)
-            val mouthC = Pt(0.0, cy)
-            val cLen = min(m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH, mouthC.dist(apexPt) - 1.0 * INCH)
-            if (cy + half < centreLength - 2.0 * INCH && cLen > 1.0 * INCH) {
-                darts += Dart(Pt(0.0, cy - half), mouthC + (apexPt - mouthC).normalized() * cLen, Pt(0.0, cy + half))
+            val cLen = min(m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH, f.apexX - 0.75 * INCH)
+            if (cy - half > centreTop.y + 0.5 * INCH && cLen > 1.0 * INCH) {
+                darts += Dart(Pt(0.0, cy - half), Pt(cLen, cy), Pt(0.0, cy + half))
             }
             // From the arm round where a 45° line up from the corner (shoulder end, chest line)
             // meets it, pointing at the bust point, 4" long.

@@ -84,7 +84,7 @@ test square (arrow keys move the pattern). Customers are kept in `Documents\Tail
 
 | Type | Front |
 |---|---|
-| 3 Dart | as on the tailor's 3-dart chart: a 4" dart from the arm round (where a 45° line up from the corner of the shoulder-end line and the chest line meets it) towards the bust point, a 2½" dart across from the centre front 2½" above the bust point, and a dart under the bust point at most 1¼" wide and 2½" high; no dart in the side seam |
+| 3 Dart | as on the tailor's 3-dart chart: a 4" dart from the arm round (where a 45° line up from the corner of the shoulder-end line and the chest line meets it) towards the bust point, a 2½" dart straight across from the centre front at the bust point level, and a dart under the bust point at most 1¼" wide and 2½" high; no dart in the side seam |
 | 4 Dart | as 3 dart, with the side shaping split into two side darts |
 | Princess | two panels joined by a curved seam from the armhole through the bust point to the bottom |
 | Katori | cup panels joined from the armhole through the bust point, and a separate belt below |
