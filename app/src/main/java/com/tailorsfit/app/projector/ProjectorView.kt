@@ -23,6 +23,8 @@ data class ProjectorFrame(
     val calibrating: Boolean,
     val calibrationSizeCm: Double,
     val lineWidthPx: Float,
+    /** Quarter turns of the picture, so the cloth can run either way under the projector. */
+    val rotationDeg: Int = 0,
 )
 
 /**
@@ -46,6 +48,26 @@ class ProjectorView(context: Context) : View(context) {
         val style = SinkStyle.projector(f?.lineWidthPx ?: 3f)
         canvas.drawColor(style.background)
         if (f == null) return
+        // Turn the picture; afterwards (0, 0) is again the top-left of what is seen.
+        canvas.save()
+        when (f.rotationDeg) {
+            90 -> { canvas.translate(width.toFloat(), 0f); canvas.rotate(90f) }
+            180 -> { canvas.translate(width.toFloat(), height.toFloat()); canvas.rotate(180f) }
+            270 -> { canvas.translate(0f, height.toFloat()); canvas.rotate(270f) }
+        }
+        val turned = f.rotationDeg == 90 || f.rotationDeg == 270
+        val w = if (turned) height else width
+        val h = if (turned) width else height
+        // Turned a quarter, the screen's vertical scale applies across the cloth and vice versa.
+        val ff = if (turned) f.copy(pxPerCmX = f.pxPerCmY, pxPerCmY = f.pxPerCmX) else f
+        try {
+            drawFrame(canvas, ff, style, w, h)
+        } finally {
+            canvas.restore()
+        }
+    }
+
+    private fun drawFrame(canvas: Canvas, f: ProjectorFrame, style: SinkStyle, width: Int, height: Int) {
 
         if (f.calibrating) {
             // Square centred on the display, independent of panning.

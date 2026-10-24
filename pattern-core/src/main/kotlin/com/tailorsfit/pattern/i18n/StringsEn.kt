@@ -902,6 +902,7 @@ object StringsEn {
         "desktop.square" to "Show test square",
         "desktop.calib_text" to "Measure the square on the cloth (should be %s) and type its real size:",
         "desktop.calib_apply" to "Fix size",
-        "desktop.keys" to "On the projector: arrow keys move the pattern (Shift = faster), + / − line width, G grid, Esc stops.",
+        "desktop.keys" to "On the projector: arrow keys move the pattern (Shift = faster), R rotates, + / − line width, G grid, Esc stops.",
+        "projector.rotate" to "Rotate (%d°)",
     )
 }

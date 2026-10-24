@@ -891,5 +891,6 @@ object StringsTe {
         "desktop.calib_text" to "బట్టపై చతురస్రాన్ని కొలవండి (%s ఉండాలి), అసలు కొలత టైప్ చేయండి:",
         "desktop.calib_apply" to "సైజు సరిచేయి",
         "desktop.keys" to "ప్రొజెక్టర్‌పై: బాణం కీలతో ప్యాటర్న్ కదపండి (Shift = వేగంగా), + / − లైన్ మందం, G గ్రిడ్, Esc ఆపు.",
+        "projector.rotate" to "తిప్పు (%d°)",
     )
 }

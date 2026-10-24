@@ -243,6 +243,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var projectorCalibrating by mutableStateOf(false)
     var projectorLineWidth by mutableStateOf(settings.projectorLineWidthPx)
         private set
+    var projectorRotation by mutableStateOf(settings.projectorRotation)
+        private set
+
+    /** Turns the projected pattern a quarter turn clockwise (remembered). */
+    fun rotateProjector() {
+        projectorRotation = (projectorRotation + 90) % 360
+        settings.projectorRotation = projectorRotation
+    }
 
     init {
         fillFrom(SizePreset.M.measurements())

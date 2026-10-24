@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -58,6 +59,7 @@ fun ProjectorWindow(state: AppState) {
                 Key.Plus, Key.Equals, Key.NumPadAdd -> state.lineWidth = (state.lineWidth + 1f).coerceAtMost(12f)
                 Key.Minus, Key.NumPadSubtract -> state.lineWidth = (state.lineWidth - 1f).coerceAtLeast(1f)
                 Key.G -> state.projectorGrid = !state.projectorGrid
+                Key.R -> state.rotate()
                 Key.Escape -> state.projecting = false
                 else -> return@Window false
             }
@@ -67,12 +69,23 @@ fun ProjectorWindow(state: AppState) {
         val measurer = rememberTextMeasurer()
         Canvas(Modifier.fillMaxSize().background(Color.Black)) {
             val layout = state.layout ?: return@Canvas
+            // Turned a quarter / half / three quarters; afterwards (0, 0) is the visible top-left.
+            val turned = state.rotation == 90 || state.rotation == 270
+            val (dx, dy) = when (state.rotation) {
+                90 -> size.width to 0f
+                180 -> size.width to size.height
+                270 -> 0f to size.height
+                else -> 0f to 0f
+            }
+            withTransform({ translate(dx, dy); rotate(state.rotation.toFloat(), pivot = Offset.Zero) }) {
+            val w = if (turned) size.height else size.width
+            val h = if (turned) size.width else size.height
             // pxPerCm is in screen pixels of this window.
             val k = state.pxPerCm
             val origin = Pt(state.panX, state.panY)
             val sink = ComposeSink(this, measurer, k, origin, Offset.Zero, LineStyle.projector(state.lineWidth))
             if (state.projectorGrid) {
-                val area = Rect(origin.x, origin.y, origin.x + size.width / k, origin.y + size.height / k)
+                val area = Rect(origin.x, origin.y, origin.x + w / k, origin.y + h / k)
                 PatternPainter.paintGrid(sink, area, Lengths.gridStepCm)
             }
             if (state.showTestSquare) {
@@ -81,6 +94,7 @@ fun ProjectorWindow(state: AppState) {
             } else {
                 PatternPainter.paintFabric(layout, sink)
                 PatternPainter.paintLayout(layout, sink, PaintOptions(showAllowance = state.allowance, textScale = 1.2))
+            }
             }
         }
     }

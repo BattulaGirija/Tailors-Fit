@@ -151,6 +151,10 @@ class AppState {
     var panY by mutableStateOf(-2.0)
     var projectorGrid by mutableStateOf(false)
     var showTestSquare by mutableStateOf(false)
+    var rotation by mutableStateOf(Store.setting("rotation")?.toIntOrNull() ?: 0)
+
+    /** Turns the projected pattern a quarter turn clockwise (remembered). */
+    fun rotate() { rotation = (rotation + 90) % 360; Store.setSetting("rotation", rotation.toString()) }
 
     init {
         I18n.language = language
@@ -647,6 +651,8 @@ private fun ProjectorControls(state: AppState) {
                 }
                 Spacer(Modifier.width(12.dp))
                 Switch(state.projectorGrid, { state.projectorGrid = it }); Text(" " + tr("projector.grid", Lengths.format(Lengths.gridStepCm)) + "   ")
+                OutlinedButton(onClick = { state.rotate() }) { Text(tr("projector.rotate", state.rotation)) }
+                Spacer(Modifier.width(12.dp))
                 Text(tr("projector.line") + " ")
                 Slider(state.lineWidth, { state.lineWidth = it }, valueRange = 1f..12f, modifier = Modifier.width(140.dp))
             }

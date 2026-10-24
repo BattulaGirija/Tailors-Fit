@@ -891,5 +891,6 @@ object StringsHi {
         "desktop.calib_text" to "कपड़े पर चौकोर नापें (%s होना चाहिए) और असली नाप लिखें:",
         "desktop.calib_apply" to "साइज़ ठीक करें",
         "desktop.keys" to "प्रोजेक्टर पर: तीर कुंजियों से पैटर्न हिलाएँ (Shift = तेज़), + / − लाइन मोटाई, G ग्रिड, Esc बंद।",
+        "projector.rotate" to "घुमाएँ (%d°)",
     )
 }

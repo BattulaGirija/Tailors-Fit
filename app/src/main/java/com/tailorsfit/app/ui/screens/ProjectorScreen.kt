@@ -116,6 +116,7 @@ fun ProjectorScreen(vm: AppViewModel, modelId: String, onBack: () -> Unit) {
         calibrating = vm.projectorCalibrating,
         calibrationSizeCm = calibSize,
         lineWidthPx = vm.projectorLineWidth,
+        rotationDeg = vm.projectorRotation,
     )
     val onCalibrated: (Calibration) -> Unit = {
         calibration = it
@@ -263,6 +264,7 @@ private fun Controls(
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AssistChip(onClick = { vm.projectorPan = Pt(-2.0, -2.0) }, label = { Text(tr("projector.start")) })
+            AssistChip(onClick = { vm.rotateProjector() }, label = { Text(tr("projector.rotate", vm.projectorRotation)) })
             layout.placed.forEach { p ->
                 AssistChip(
                     onClick = {
