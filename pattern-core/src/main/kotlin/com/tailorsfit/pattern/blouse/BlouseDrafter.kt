@@ -451,13 +451,19 @@ object BlouseDrafter {
 
         if (threeDart) {
             // Under the bust: centred on the bust point, only 2½" high.
-            if (dartIntake > 0.3) bottomDart(f.apexX, dartIntake, max(hemY(f.apexX) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH))
+            // With a patti the dart starts at the patti seam and goes up to 1" below the bust point.
+            val bottomTip = if (model.hasPatti) f.apexY + 1.0 * INCH
+            else max(hemY(f.apexX) - THREE_DART_BOTTOM_HEIGHT, f.apexY + 1.0 * INCH)
+            if (dartIntake > 0.3) bottomDart(f.apexX, dartIntake, bottomTip)
             // Across from the centre front, 2½" above the bust point, 2½" in.
             val cy = max(f.apexY - THREE_DART_CENTRE_ABOVE, centreTop.y + 1.0 * INCH)
             val half = THREE_DART_CENTRE_WIDTH / 2
-            val tipX = (m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH).coerceAtMost(f.apexX - 0.5 * INCH)
-            if (cy + half < centreLength - 2.0 * INCH && tipX > 1.0 * INCH) {
-                darts += Dart(Pt(0.0, cy - half), Pt(tipX, cy), Pt(0.0, cy + half))
+            // Pointing at the bust point, 2½" long, ending at least 1" short of it.
+            val apexPt = Pt(f.apexX, f.apexY)
+            val mouthC = Pt(0.0, cy)
+            val cLen = min(m.adjustment(F.HOOK_DART_DISTANCE) ?: THREE_DART_CENTRE_LENGTH, mouthC.dist(apexPt) - 1.0 * INCH)
+            if (cy + half < centreLength - 2.0 * INCH && cLen > 1.0 * INCH) {
+                darts += Dart(Pt(0.0, cy - half), mouthC + (apexPt - mouthC).normalized() * cLen, Pt(0.0, cy + half))
             }
             // From the arm round where a 45° line up from the corner (shoulder end, chest line)
             // meets it, pointing at the bust point, 4" long.
@@ -603,21 +609,7 @@ object BlouseDrafter {
         val shift = Pt(pc.x - ps.x, 0.0)
         val top = Pt(0.0, y0)
         val topSide = sPts.map { it + shift } // from the joined seam point out to the side
-        val bottom = listOf(hemCentre, hemL) + sideHem.points().map { it + shift }
-        fun path(pts: List<Pt>) = PathD(pts.first(), pts.drop(1).map { LineTo(it) })
-        val band = Piece(
-            id = "front_patti",
-            name = tr("piece.front_patti"),
-            cut = centre.cut,
-            edges = listOf(
-                Edge(centreEdge.kind, PathD.line(top, hemCentre)),
-                Edge(EdgeKind.HEM, path(bottom)),
-                Edge(EdgeKind.SIDE, PathD.line(bottom.last(), topSide.last())),
-                Edge(EdgeKind.BELT, path(topSide.reversed() + top)),
-            ),
-            labelAt = Pt(topSide.last().x * 0.45, (y0 + hemCentre.y) / 2),
-            notes = listOf(tr("note.patti", cm(PATTI_HEIGHT))),
-        )
+        val band = straightPatti(PathD(top, topSide.map { LineTo(it) }).length(), centreEdge.kind, centre.cut, sideHeight = sideBottom.dist(sPts.last()))
         pieces[ci] = c.upper.copy(notes = c.upper.notes + tr("note.patti_seam"))
         pieces[si] = sd.upper
         pieces.add(si + 1, band)
@@ -888,26 +880,31 @@ object BlouseDrafter {
             return out
         }
         val top = closeUp(seamPts, seamDarts.map { it.legA.x to it.legB.x })
-        val bottom = closeUp(hemPts, bottomDarts.map { it.legA.x to it.legB.x })
-        val bandEdges = listOf(
-            Edge(if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, PathD.line(top.first(), bottom.first())),
-            Edge(EdgeKind.HEM, PathD(bottom.first(), bottom.drop(1).map { LineTo(it) })),
-            Edge(EdgeKind.SIDE, PathD.line(bottom.last(), top.last())),
-            Edge(EdgeKind.BELT, PathD(top.last(), top.dropLast(1).reversed().map { LineTo(it) })),
-        )
-        val midX = top.last().x * 0.5
-        val band = Piece(
+        val band = straightPatti(PathD(top.first(), top.drop(1).map { LineTo(it) }).length(), if (isOpening) EdgeKind.OPENING else EdgeKind.FOLD, cut)
+        return listOf(upper, band)
+    }
+
+    /**
+     * The patti: a straight band [PATTI_HEIGHT] tall and [length] long (the front's bottom seam
+     * with its darts closed), cut on the fold or as a pair like the front.
+     */
+    private fun straightPatti(length: Double, centreKind: EdgeKind, cut: CutInstruction, sideHeight: Double = PATTI_HEIGHT): Piece {
+        val h = PATTI_HEIGHT
+        return Piece(
             id = "front_patti",
             name = tr("piece.front_patti"),
             cut = cut,
-            edges = bandEdges,
-            markings = listOf(
-                Marking(Pt(midX - 2.0, (seamY(midX) + hemY(midX)) / 2), Pt(midX + 2.0, (seamY(midX) + hemY(midX)) / 2), Marking.Kind.GUIDE),
+            edges = listOf(
+                Edge(centreKind, PathD.line(Pt(0.0, 0.0), Pt(0.0, h))),
+                // (The side end matches the side seam it continues, a hair taller on a slanted side.)
+                Edge(EdgeKind.HEM, PathD.line(Pt(0.0, h), Pt(length, sideHeight))),
+                Edge(EdgeKind.SIDE, PathD.line(Pt(length, sideHeight), Pt(length, 0.0))),
+                Edge(EdgeKind.BELT, PathD.line(Pt(length, 0.0), Pt(0.0, 0.0))),
             ),
-            labelAt = Pt(top.last().x * 0.45, (seamY(midX) + hemY(midX)) / 2),
-            notes = listOf(tr("note.patti", cm(PATTI_HEIGHT))),
+            markings = listOf(Marking(Pt(length * 0.3, h / 2), Pt(length * 0.7, h / 2), Marking.Kind.GRAIN)),
+            labelAt = Pt(length * 0.5, h / 2),
+            notes = listOf(tr("note.patti", cm(PATTI_HEIGHT)), cm(length) + " × " + cm(h)),
         )
-        return listOf(upper, band)
     }
 
     /**

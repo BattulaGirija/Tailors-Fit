@@ -148,10 +148,14 @@ object Illustration {
     fun asWorn(pieces: List<Piece>): List<Piece> {
         val front = pieces.firstOrNull { it.id == "front_side" } ?: pieces.firstOrNull { it.id == "front" } ?: return pieces
         val sideTop = front.edgesOf(EdgeKind.SIDE).firstOrNull()?.path?.start ?: return pieces
+        // Where the patti is sewn on: the front's bottom seam at the centre.
+        val seamY = pieces.filter { it.id == "front" || it.id == "front_centre" }
+            .flatMap { p -> p.edgesOf(EdgeKind.BELT).flatMap { it.path.points() } }
+            .minByOrNull { kotlin.math.abs(it.x) }?.y ?: return pieces
         return pieces.map { p ->
             val top = p.edgesOf(EdgeKind.BELT).firstOrNull()?.path?.start
             if (p.id != "front_patti" || top == null || top.x <= 0) p
-            else p.map({ Pt(it.x * sideTop.x / top.x, it.y) })
+            else p.map({ Pt(it.x * sideTop.x / top.x, it.y - top.y + seamY) })
         }
     }
 
